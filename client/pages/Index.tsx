@@ -22,34 +22,34 @@ export default function Index() {
           <div className="w-full max-w-[1122px]">
             {/* Navigation Bar */}
             <nav className="rounded-[40px] bg-[#e6e6e6] border-2 border-[#2a2d31] p-1 md:p-2">
-              <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 md:gap-6 lg:gap-8">
+              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 md:gap-6 lg:gap-8">
                 {/* Dark Navigation Section */}
-                <div className="rounded-[40px] bg-[#090a0c] border-2 border-[#42484c] px-5 md:px-7 py-5 flex flex-wrap items-center gap-4 md:gap-8 lg:gap-16 flex-1">
-                  <div className="rounded-[25px] bg-[#d9d9d9] px-8 md:px-11 py-1 md:py-2">
-                    <div className="font-outfit text-xl md:text-2xl font-normal text-[#090a0c]">
+                <div className="rounded-[40px] bg-[#090a0c] border-2 border-[#42484c] px-5 md:px-7 py-5 flex flex-nowrap items-center gap-4 md:gap-8 lg:gap-16 flex-1 overflow-x-auto">
+                  <div className="rounded-[25px] bg-[#d9d9d9] px-8 md:px-11 py-1 md:py-2 shrink-0">
+                    <div className="font-outfit text-xl md:text-2xl font-normal text-[#090a0c] whitespace-nowrap">
                       Logo
                     </div>
                   </div>
-                  <Link to="/" className="font-pacifico text-base md:text-xl font-normal text-white">
+                  <Link to="/" className="font-pacifico text-base md:text-xl font-normal text-white whitespace-nowrap shrink-0">
                     Ana Sayfa
                   </Link>
-                  <Link to="/bloglar" className="font-pacifico text-base md:text-xl font-normal text-white">
+                  <Link to="/bloglar" className="font-pacifico text-base md:text-xl font-normal text-white whitespace-nowrap shrink-0">
                     Bloglar
                   </Link>
-                  <Link to="/duyurular" className="font-pacifico text-base md:text-xl font-normal text-white">
+                  <Link to="/duyurular" className="font-pacifico text-base md:text-xl font-normal text-white whitespace-nowrap shrink-0">
                     Duyurular
                   </Link>
-                  <Link to="/hakkimizda" className="font-pacifico text-base md:text-xl font-normal text-white">
+                  <Link to="/hakkimizda" className="font-pacifico text-base md:text-xl font-normal text-white whitespace-nowrap shrink-0">
                     Hakkımızda
                   </Link>
                 </div>
 
                 {/* Auth Buttons */}
-                <div className="flex items-center gap-4 md:gap-6 lg:gap-8 px-4 md:px-0">
-                  <Link to="/kaydol" className="font-pacifico text-base md:text-xl font-normal text-[#090a0c]">
+                <div className="flex items-center flex-nowrap gap-4 md:gap-6 lg:gap-8 px-4 md:px-0">
+                  <Link to="/kaydol" className="font-pacifico text-base md:text-xl font-normal text-[#090a0c] whitespace-nowrap shrink-0">
                     Kaydol
                   </Link>
-                  <Link to="/giris" className="font-pacifico text-base md:text-xl font-normal text-black">
+                  <Link to="/giris" className="font-pacifico text-base md:text-xl font-normal text-black whitespace-nowrap shrink-0">
                     Giriş Yap
                   </Link>
                 </div>
@@ -125,7 +125,7 @@ export default function Index() {
               <div className="relative min-h-[300px] md:min-h-[400px] lg:min-h-[500px] flex items-end justify-end">
                 <img
                   loading="lazy"
-                  srcSet="https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3182a495439504b4d43051569e264a2f?placeholderIfAbsent=true&width=100 100w, https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3182a495439504b4d43051569e264a2f?placeholderIfAbsent=true&width=200 200w, https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3182a495439504b4d43051569e264a2f?placeholderIfAbsent=true&width=400 400w, https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3182a495439504b4d43051569e264a2f?placeholderIfAbsent=true&width=800 800w, https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3182a495439504b4d43051569e264a2f?placeholderIfAbsent=true&width=1200 1200w, https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3182a495439504b4d43051569e264a2f?placeholderIfAbsent=true&width=1600 1600w, https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3182a495439504b4d43051569e264a2f?placeholderIfAbsent=true&width=2000 2000w"
+                  srcSet="https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3182a495439504b4d43051569e264a2f?placeholderIfAbsent=true&width=100 100w, https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3182a495439504b4d43051569e264a2f?placeholderIfAbsent=true&width=200 200w, https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3182a495439504b4d43051569e264a2f?placeholderIfAbsent=true&width=400 400w, https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3182a495439504b4d43051569e264a2f?placeholderIfAbsent=true&width=800 800w, https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3181a495439504b4d43051569e264a2f?placeholderIfAbsent=true&width=1200 1200w, https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3182a495439504b4d43051569e264a2f?placeholderIfAbsent=true&width=1600 1600w, https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3182a495439504b4d43051569e264a2f?placeholderIfAbsent=true&width=2000 2000w"
                   src="https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3182a495439504b4d43051569e264a2f?placeholderIfAbsent=true"
                   alt="Güvenlik"
                   className="w-full h-auto object-contain"
