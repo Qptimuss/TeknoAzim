@@ -60,14 +60,14 @@ export default function Kaydol() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-outfit text-white">Hesap Oluştur</CardTitle>
           <CardDescription className="text-[#eeeeee]">
-            Yeni bir hesap oluşturmak için bilgilerinizi girin
+            Yeni bir hesap oluşturmak için bilgilerinizi girin. Kullanıcı adınız benzersiz olmalıdır.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-white">İsim</Label>
-              <Input id="name" name="name" type="text" value={formData.name} onChange={handleChange} required className="bg-[#151313] border-[#42484c] text-white placeholder:text-[#999999]" placeholder="Adınız Soyadınız" />
+              <Label htmlFor="name" className="text-white">Kullanıcı Adı</Label>
+              <Input id="name" name="name" type="text" value={formData.name} onChange={handleChange} required className="bg-[#151313] border-[#42484c] text-white placeholder:text-[#999999]" placeholder="Kullanıcı adınız" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email" className="text-white">E-posta</Label>

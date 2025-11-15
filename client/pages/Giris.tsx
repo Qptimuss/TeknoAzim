@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 export default function Giris() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    email: "",
+    name: "",
     password: "",
   });
   const navigate = useNavigate();
@@ -25,18 +25,29 @@ export default function Giris() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    const { error } = await supabase.auth.signInWithPassword({
-      email: formData.email,
-      password: formData.password,
+    const { data, error } = await supabase.functions.invoke('login-with-username', {
+        body: {
+            username: formData.name,
+            password: formData.password,
+        },
     });
 
     setIsSubmitting(false);
 
-    if (error) {
-      toast({ title: "Giriş Hatası", description: error.message, variant: "destructive" });
+    if (error || data.error) {
+      toast({ title: "Giriş Hatası", description: data?.error || error.message, variant: "destructive" });
     } else {
-      toast({ title: "Başarılı", description: "Giriş yapıldı. Yönlendiriliyorsunuz..." });
-      navigate("/profil");
+      const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
+
+      if (sessionError) {
+        toast({ title: "Giriş Hatası", description: "Oturum başlatılamadı.", variant: "destructive" });
+      } else {
+        toast({ title: "Başarılı", description: "Giriş yapıldı. Yönlendiriliyorsunuz..." });
+        navigate("/profil");
+      }
     }
   };
 
@@ -52,16 +63,16 @@ export default function Giris() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-white">E-posta</Label>
+              <Label htmlFor="name" className="text-white">Kullanıcı Adı</Label>
               <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
+                id="name"
+                name="name"
+                type="text"
+                value={formData.name}
                 onChange={handleChange}
                 required
                 className="bg-[#151313] border-[#42484c] text-white placeholder:text-[#999999]"
-                placeholder="ornek@email.com"
+                placeholder="Kullanıcı adınız"
               />
             </div>
             <div className="space-y-2">
