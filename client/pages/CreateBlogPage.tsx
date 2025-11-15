@@ -14,13 +14,19 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "sonner";
-import { addBlogPost } from "@/lib/blog-store";
+import { addBlogPost, uploadBlogImage } from "@/lib/blog-store";
 import { useAuth } from "@/contexts/AuthContext";
 
 const blogSchema = z.object({
   title: z.string().min(5, "Başlık en az 5 karakter olmalıdır."),
   content: z.string().min(20, "İçerik en az 20 karakter olmalıdır."),
-  imageUrl: z.string().url("Lütfen geçerli bir URL girin.").optional().or(z.literal('')),
+  imageFile: z
+    .instanceof(FileList)
+    .optional()
+    .refine(
+      (files) => !files || files.length === 0 || files[0].size <= 2 * 1024 * 1024, // 2MB
+      `Resim boyutu 2MB'den küçük olmalıdır.`
+    ),
 });
 
 export default function CreateBlogPage() {
@@ -31,21 +37,43 @@ export default function CreateBlogPage() {
     defaultValues: {
       title: "",
       content: "",
-      imageUrl: "",
     },
   });
+
+  const imageFileRef = form.register("imageFile");
 
   async function onSubmit(values: z.infer<typeof blogSchema>) {
     if (!user) {
       toast.error("Blog yazısı oluşturmak için giriş yapmalısınız.");
       return;
     }
+
+    let imageUrl: string | undefined = undefined;
+
     try {
-      await addBlogPost({ ...values, userId: user.id });
+      // Upload image if selected
+      if (values.imageFile && values.imageFile.length > 0) {
+        toast.info("Resim yükleniyor...");
+        const file = values.imageFile[0];
+        const uploadedUrl = await uploadBlogImage(file, user.id);
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+        }
+      }
+
+      // Add blog post to database
+      await addBlogPost({ 
+        title: values.title,
+        content: values.content,
+        userId: user.id,
+        imageUrl,
+      });
+
       toast.success("Blog yazınız başarıyla oluşturuldu!");
       navigate("/bloglar");
     } catch (error) {
       toast.error("Blog yazısı oluşturulurken bir hata oluştu.");
+      console.error(error);
     }
   }
 
@@ -72,12 +100,17 @@ export default function CreateBlogPage() {
             />
             <FormField
               control={form.control}
-              name="imageUrl"
+              name="imageFile"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white">Resim URL'si (İsteğe Bağlı)</FormLabel>
+                  <FormLabel className="text-white">Kapak Resmi (İsteğe Bağlı, Maks 2MB)</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://ornek.com/resim.jpg" {...field} />
+                    <Input 
+                      type="file" 
+                      accept="image/*"
+                      {...imageFileRef}
+                      className="bg-[#151313] border-[#42484c] text-white file:text-white"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -96,8 +129,8 @@ export default function CreateBlogPage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" size="lg" className="w-full bg-[#151313]/95 border border-[#42484c] hover:bg-[#151313] text-white text-lg">
-              Yayınla
+            <Button type="submit" size="lg" disabled={form.formState.isSubmitting} className="w-full bg-[#151313]/95 border border-[#42484c] hover:bg-[#151313] text-white text-lg">
+              {form.formState.isSubmitting ? "Yayınlanıyor..." : "Yayınla"}
             </Button>
           </form>
         </Form>

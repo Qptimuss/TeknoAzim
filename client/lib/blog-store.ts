@@ -16,6 +16,29 @@ type NewComment = {
   userId: string;
 };
 
+// Upload a blog image to Supabase Storage
+export const uploadBlogImage = async (file: File, userId: string): Promise<string | null> => {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${userId}-${Date.now()}.${fileExt}`;
+  const filePath = `${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('blog_images')
+    .upload(filePath, file);
+
+  if (uploadError) {
+    console.error('Error uploading image:', uploadError);
+    throw uploadError;
+  }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('blog_images')
+    .getPublicUrl(filePath);
+    
+  return publicUrl;
+};
+
+
 // Fetch all blog posts with their authors
 export const getBlogPosts = async (): Promise<BlogPostWithAuthor[]> => {
   const { data, error } = await supabase
