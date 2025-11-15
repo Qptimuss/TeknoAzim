@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { BlogPost } from "@shared/api";
 import { Link } from "react-router-dom";
+import LikeDislikeButtons from "./LikeDislikeButtons";
 
 interface BlogCardProps {
   post: BlogPost;
@@ -21,8 +22,8 @@ export default function BlogCard({ post }: BlogCardProps) {
   });
 
   return (
-    <Link to={`/bloglar/${post.id}`} className="flex">
-      <Card className="w-full bg-[#090a0c] border-[#2a2d31] text-white flex flex-col transition-all hover:border-white/50 hover:scale-105">
+    <Card className="w-full bg-[#090a0c] border-[#2a2d31] text-white flex flex-col transition-all hover:border-white/50 hover:scale-105">
+      <Link to={`/bloglar/${post.id}`} className="flex flex-col flex-grow">
         <CardHeader>
           {post.imageUrl && (
             <div className="aspect-video overflow-hidden rounded-t-lg mb-4">
@@ -41,10 +42,11 @@ export default function BlogCard({ post }: BlogCardProps) {
         <CardContent className="flex-grow">
           <p className="text-[#eeeeee] line-clamp-3">{post.content}</p>
         </CardContent>
-        <CardFooter>
-          <p className="text-sm text-muted-foreground">{formattedDate}</p>
-        </CardFooter>
-      </Card>
-    </Link>
+      </Link>
+      <CardFooter className="flex justify-between items-center">
+        <p className="text-sm text-muted-foreground">{formattedDate}</p>
+        <LikeDislikeButtons postId={post.id} initialLikes={post.likes} initialDislikes={post.dislikes} />
+      </CardFooter>
+    </Card>
   );
 }

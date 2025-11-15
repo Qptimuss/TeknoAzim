@@ -1,4 +1,4 @@
-import { BlogPost } from "@shared/api";
+import { BlogPost, Comment } from "@shared/api";
 
 // Bu, veritabanı yerine geçen geçici bir bellek içi depodur.
 // Sayfa yenilendiğinde veriler sıfırlanacaktır.
@@ -10,6 +10,11 @@ let posts: BlogPost[] = [
     author: "Ahmet Yılmaz",
     date: "2024-05-15T10:00:00Z",
     imageUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2070&auto=format&fit=crop",
+    likes: 15,
+    dislikes: 2,
+    comments: [
+      { id: 'c1', author: 'Zeynep', content: 'Harika bir yazı!', date: new Date().toISOString() }
+    ],
   },
   {
     id: "2",
@@ -18,20 +23,42 @@ let posts: BlogPost[] = [
     author: "Ayşe Kaya",
     date: "2024-05-14T14:30:00Z",
     imageUrl: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=2120&auto=format&fit=crop",
+    likes: 32,
+    dislikes: 1,
+    comments: [],
   },
 ];
 
-export const getBlogPosts = () => posts;
+export const getBlogPosts = (): BlogPost[] => posts;
 
-export const getBlogPostById = (id: string) => posts.find(p => p.id === id);
+export const getBlogPostById = (id: string): BlogPost | undefined => posts.find(p => p.id === id);
 
-export const addBlogPost = (postData: Omit<BlogPost, 'id' | 'date'>) => {
+export const addBlogPost = (postData: Omit<BlogPost, 'id' | 'date' | 'likes' | 'dislikes' | 'comments'>) => {
   const newPost: BlogPost = {
     id: Date.now().toString(),
     ...postData,
     date: new Date().toISOString(),
+    likes: 0,
+    dislikes: 0,
+    comments: [],
   };
-  // Yeni gönderiyi listenin başına ekle
   posts = [newPost, ...posts];
   return newPost;
+};
+
+export const likePost = (postId: string) => {
+  posts = posts.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p);
+};
+
+export const dislikePost = (postId: string) => {
+  posts = posts.map(p => p.id === postId ? { ...p, dislikes: p.dislikes + 1 } : p);
+};
+
+export const addComment = (postId: string, commentData: Omit<Comment, 'id' | 'date'>) => {
+  const newComment: Comment = {
+    id: Date.now().toString(),
+    ...commentData,
+    date: new Date().toISOString(),
+  };
+  posts = posts.map(p => p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p);
 };

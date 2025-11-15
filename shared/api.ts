@@ -11,6 +11,13 @@ export interface DemoResponse {
   message: string;
 }
 
+export interface Comment {
+  id: string;
+  author: string;
+  content: string;
+  date: string;
+}
+
 export interface BlogPost {
   id: string;
   title: string;
@@ -18,4 +25,7 @@ export interface BlogPost {
   author: string;
   date: string;
   imageUrl?: string;
+  likes: number;
+  dislikes: number;
+  comments: Comment[];
 }

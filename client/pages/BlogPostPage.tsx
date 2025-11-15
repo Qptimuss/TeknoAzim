@@ -1,10 +1,27 @@
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getBlogPostById } from "@/lib/blog-store";
 import { ArrowLeft } from "lucide-react";
+import { BlogPost } from "@shared/api";
+import LikeDislikeButtons from "@/components/LikeDislikeButtons";
+import CommentSection from "@/components/CommentSection";
 
 export default function BlogPostPage() {
   const { id } = useParams<{ id: string }>();
-  const post = id ? getBlogPostById(id) : undefined;
+  const [post, setPost] = useState<BlogPost | undefined>(undefined);
+
+  useEffect(() => {
+    if (id) {
+      setPost(getBlogPostById(id));
+    }
+  }, [id]);
+
+  const handleCommentAdded = () => {
+    if (id) {
+      // Yorum eklendikten sonra en son veriyi almak için post durumunu güncelle
+      setPost(getBlogPostById(id));
+    }
+  };
 
   if (!post) {
     return (
@@ -46,16 +63,21 @@ export default function BlogPostPage() {
           <h1 className="text-white text-3xl md:text-5xl font-outfit font-bold mb-4">
             {post.title}
           </h1>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6">
-            <span>{post.author}</span>
-            <span>&bull;</span>
-            <span>{formattedDate}</span>
+          <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground mb-6">
+            <div className="flex items-center gap-4">
+              <span>{post.author}</span>
+              <span>&bull;</span>
+              <span>{formattedDate}</span>
+            </div>
+            <LikeDislikeButtons postId={post.id} initialLikes={post.likes} initialDislikes={post.dislikes} />
           </div>
           <div className="text-[#eeeeee] text-lg leading-relaxed whitespace-pre-wrap">
             {post.content}
           </div>
         </div>
       </article>
+
+      <CommentSection postId={post.id} comments={post.comments} onCommentAdded={handleCommentAdded} />
     </div>
   );
 }
