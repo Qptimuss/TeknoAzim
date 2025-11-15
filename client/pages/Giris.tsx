@@ -37,41 +37,35 @@ export default function Giris() {
       }
 
       if (data.error) {
-        let errorMessage = data.error;
-        
-        if (errorMessage.includes("Invalid login credentials")) {
-          errorMessage = "Geçersiz kullanıcı adı veya şifre.";
-        } else if (errorMessage.includes("Email not confirmed")) {
-          errorMessage = "Giriş yapmadan önce lütfen e-postanızı doğrulayın.";
+        let userMessage = data.error;
+        if (userMessage.includes("Invalid login credentials")) {
+          userMessage = "Geçersiz kullanıcı adı veya şifre.";
+        } else if (userMessage.includes("Email not confirmed")) {
+          userMessage = "Giriş yapmadan önce lütfen e-postanızı doğrulayın.";
         }
-        
-        toast.error("Giriş Hatası", { description: errorMessage });
+        toast.error("Giriş Hatası", { description: userMessage });
         return;
       }
 
       if (data.session) {
-        // Set the session received from the Edge Function
         const { error: sessionError } = await supabase.auth.setSession({
           access_token: data.session.access_token,
           refresh_token: data.session.refresh_token,
         });
 
         if (sessionError) {
-          toast.error("Giriş Hatası", { description: "Oturum başlatılamadı: " + sessionError.message });
+          toast.error("Oturum Hatası", { description: sessionError.message });
         } else {
-          toast.success("Başarılı!", { description: "Giriş yapıldı. Yönlendiriliyorsunuz..." });
+          toast.success("Giriş başarılı!", { description: "Yönlendiriliyorsunuz..." });
           navigate("/profil");
         }
-      } else if (data.user && !data.session) {
-          // This case should ideally be handled by the Edge Function returning an error if email is not confirmed, 
-          // but keeping it for robustness.
-          toast.info("Doğrulama Gerekli", { description: "Giriş yapmadan önce lütfen e-postanızı doğrulayın." });
       } else {
-          toast.error("Giriş Hatası", { description: "Beklenmedik bir yanıt alındı. Lütfen tekrar deneyin." });
+        toast.error("Giriş Hatası", { description: "Bilinmeyen bir hata oluştu. Lütfen tekrar deneyin." });
       }
     } catch (error) {
       console.error("Login error:", error);
-      toast.error("Giriş Hatası", { description: "Sunucuya ulaşılamadı veya beklenmedik bir hata oluştu." });
+      const errorMessage = error instanceof Error ? error.message : "Sunucuya ulaşılamadı veya beklenmedik bir hata oluştu.";
+      toast.error("Giriş Hatası", { description: errorMessage });
     } finally {
       setIsSubmitting(false);
     }

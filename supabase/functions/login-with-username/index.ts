@@ -21,7 +21,6 @@ serve(async (req) => {
       })
     }
 
-    // Use Admin client to find user by username
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -34,7 +33,7 @@ serve(async (req) => {
       .single()
 
     if (profileError || !profile) {
-      return new Response(JSON.stringify({ error: 'Geçersiz kullanıcı adı veya şifre' }), {
+      return new Response(JSON.stringify({ error: 'Invalid login credentials' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -58,7 +57,6 @@ serve(async (req) => {
         })
     }
 
-    // Use Anon client to sign in with email and password
     const supabaseClient = createClient(
         Deno.env.get('SUPABASE_URL')!,
         Deno.env.get('SUPABASE_ANON_KEY')!
@@ -76,7 +74,20 @@ serve(async (req) => {
       })
     }
 
-    // Return the session and user directly
+    if (!data.session && data.user) {
+      return new Response(JSON.stringify({ error: 'Email not confirmed' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!data.session || !data.user) {
+      return new Response(JSON.stringify({ error: 'Authentication failed unexpectedly' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     return new Response(JSON.stringify({ session: data.session, user: data.user }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
