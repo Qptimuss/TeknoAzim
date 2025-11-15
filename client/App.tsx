@@ -8,10 +8,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import Placeholder from "./pages/Placeholder";
+import Bloglar from "./pages/Bloglar";
 import Kaydol from "./pages/Kaydol";
 import Giris from "./pages/Giris";
 import Layout from "./components/Layout";
+import Placeholder from "./pages/Placeholder"; // Placeholder'ı yeni bir dosya olarak oluşturacağız
 
 const queryClient = new QueryClient();
 
@@ -24,7 +25,7 @@ const App = () => (
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<Index />} />
-            <Route path="/bloglar" element={<Placeholder title="Bloglar" />} />
+            <Route path="/bloglar" element={<Bloglar />} />
             <Route path="/duyurular" element={<Placeholder title="Duyurular" />} />
             <Route path="/hakkimizda" element={<Placeholder title="Hakkımızda" />} />
             <Route path="/gizlilik-politikasi" element={<Placeholder title="Gizlilik Politikası" />} />
