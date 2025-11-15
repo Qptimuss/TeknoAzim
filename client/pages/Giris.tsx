@@ -25,7 +25,7 @@ export default function Giris() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    const { data, error } = await supabase.functions.invoke('login-with-username', {
+    const { data: invokeResult, error: invokeError } = await supabase.functions.invoke('login-with-username', {
         body: {
             username: formData.name,
             password: formData.password,
@@ -34,12 +34,12 @@ export default function Giris() {
 
     setIsSubmitting(false);
 
-    if (error || data.error) {
-      toast({ title: "Giriş Hatası", description: data?.error || error.message, variant: "destructive" });
-    } else {
-      const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
+    if (invokeError || invokeResult.error) {
+      toast({ title: "Giriş Hatası", description: invokeResult?.error || invokeError.message, variant: "destructive" });
+    } else if (invokeResult.data && invokeResult.data.session) {
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: invokeResult.data.session.access_token,
+        refresh_token: invokeResult.data.session.refresh_token,
       });
 
       if (sessionError) {
@@ -48,6 +48,8 @@ export default function Giris() {
         toast({ title: "Başarılı", description: "Giriş yapıldı. Yönlendiriliyorsunuz..." });
         navigate("/profil");
       }
+    } else {
+        toast({ title: "Giriş Hatası", description: "Beklenmedik bir hata oluştu. Lütfen tekrar deneyin.", variant: "destructive" });
     }
   };
 
