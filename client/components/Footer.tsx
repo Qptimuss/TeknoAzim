@@ -21,6 +21,13 @@ const Footer = () => {
   return (
     <footer className="bg-[#090a0c] text-white py-8 md:py-12 border-t border-[#2a2d31]">
       <div className="container mx-auto px-5 md:px-10 lg:px-20">
+        <div className="mb-8 text-left">
+          <p className="text-xs text-[#eeeeee]/70 max-w-sm">
+            "Okumayan ve yazmayan insan düşünemez."
+            <br />
+            <span className="italic">- Ali Fuat Başgil, Gençlerle Başbaşa</span>
+          </p>
+        </div>
         <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-8 md:gap-12">
           {/* Logo and Description */}
           <div className="flex flex-col items-center md:items-start text-center md:text-left">
