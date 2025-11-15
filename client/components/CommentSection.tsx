@@ -93,7 +93,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="h-6 w-6 text-muted-foreground hover:text-red-500 transition-opacity"
                         onClick={() => setCommentToDelete(comment.id)}
                       >
                         <Trash2 className="h-4 w-4" />
