@@ -10,7 +10,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Placeholder from "./pages/Placeholder";
 import Footer from "./components/Footer";
-import Kaydol from "./pages/Kaydol"; // Kaydol bileşenini import et
+import Kaydol from "./pages/Kaydol";
+import Giris from "./pages/Giris"; // Giris bileşenini import et
 
 const queryClient = new QueryClient();
 
@@ -27,8 +28,8 @@ const App = () => (
               <Route path="/bloglar" element={<Placeholder title="Bloglar" />} />
               <Route path="/duyurular" element={<Placeholder title="Duyurular" />} />
               <Route path="/hakkimizda" element={<Placeholder title="Hakkımızda" />} />
-              <Route path="/kaydol" element={<Kaydol />} /> {/* Kaydol route'u */}
-              <Route path="/giris" element={<Placeholder title="Giriş Yap" />} />
+              <Route path="/kaydol" element={<Kaydol />} />
+              <Route path="/giris" element={<Giris />} /> {/* Giris route'u */}
               <Route path="/gizlilik-politikasi" element={<Placeholder title="Gizlilik Politikası" />} />
               <Route path="/kullanim-kosullari" element={<Placeholder title="Kullanım Koşulları" />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
