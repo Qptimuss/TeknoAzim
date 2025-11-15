@@ -6,8 +6,6 @@ import { Github, Twitter, Linkedin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const Footer = () => {
-  const currentYear = new Date().getFullYear();
-
   const socialLinks = [
     { name: 'GitHub', icon: Github, url: '#' },
     { name: 'Twitter', icon: Twitter, url: '#' },
@@ -18,8 +16,6 @@ const Footer = () => {
     { to: "/bloglar", label: "Bloglar" },
     { to: "/duyurular", label: "Duyurular" },
     { to: "/hakkimizda", label: "Hakkımızda" },
-    { to: "/gizlilik-politikasi", label: "Gizlilik Politikası" },
-    { to: "/kullanim-kosullari", label: "Kullanım Koşulları" },
   ];
 
   return (
@@ -75,7 +71,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-[#2a2d31] mt-8 pt-6 text-center text-sm text-[#eeeeee]">
-          <p>&copy; {currentYear} Tüm hakları saklıdır.</p>
+          <p>Bu proje açık kaynaklıdır.</p>
         </div>
       </div>
     </footer>
