@@ -24,41 +24,56 @@ export default function Giris() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    const { data, error: invokeError } = await supabase.functions.invoke('login-with-username', {
-        body: {
-            username: formData.name,
-            password: formData.password,
-        },
-    });
-
-    setIsSubmitting(false);
-
-    if (invokeError || data.error) {
-      let errorMessage = data?.error || invokeError?.message || "Bilinmeyen bir hata oluştu.";
-      
-      if (errorMessage.includes("Invalid login credentials")) {
-        errorMessage = "Geçersiz kullanıcı adı veya şifre.";
-      } else if (errorMessage.includes("Email not confirmed")) {
-        errorMessage = "Giriş yapmadan önce lütfen e-postanızı doğrulayın.";
-      }
-      
-      toast.error("Giriş Hatası", { description: errorMessage });
-    } else if (data.session) {
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke('login-with-username', {
+          body: {
+              username: formData.name,
+              password: formData.password,
+          },
       });
 
-      if (sessionError) {
-        toast.error("Giriş Hatası", { description: "Oturum başlatılamadı." });
-      } else {
-        toast.success("Başarılı!", { description: "Giriş yapıldı. Yönlendiriliyorsunuz..." });
-        navigate("/profil");
+      if (invokeError) {
+        throw new Error(invokeError.message);
       }
-    } else if (data.user && !data.session) {
-        toast.info("Doğrulama Gerekli", { description: "Giriş yapmadan önce lütfen e-postanızı doğrulayın." });
-    } else {
-        toast.error("Giriş Hatası", { description: "Beklenmedik bir hata oluştu. Lütfen tekrar deneyin." });
+
+      if (data.error) {
+        let errorMessage = data.error;
+        
+        if (errorMessage.includes("Invalid login credentials")) {
+          errorMessage = "Geçersiz kullanıcı adı veya şifre.";
+        } else if (errorMessage.includes("Email not confirmed")) {
+          errorMessage = "Giriş yapmadan önce lütfen e-postanızı doğrulayın.";
+        }
+        
+        toast.error("Giriş Hatası", { description: errorMessage });
+        return;
+      }
+
+      if (data.session) {
+        // Set the session received from the Edge Function
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+
+        if (sessionError) {
+          toast.error("Giriş Hatası", { description: "Oturum başlatılamadı: " + sessionError.message });
+        } else {
+          toast.success("Başarılı!", { description: "Giriş yapıldı. Yönlendiriliyorsunuz..." });
+          navigate("/profil");
+        }
+      } else if (data.user && !data.session) {
+          // This case should ideally be handled by the Edge Function returning an error if email is not confirmed, 
+          // but keeping it for robustness.
+          toast.info("Doğrulama Gerekli", { description: "Giriş yapmadan önce lütfen e-postanızı doğrulayın." });
+      } else {
+          toast.error("Giriş Hatası", { description: "Beklenmedik bir yanıt alındı. Lütfen tekrar deneyin." });
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Giriş Hatası", { description: "Sunucuya ulaşılamadı veya beklenmedik bir hata oluştu." });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
