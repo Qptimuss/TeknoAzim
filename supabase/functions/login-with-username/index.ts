@@ -21,13 +21,11 @@ serve(async (req) => {
       })
     }
 
-    // Create a Supabase client with the service role key to query protected tables
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // 1. Find the user ID from the username in the profiles table
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('id')
@@ -35,13 +33,12 @@ serve(async (req) => {
       .single()
 
     if (profileError || !profile) {
-      return new Response(JSON.stringify({ error: 'Geçersiz kullanıcı adı veya şifre' }), {
+      return new Response(JSON.stringify({ error: 'Invalid login credentials' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    // 2. Get the user's email from the auth.users table using the user ID
     const { data: authUser, error: userError } = await supabaseAdmin.auth.admin.getUserById(profile.id)
     
     if (userError || !authUser.user) {
@@ -60,7 +57,6 @@ serve(async (req) => {
         })
     }
 
-    // 3. Attempt to sign in with the retrieved email and provided password
     const supabaseClient = createClient(
         Deno.env.get('SUPABASE_URL')!,
         Deno.env.get('SUPABASE_ANON_KEY')!
@@ -72,7 +68,7 @@ serve(async (req) => {
     })
 
     if (signInError) {
-      return new Response(JSON.stringify({ error: 'Geçersiz kullanıcı adı veya şifre' }), {
+      return new Response(JSON.stringify({ error: signInError.message || 'Geçersiz kullanıcı adı veya şifre' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })

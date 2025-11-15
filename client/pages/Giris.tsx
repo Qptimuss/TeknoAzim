@@ -34,12 +34,27 @@ export default function Giris() {
 
     setIsSubmitting(false);
 
-    if (invokeError || invokeResult.error) {
-      toast({ title: "Giriş Hatası", description: invokeResult?.error || invokeError.message, variant: "destructive" });
-    } else if (invokeResult.data && invokeResult.data.session) {
+    if (invokeError) {
+      let errorMessage = "Bilinmeyen bir hata oluştu.";
+      try {
+        const errorBody = JSON.parse(invokeError.message);
+        errorMessage = errorBody.error || invokeError.message;
+      } catch (e) {
+        errorMessage = invokeError.message;
+      }
+
+      if (errorMessage === "Invalid login credentials") {
+        errorMessage = "Geçersiz kullanıcı adı veya şifre.";
+      } else if (errorMessage === "Email not confirmed") {
+        errorMessage = "Giriş yapmadan önce lütfen e-postanızı doğrulayın.";
+      }
+      
+      toast({ title: "Giriş Hatası", description: errorMessage, variant: "destructive" });
+
+    } else if (invokeResult && invokeResult.session) {
       const { error: sessionError } = await supabase.auth.setSession({
-        access_token: invokeResult.data.session.access_token,
-        refresh_token: invokeResult.data.session.refresh_token,
+        access_token: invokeResult.session.access_token,
+        refresh_token: invokeResult.session.refresh_token,
       });
 
       if (sessionError) {
@@ -48,6 +63,8 @@ export default function Giris() {
         toast({ title: "Başarılı", description: "Giriş yapıldı. Yönlendiriliyorsunuz..." });
         navigate("/profil");
       }
+    } else if (invokeResult && invokeResult.user && !invokeResult.session) {
+        toast({ title: "Doğrulama Gerekli", description: "Giriş yapmadan önce lütfen e-postanızı doğrulayın.", variant: "default" });
     } else {
         toast({ title: "Giriş Hatası", description: "Beklenmedik bir hata oluştu. Lütfen tekrar deneyin.", variant: "destructive" });
     }
