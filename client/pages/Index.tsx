@@ -95,18 +95,27 @@ export default function Index() {
         {/* Announcements Section */}
         <div className="w-full max-w-[1122px] mx-auto px-5 md:px-10 lg:px-20 py-12 md:py-16 lg:py-20">
           {/* Announcements Header */}
-          <div className="mb-12 md:mb-16 lg:mb-20">
-            <h2 className="text-white text-xl md:text-2xl lg:text-[25px] font-outfit font-semibold tracking-[2.5px] uppercase">
-              Duyurular
-            </h2>
-
-            <p className="text-white text-4xl md:text-5xl lg:text-[70px] font-outfit font-bold leading-tight md:leading-[85px] mt-4 max-w-[647px]">
-              Duyurularda son gelişmelerle İlgili bilgi edin.
-            </p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-12 md:mb-16 lg:mb-20">
+            <div className="flex flex-col">
+              <h2 className="text-white text-xl md:text-2xl lg:text-[25px] font-outfit font-semibold tracking-[2.5px] uppercase">
+                Duyurular
+              </h2>
+              <p className="text-white text-4xl md:text-5xl lg:text-[70px] font-outfit font-bold leading-tight md:leading-[85px] mt-4 max-w-[647px]">
+                Duyurularda son gelişmelerle İlgili bilgi edin.
+              </p>
+            </div>
+            {/* Megafon görseli buraya taşındı */}
+            <img
+              loading="lazy"
+              srcSet="https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=100 100w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=200 200w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=400 400w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=800 800w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=1200 1200w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=1600 1600w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=2000 2000w"
+              src="https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true"
+              alt="Duyurular"
+              className="w-auto h-auto object-contain max-w-[100px] sm:max-w-[150px] md:max-w-[200px] lg:max-w-[250px] mt-4 md:mt-0 md:ml-8"
+            />
           </div>
 
           {/* Announcements Content */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 lg:gap-5 mb-12 md:mb-16 lg:mb-20 items-center"> {/* items-center eklendi */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 lg:gap-5 mb-12 md:mb-16 lg:mb-20 items-center">
             {/* Text Column */}
             <div className="flex flex-col justify-start">
               <p className="text-[#eeeeee] text-xl md:text-2xl lg:text-[25px] font-roboto font-medium leading-relaxed md:leading-[40px]">
@@ -120,16 +129,8 @@ export default function Index() {
               </div>
             </div>
 
-            {/* Image Column */}
-            <div className="flex justify-center md:justify-end"> {/* pt- sınıfları kaldırıldı */}
-              <img
-                loading="lazy"
-                srcSet="https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=100 100w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=200 200w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=400 400w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=800 800w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=1200 1200w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=1600 1600w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=2000 2000w"
-                src="https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true"
-                alt="Duyurular"
-                className="w-full h-auto object-contain max-w-[150px] sm:max-w-[250px] md:max-w-sm lg:max-w-md"
-              />
-            </div>
+            {/* Eski görsel sütunu kaldırıldı */}
+            <div></div> 
           </div>
         </div>
 
