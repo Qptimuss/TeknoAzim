@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Giris() {
@@ -14,7 +14,6 @@ export default function Giris() {
     password: "",
   });
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -25,7 +24,7 @@ export default function Giris() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    const { data: invokeResult, error: invokeError } = await supabase.functions.invoke('login-with-username', {
+    const { data, error: invokeError } = await supabase.functions.invoke('login-with-username', {
         body: {
             username: formData.name,
             password: formData.password,
@@ -34,39 +33,32 @@ export default function Giris() {
 
     setIsSubmitting(false);
 
-    if (invokeError) {
-      let errorMessage = "Bilinmeyen bir hata oluştu.";
-      try {
-        const errorBody = JSON.parse(invokeError.message);
-        errorMessage = errorBody.error || invokeError.message;
-      } catch (e) {
-        errorMessage = invokeError.message;
-      }
-
-      if (errorMessage === "Invalid login credentials") {
+    if (invokeError || data.error) {
+      let errorMessage = data?.error || invokeError?.message || "Bilinmeyen bir hata oluştu.";
+      
+      if (errorMessage.includes("Invalid login credentials")) {
         errorMessage = "Geçersiz kullanıcı adı veya şifre.";
-      } else if (errorMessage === "Email not confirmed") {
+      } else if (errorMessage.includes("Email not confirmed")) {
         errorMessage = "Giriş yapmadan önce lütfen e-postanızı doğrulayın.";
       }
       
-      toast({ title: "Giriş Hatası", description: errorMessage, variant: "destructive" });
-
-    } else if (invokeResult && invokeResult.session) {
+      toast.error("Giriş Hatası", { description: errorMessage });
+    } else if (data.session) {
       const { error: sessionError } = await supabase.auth.setSession({
-        access_token: invokeResult.session.access_token,
-        refresh_token: invokeResult.session.refresh_token,
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
       });
 
       if (sessionError) {
-        toast({ title: "Giriş Hatası", description: "Oturum başlatılamadı.", variant: "destructive" });
+        toast.error("Giriş Hatası", { description: "Oturum başlatılamadı." });
       } else {
-        toast({ title: "Başarılı", description: "Giriş yapıldı. Yönlendiriliyorsunuz..." });
+        toast.success("Başarılı!", { description: "Giriş yapıldı. Yönlendiriliyorsunuz..." });
         navigate("/profil");
       }
-    } else if (invokeResult && invokeResult.user && !invokeResult.session) {
-        toast({ title: "Doğrulama Gerekli", description: "Giriş yapmadan önce lütfen e-postanızı doğrulayın.", variant: "default" });
+    } else if (data.user && !data.session) {
+        toast.info("Doğrulama Gerekli", { description: "Giriş yapmadan önce lütfen e-postanızı doğrulayın." });
     } else {
-        toast({ title: "Giriş Hatası", description: "Beklenmedik bir hata oluştu. Lütfen tekrar deneyin.", variant: "destructive" });
+        toast.error("Giriş Hatası", { description: "Beklenmedik bir hata oluştu. Lütfen tekrar deneyin." });
     }
   };
 

@@ -21,6 +21,7 @@ serve(async (req) => {
       })
     }
 
+    // Use Admin client to find user by username
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -33,7 +34,7 @@ serve(async (req) => {
       .single()
 
     if (profileError || !profile) {
-      return new Response(JSON.stringify({ error: 'Invalid login credentials' }), {
+      return new Response(JSON.stringify({ error: 'Geçersiz kullanıcı adı veya şifre' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -57,24 +58,26 @@ serve(async (req) => {
         })
     }
 
+    // Use Anon client to sign in with email and password
     const supabaseClient = createClient(
         Deno.env.get('SUPABASE_URL')!,
         Deno.env.get('SUPABASE_ANON_KEY')!
     )
 
-    const { data: sessionData, error: signInError } = await supabaseClient.auth.signInWithPassword({
+    const { data, error: signInError } = await supabaseClient.auth.signInWithPassword({
       email: email,
       password: password,
     })
 
     if (signInError) {
-      return new Response(JSON.stringify({ error: signInError.message || 'Geçersiz kullanıcı adı veya şifre' }), {
+      return new Response(JSON.stringify({ error: signInError.message }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    return new Response(JSON.stringify(sessionData), {
+    // Return the session and user directly
+    return new Response(JSON.stringify({ session: data.session, user: data.user }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (e) {

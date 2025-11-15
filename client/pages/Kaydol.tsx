@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Kaydol() {
@@ -16,7 +16,6 @@ export default function Kaydol() {
     confirmPassword: "",
   });
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -27,7 +26,7 @@ export default function Kaydol() {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      toast({ title: "Hata", description: "Şifreler eşleşmiyor", variant: "destructive" });
+      toast.error("Şifreler eşleşmiyor");
       return;
     }
 
@@ -47,9 +46,9 @@ export default function Kaydol() {
     setIsSubmitting(false);
 
     if (error) {
-      toast({ title: "Kayıt Hatası", description: error.message, variant: "destructive" });
+      toast.error("Kayıt Hatası", { description: error.message });
     } else {
-      toast({ title: "Başarılı", description: "Hesabınız oluşturuldu! Lütfen e-postanızı kontrol ederek hesabınızı doğrulayın." });
+      toast.success("Hesabınız oluşturuldu!", { description: "Lütfen e-postanızı kontrol ederek hesabınızı doğrulayın." });
       navigate("/giris");
     }
   };
