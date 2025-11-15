@@ -25,28 +25,20 @@ export default function Giris() {
     setIsSubmitting(true);
     
     try {
-      const { data, error: invokeError } = await supabase.functions.invoke('login-with-username', {
+      const { data, error } = await supabase.functions.invoke('login-with-username', {
           body: {
               username: formData.name,
               password: formData.password,
           },
       });
 
-      if (invokeError) {
-        throw new Error(invokeError.message);
+      if (error) {
+        // This will catch all non-2xx responses from the edge function
+        const errorData = await error.context.json();
+        throw new Error(errorData.error || error.message);
       }
 
-      if (data.error) {
-        let userMessage = data.error;
-        if (userMessage.includes("Invalid login credentials")) {
-          userMessage = "Geçersiz kullanıcı adı veya şifre.";
-        } else if (userMessage.includes("Email not confirmed")) {
-          userMessage = "Giriş yapmadan önce lütfen e-postanızı doğrulayın.";
-        }
-        toast.error("Giriş Hatası", { description: userMessage });
-        return;
-      }
-
+      // If we get here, it means a 2xx response was received.
       if (data.session) {
         const { error: sessionError } = await supabase.auth.setSession({
           access_token: data.session.access_token,
@@ -54,17 +46,17 @@ export default function Giris() {
         });
 
         if (sessionError) {
-          toast.error("Oturum Hatası", { description: sessionError.message });
-        } else {
-          toast.success("Giriş başarılı!", { description: "Yönlendiriliyorsunuz..." });
-          navigate("/profil");
+          throw new Error(sessionError.message);
         }
+        
+        toast.success("Giriş başarılı!", { description: "Yönlendiriliyorsunuz..." });
+        navigate("/profil");
+        
       } else {
-        toast.error("Giriş Hatası", { description: "Bilinmeyen bir hata oluştu. Lütfen tekrar deneyin." });
+        throw new Error("Bilinmeyen bir hata oluştu. Sunucudan geçerli bir oturum alınamadı.");
       }
     } catch (error) {
-      console.error("Login error:", error);
-      const errorMessage = error instanceof Error ? error.message : "Sunucuya ulaşılamadı veya beklenmedik bir hata oluştu.";
+      const errorMessage = error instanceof Error ? error.message : "Beklenmedik bir hata oluştu.";
       toast.error("Giriş Hatası", { description: errorMessage });
     } finally {
       setIsSubmitting(false);

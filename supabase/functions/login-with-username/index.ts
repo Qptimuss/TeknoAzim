@@ -6,95 +6,85 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Helper to create consistent JSON error responses
+const createErrorResponse = (message: string, status: number) => {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { username, password } = await req.json()
+    const { username, password } = await req.json();
 
     if (!username || !password) {
-      return new Response(JSON.stringify({ error: 'Kullanıcı adı ve şifre gereklidir' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return createErrorResponse('Kullanıcı adı ve şifre gereklidir', 400);
     }
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
+    );
 
+    // Step 1: Find profile by username
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('id')
       .eq('name', username)
-      .single()
+      .single();
 
     if (profileError || !profile) {
-      return new Response(JSON.stringify({ error: 'Invalid login credentials' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return createErrorResponse('Geçersiz kullanıcı adı veya şifre.', 400);
     }
 
-    const { data: authUser, error: userError } = await supabaseAdmin.auth.admin.getUserById(profile.id)
+    // Step 2: Get user email using the ID from profile
+    const { data: authUser, error: userError } = await supabaseAdmin.auth.admin.getUserById(profile.id);
     
-    if (userError || !authUser.user) {
-        return new Response(JSON.stringify({ error: 'Kullanıcı bulunamadı' }), {
-            status: 404,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+    if (userError || !authUser.user?.email) {
+      return createErrorResponse('Kullanıcı bilgileri alınamadı.', 500);
     }
     
-    const email = authUser.user.email
+    const email = authUser.user.email;
 
-    if (!email) {
-        return new Response(JSON.stringify({ error: 'Bu kullanıcı için e-posta bulunamadı' }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
-    }
-
+    // Step 3: Attempt to sign in with email and password
     const supabaseClient = createClient(
         Deno.env.get('SUPABASE_URL')!,
         Deno.env.get('SUPABASE_ANON_KEY')!
-    )
+    );
 
     const { data, error: signInError } = await supabaseClient.auth.signInWithPassword({
       email: email,
       password: password,
-    })
+    });
 
     if (signInError) {
-      return new Response(JSON.stringify({ error: signInError.message }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      if (signInError.message === 'Invalid login credentials') {
+        return createErrorResponse('Geçersiz kullanıcı adı veya şifre.', 400);
+      }
+      return createErrorResponse(signInError.message, 400);
     }
 
     if (!data.session && data.user) {
-      return new Response(JSON.stringify({ error: 'Email not confirmed' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return createErrorResponse('Giriş yapmadan önce lütfen e-postanızı doğrulayın.', 401);
     }
 
     if (!data.session || !data.user) {
-      return new Response(JSON.stringify({ error: 'Authentication failed unexpectedly' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return createErrorResponse('Oturum oluşturulamadı.', 500);
     }
 
+    // Step 4: Success
     return new Response(JSON.stringify({ session: data.session, user: data.user }), {
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    });
+
   } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    console.error('Edge function error:', e);
+    return createErrorResponse(e.message || 'Sunucuda beklenmedik bir hata oluştu.', 500);
   }
-})
+});
