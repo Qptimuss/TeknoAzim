@@ -121,13 +121,13 @@ export default function Index() {
             </div>
 
             {/* Image Column */}
-            <div className="flex items-start justify-end pt-6 md:pt-8 lg:pt-10">
+            <div className="flex justify-center md:justify-end pt-6 md:pt-8 lg:pt-10">
               <img
                 loading="lazy"
                 srcSet="https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=100 100w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=200 200w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=400 400w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=800 800w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=1200 1200w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=1600 1600w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=2000 2000w"
                 src="https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true"
                 alt="Duyurular"
-                className="w-auto h-auto object-contain max-w-sm md:max-w-md lg:max-w-lg"
+                className="w-full h-auto object-contain max-w-[150px] sm:max-w-[250px] md:max-w-sm lg:max-w-md"
               />
             </div>
           </div>
