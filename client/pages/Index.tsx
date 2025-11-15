@@ -15,8 +15,8 @@ export default function Index() {
   ];
 
   const LogoContent = (
-    <div className="rounded-[25px] bg-[#d9d9d9] px-8 md:px-11 py-1 md:py-2 shrink-0">
-      <div className="font-outfit text-xl md:text-2xl font-normal text-[#090a0c] whitespace-nowrap">
+    <div className="rounded-[25px] bg-[#d9d9d9] px-6 md:px-8 py-1 shrink-0">
+      <div className="font-outfit text-lg md:text-xl font-normal text-[#090a0c] whitespace-nowrap">
         Logo
       </div>
     </div>
@@ -50,12 +50,12 @@ export default function Index() {
                 </div>
 
                 {/* Desktop Logo and Main Navigation Links (hidden on small screens) */}
-                <div className="hidden md:flex rounded-[40px] bg-[#090a0c] border-2 border-[#42484c] px-5 md:px-7 py-5 items-center gap-4 md:gap-8 lg:gap-16 flex-1">
+                <div className="hidden md:flex rounded-[40px] bg-[#090a0c] border-2 border-[#42484c] px-4 md:px-6 py-4 items-center gap-4 md:gap-6 lg:gap-10 flex-1">
                   <Link to="/" className="flex items-center">
                     {LogoContent}
                   </Link>
                   {mainNavLinks.map((link) => (
-                    <Link key={link.to} to={link.to} className="font-pacifico text-base md:text-xl font-normal text-white whitespace-nowrap shrink-0">
+                    <Link key={link.to} to={link.to} className="font-pacifico text-base md:text-lg font-normal text-white whitespace-nowrap shrink-0">
                       {link.label}
                     </Link>
                   ))}
@@ -64,7 +64,7 @@ export default function Index() {
                 {/* Desktop Auth Buttons (hidden on small screens) */}
                 <div className="hidden md:flex items-center gap-4 md:gap-6 lg:gap-8 px-4 md:px-0">
                   {authNavLinks.map((link) => (
-                    <Link key={link.to} to={link.to} className="font-pacifico text-base md:text-xl font-normal text-[#090a0c] whitespace-nowrap shrink-0">
+                    <Link key={link.to} to={link.to} className="font-pacifico text-base md:text-lg font-normal text-[#090a0c] whitespace-nowrap shrink-0">
                       {link.label}
                     </Link>
                   ))}
