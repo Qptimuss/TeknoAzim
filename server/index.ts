@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import path from "path";
 import { handleDemo } from "./routes/demo";
 
 export function createServer() {
@@ -18,6 +19,17 @@ export function createServer() {
   });
 
   app.get("/api/demo", handleDemo);
+
+  // In development, all non-API routes should serve the main index.html
+  // to let the client-side router handle the path.
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api/")) {
+      // This is an API route that wasn't found, let it 404
+      return next();
+    }
+    // For all other routes, serve the SPA's entry point
+    res.sendFile(path.join(process.cwd(), "index.html"));
+  });
 
   return app;
 }
