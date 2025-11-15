@@ -46,12 +46,20 @@ export const addBlogPost = (postData: Omit<BlogPost, 'id' | 'date' | 'likes' | '
   return newPost;
 };
 
-export const likePost = (postId: string) => {
+export const incrementLike = (postId: string) => {
   posts = posts.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p);
 };
 
-export const dislikePost = (postId: string) => {
+export const decrementLike = (postId: string) => {
+  posts = posts.map(p => p.id === postId ? { ...p, likes: Math.max(0, p.likes - 1) } : p);
+};
+
+export const incrementDislike = (postId: string) => {
   posts = posts.map(p => p.id === postId ? { ...p, dislikes: p.dislikes + 1 } : p);
+};
+
+export const decrementDislike = (postId: string) => {
+  posts = posts.map(p => p.id === postId ? { ...p, dislikes: Math.max(0, p.dislikes - 1) } : p);
 };
 
 export const addComment = (postId: string, commentData: Omit<Comment, 'id' | 'date'>) => {
