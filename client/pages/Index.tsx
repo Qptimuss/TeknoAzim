@@ -106,7 +106,7 @@ export default function Index() {
           </div>
 
           {/* Announcements Content */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 lg:gap-5 mb-12 md:mb-16 lg:mb-20">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 lg:gap-5 mb-12 md:mb-16 lg:mb-20 items-center"> {/* items-center eklendi */}
             {/* Text Column */}
             <div className="flex flex-col justify-start">
               <p className="text-[#eeeeee] text-xl md:text-2xl lg:text-[25px] font-roboto font-medium leading-relaxed md:leading-[40px]">
@@ -121,13 +121,13 @@ export default function Index() {
             </div>
 
             {/* Image Column */}
-            <div className="flex items-center justify-center md:justify-end"> {/* Removed pt- classes, added items-center */}
+            <div className="flex justify-center md:justify-end"> {/* pt- sınıfları kaldırıldı */}
               <img
                 loading="lazy"
                 srcSet="https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=100 100w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=200 200w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=400 400w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=800 800w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=1200 1200w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=1600 1600w, https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true&width=2000 2000w"
                 src="https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e?placeholderIfAbsent=true"
                 alt="Duyurular"
-                className="w-auto h-auto object-contain max-w-[120px] sm:max-w-[180px] md:max-w-[250px] lg:max-w-[300px]" // Adjusted max-w values
+                className="w-full h-auto object-contain max-w-[150px] sm:max-w-[250px] md:max-w-sm lg:max-w-md"
               />
             </div>
           </div>
