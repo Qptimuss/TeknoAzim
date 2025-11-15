@@ -29,7 +29,7 @@ export default function Placeholder({ title }: PlaceholderProps) {
   return (
     <div className="bg-[#020303] min-h-screen">
       {/* Navigation Bar */}
-      <nav className="px-5 md:px-10 lg:px-20 pt-14 pb-8">
+      <nav className="sticky top-0 z-50 px-5 md:px-10 lg:px-20 pt-14 pb-8"> {/* sticky, top-0 ve z-50 eklendi */}
         <div className="w-full max-w-[1122px] mx-auto rounded-[40px] bg-[#e6e6e6] border-2 border-[#2a2d31] p-1 md:p-2">
           <div className="flex items-center justify-between gap-4 md:gap-6 lg:gap-8">
             {/* Mobile Nav Trigger (visible only on small screens) */}

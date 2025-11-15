@@ -39,10 +39,10 @@ export default function Index() {
         <div className="absolute inset-0 h-full w-full bg-gradient-to-t from-[#020303] from-0% via-[#020303]/50 via-30% to-transparent to-100%" />
 
         {/* Content Container */}
-        <div className="relative z-10 px-5 md:px-10 lg:px-20 pt-14 pb-8 flex flex-col items-center">
+        <div className="relative z-10 px-5 md:px-10 lg:px-20 pb-8 flex flex-col items-center"> {/* pt-14 kaldırıldı */}
           <div className="w-full max-w-[1122px]">
             {/* Navigation Bar */}
-            <nav className="rounded-[40px] bg-[#e6e6e6] border-2 border-[#2a2d31] p-1 md:p-2">
+            <nav className="sticky top-0 z-50 rounded-[40px] bg-[#e6e6e6] border-2 border-[#2a2d31] p-1 md:p-2 pt-14"> {/* sticky, top-0, z-50 ve pt-14 eklendi */}
               <div className="flex items-center justify-between gap-4 md:gap-6 lg:gap-8">
                 {/* Mobile Nav Trigger (visible only on small screens) */}
                 <div className="md:hidden">
