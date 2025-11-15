@@ -1,7 +1,6 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import path from "path";
 import { handleDemo } from "./routes/demo";
 
 export function createServer() {
@@ -19,13 +18,6 @@ export function createServer() {
   });
 
   app.get("/api/demo", handleDemo);
-
-  // In development, all non-API GET routes should serve the main index.html
-  // to let the client-side router handle the path.
-  // This regex matches any path that does NOT start with /api
-  app.get(/^(?!\/api).*/, (_req, res) => {
-    res.sendFile(path.join(process.cwd(), "index.html"));
-  });
 
   return app;
 }
