@@ -1,4 +1,3 @@
-`onCommentAdded`) iletiliyor.">
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getBlogPostById, getCommentsForPost } from "@/lib/blog-store";
