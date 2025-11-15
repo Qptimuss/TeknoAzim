@@ -39,40 +39,40 @@ export default function Index() {
         <div className="absolute inset-0 h-full w-full bg-gradient-to-t from-[#020303] from-0% via-[#020303]/50 via-30% to-transparent to-100%" />
 
         {/* Content Container */}
-        <div className="relative z-10 pb-8 flex flex-col items-center">
-          {/* Navigation Bar */}
-          <nav className="sticky top-0 z-50 w-full max-w-[1122px] mx-auto rounded-[40px] bg-[#e6e6e6] border-2 border-[#2a2d31] p-1 md:p-2 pt-14 px-5 md:px-10 lg:px-20">
-            <div className="flex items-center justify-between gap-4 md:gap-6 lg:gap-8">
-              {/* Mobile Nav Trigger (visible only on small screens) */}
-              <div className="md:hidden">
-                <MobileNav mainLinks={mainNavLinks} authLinks={authNavLinks} logo={LogoContent} />
-              </div>
+        <div className="relative z-10 px-5 md:px-10 lg:px-20 pb-8 flex flex-col items-center"> {/* pt-14 kaldırıldı */}
+          <div className="w-full max-w-[1122px]">
+            {/* Navigation Bar */}
+            <nav className="sticky top-0 z-50 rounded-[40px] bg-[#e6e6e6] border-2 border-[#2a2d31] p-1 md:p-2 pt-14"> {/* sticky, top-0, z-50 ve pt-14 eklendi */}
+              <div className="flex items-center justify-between gap-4 md:gap-6 lg:gap-8">
+                {/* Mobile Nav Trigger (visible only on small screens) */}
+                <div className="md:hidden">
+                  <MobileNav mainLinks={mainNavLinks} authLinks={authNavLinks} logo={LogoContent} />
+                </div>
 
-              {/* Desktop Logo and Main Navigation Links (hidden on small screens) */}
-              <div className="hidden md:flex rounded-[40px] bg-[#090a0c] border-2 border-[#42484c] px-4 md:px-6 py-4 items-center gap-4 md:gap-6 lg:gap-10 flex-1">
-                <Link to="/" className="flex items-center">
-                  {LogoContent}
-                </Link>
-                {mainNavLinks.map((link) => (
-                  <Link key={link.to} to={link.to} className="font-pacifico text-base md:text-lg font-normal text-white whitespace-nowrap shrink-0">
-                    {link.label}
+                {/* Desktop Logo and Main Navigation Links (hidden on small screens) */}
+                <div className="hidden md:flex rounded-[40px] bg-[#090a0c] border-2 border-[#42484c] px-4 md:px-6 py-4 items-center gap-4 md:gap-6 lg:gap-10 flex-1">
+                  <Link to="/" className="flex items-center">
+                    {LogoContent}
                   </Link>
-                ))}
-              </div>
+                  {mainNavLinks.map((link) => (
+                    <Link key={link.to} to={link.to} className="font-pacifico text-base md:text-lg font-normal text-white whitespace-nowrap shrink-0">
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
 
-              {/* Desktop Auth Buttons (hidden on small screens) */}
-              <div className="hidden md:flex items-center gap-4 md:gap-6 lg:gap-8 px-4 md:px-0">
-                {authNavLinks.map((link) => (
-                  <Link key={link.to} to={link.to} className="font-pacifico text-base md:text-lg font-normal text-[#090a0c] whitespace-nowrap shrink-0">
-                    {link.label}
-                  </Link>
-                ))}
+                {/* Desktop Auth Buttons (hidden on small screens) */}
+                <div className="hidden md:flex items-center gap-4 md:gap-6 lg:gap-8 px-4 md:px-0">
+                  {authNavLinks.map((link) => (
+                    <Link key={link.to} to={link.to} className="font-pacifico text-base md:text-lg font-normal text-[#090a0c] whitespace-nowrap shrink-0">
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
-          </nav>
+            </nav>
 
-          {/* Hero Content */}
-          <div className="w-full max-w-[1122px] px-5 md:px-10 lg:px-20">
+            {/* Hero Content */}
             <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-outfit font-bold text-center mt-12 md:mt-16 lg:mt-20 px-4">
               Düşüncelerle derinleşen,yazılarla genişleyen bir dünya.
             </h1>
