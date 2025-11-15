@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 export default function Giris() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
+    email: "",
     password: "",
   });
   const navigate = useNavigate();
@@ -24,42 +24,24 @@ export default function Giris() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    try {
-      const { data, error } = await supabase.functions.invoke('login-with-username', {
-          body: {
-              username: formData.name,
-              password: formData.password,
-          },
-      });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password,
+    });
 
-      if (error) {
-        // This will catch all non-2xx responses from the edge function
-        const errorData = await error.context.json();
-        throw new Error(errorData.error || error.message);
-      }
+    setIsSubmitting(false);
 
-      // If we get here, it means a 2xx response was received.
-      if (data.session) {
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        });
-
-        if (sessionError) {
-          throw new Error(sessionError.message);
-        }
-        
-        toast.success("Giriş başarılı!", { description: "Yönlendiriliyorsunuz..." });
-        navigate("/profil");
-        
+    if (error) {
+      if (error.message === "Invalid login credentials") {
+        toast.error("Giriş Hatası", { description: "Geçersiz e-posta veya şifre." });
+      } else if (error.message === 'Email not confirmed') {
+        toast.error("Giriş Hatası", { description: "Giriş yapmadan önce lütfen e-postanızı doğrulayın." });
       } else {
-        throw new Error("Bilinmeyen bir hata oluştu. Sunucudan geçerli bir oturum alınamadı.");
+        toast.error("Giriş Hatası", { description: error.message });
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Beklenmedik bir hata oluştu.";
-      toast.error("Giriş Hatası", { description: errorMessage });
-    } finally {
-      setIsSubmitting(false);
+    } else {
+      toast.success("Giriş başarılı!", { description: "Yönlendiriliyorsunuz..." });
+      navigate("/profil");
     }
   };
 
@@ -75,16 +57,16 @@ export default function Giris() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-white">Kullanıcı Adı</Label>
+              <Label htmlFor="email" className="text-white">E-posta</Label>
               <Input
-                id="name"
-                name="name"
-                type="text"
-                value={formData.name}
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
                 onChange={handleChange}
                 required
                 className="bg-[#151313] border-[#42484c] text-white placeholder:text-[#999999]"
-                placeholder="Kullanıcı adınız"
+                placeholder="ornek@email.com"
               />
             </div>
             <div className="space-y-2">
