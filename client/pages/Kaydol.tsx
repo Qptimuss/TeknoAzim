@@ -31,6 +31,19 @@ export default function Kaydol() {
     }
 
     setIsSubmitting(true);
+
+    // Check if username is already taken
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('name', formData.name)
+      .single();
+
+    if (existingProfile) {
+      toast.error("Kayıt Hatası", { description: "Bu kullanıcı adı zaten kullanılıyor. Lütfen başka bir tane seçin." });
+      setIsSubmitting(false);
+      return;
+    }
     
     const { error } = await supabase.auth.signUp({
       email: formData.email,
@@ -78,7 +91,7 @@ export default function Kaydol() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword" className="text-white">Şifre Tekrar</Label>
-              <Input id="confirmPassword" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required className="bg-[#151313] border-[#42484c] text-white placeholder:text-[#999999]" placeholder="••••••••" />
+              <Input id="confirmPassword" name="confirmPassword" type="password" value={formData.password} onChange={handleChange} required className="bg-[#151313] border-[#42484c] text-white placeholder:text-[#999999]" placeholder="••••••••" />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
