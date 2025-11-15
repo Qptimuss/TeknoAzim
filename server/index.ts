@@ -20,14 +20,10 @@ export function createServer() {
 
   app.get("/api/demo", handleDemo);
 
-  // In development, all non-API routes should serve the main index.html
+  // In development, all non-API GET routes should serve the main index.html
   // to let the client-side router handle the path.
-  app.get("*", (req, res, next) => {
-    if (req.path.startsWith("/api/")) {
-      // This is an API route that wasn't found, let it 404
-      return next();
-    }
-    // For all other routes, serve the SPA's entry point
+  // This regex matches any path that does NOT start with /api
+  app.get(/^(?!\/api).*/, (_req, res) => {
     res.sendFile(path.join(process.cwd(), "index.html"));
   });
 
