@@ -2,13 +2,13 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Github, X, Linkedin } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Github, Linkedin } from 'lucide-react';
+import XLogo from './XLogo';
 
 const Footer = () => {
   const socialLinks = [
     { name: 'GitHub', icon: Github, url: '#' },
-    { name: 'X', icon: X, url: '#' },
+    { name: 'X', icon: XLogo, url: '#' },
     { name: 'LinkedIn', icon: Linkedin, url: '#' },
   ];
 
