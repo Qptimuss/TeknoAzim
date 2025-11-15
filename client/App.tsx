@@ -12,7 +12,9 @@ import Bloglar from "./pages/Bloglar";
 import Kaydol from "./pages/Kaydol";
 import Giris from "./pages/Giris";
 import Layout from "./components/Layout";
-import Placeholder from "./pages/Placeholder"; // Placeholder'ı yeni bir dosya olarak oluşturacağız
+import Placeholder from "./pages/Placeholder";
+import CreateBlogPage from "./pages/CreateBlogPage";
+import BlogPostPage from "./pages/BlogPostPage";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +28,8 @@ const App = () => (
           <Route element={<Layout />}>
             <Route path="/" element={<Index />} />
             <Route path="/bloglar" element={<Bloglar />} />
+            <Route path="/bloglar/:id" element={<BlogPostPage />} />
+            <Route path="/blog-olustur" element={<CreateBlogPage />} />
             <Route path="/duyurular" element={<Placeholder title="Duyurular" />} />
             <Route path="/hakkimizda" element={<Placeholder title="Hakkımızda" />} />
             <Route path="/gizlilik-politikasi" element={<Placeholder title="Gizlilik Politikası" />} />
