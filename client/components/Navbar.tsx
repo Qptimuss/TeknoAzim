@@ -2,6 +2,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { MobileNav } from "@/components/MobileNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "./ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User as UserIcon } from "lucide-react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -57,12 +59,17 @@ export default function Navbar() {
             <div className="hidden md:flex items-center gap-4 md:gap-6 lg:gap-8 px-4 md:px-0">
               {user ? (
                 <>
-                  <Link to="/profil" className="font-pacifico text-base md:text-lg font-normal text-[#090a0c] whitespace-nowrap shrink-0">
-                    Profil
-                  </Link>
                   <Button onClick={handleLogout} variant="ghost" className="font-pacifico text-base md:text-lg font-normal text-[#090a0c] whitespace-nowrap shrink-0 p-0 hover:bg-transparent">
                     Çıkış Yap
                   </Button>
+                  <Link to="/profil">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={user.avatar} alt={user.name} />
+                      <AvatarFallback>
+                        <UserIcon className="h-5 w-5" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </Link>
                 </>
               ) : (
                 guestLinks.map((link) => (
