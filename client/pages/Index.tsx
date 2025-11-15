@@ -1,6 +1,27 @@
 import { Link } from "react-router-dom";
+import { MobileNav } from "@/components/MobileNav";
 
 export default function Index() {
+  const mainNavLinks = [
+    { to: "/", label: "Ana Sayfa" },
+    { to: "/bloglar", label: "Bloglar" },
+    { to: "/duyurular", label: "Duyurular" },
+    { to: "/hakkimizda", label: "Hakkımızda" },
+  ];
+
+  const authNavLinks = [
+    { to: "/kaydol", label: "Kaydol" },
+    { to: "/giris", label: "Giriş Yap" },
+  ];
+
+  const LogoContent = (
+    <div className="rounded-[25px] bg-[#d9d9d9] px-8 md:px-11 py-1 md:py-2 shrink-0">
+      <div className="font-outfit text-xl md:text-2xl font-normal text-[#090a0c] whitespace-nowrap">
+        Logo
+      </div>
+    </div>
+  );
+
   return (
     <div className="bg-[#020303] min-h-screen overflow-hidden">
       {/* Hero Section */}
@@ -22,36 +43,31 @@ export default function Index() {
           <div className="w-full max-w-[1122px]">
             {/* Navigation Bar */}
             <nav className="rounded-[40px] bg-[#e6e6e6] border-2 border-[#2a2d31] p-1 md:p-2">
-              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 md:gap-6 lg:gap-8">
-                {/* Dark Navigation Section */}
-                <div className="rounded-[40px] bg-[#090a0c] border-2 border-[#42484c] px-5 md:px-7 py-5 flex flex-nowrap items-center gap-4 md:gap-8 lg:gap-16 flex-1 overflow-x-auto">
-                  <div className="rounded-[25px] bg-[#d9d9d9] px-8 md:px-11 py-1 md:py-2 shrink-0">
-                    <div className="font-outfit text-xl md:text-2xl font-normal text-[#090a0c] whitespace-nowrap">
-                      Logo
-                    </div>
-                  </div>
-                  <Link to="/" className="font-pacifico text-base md:text-xl font-normal text-white whitespace-nowrap shrink-0">
-                    Ana Sayfa
-                  </Link>
-                  <Link to="/bloglar" className="font-pacifico text-base md:text-xl font-normal text-white whitespace-nowrap shrink-0">
-                    Bloglar
-                  </Link>
-                  <Link to="/duyurular" className="font-pacifico text-base md:text-xl font-normal text-white whitespace-nowrap shrink-0">
-                    Duyurular
-                  </Link>
-                  <Link to="/hakkimizda" className="font-pacifico text-base md:text-xl font-normal text-white whitespace-nowrap shrink-0">
-                    Hakkımızda
-                  </Link>
+              <div className="flex items-center justify-between gap-4 md:gap-6 lg:gap-8">
+                {/* Mobile Nav Trigger (visible only on small screens) */}
+                <div className="md:hidden">
+                  <MobileNav mainLinks={mainNavLinks} authLinks={authNavLinks} logo={LogoContent} />
                 </div>
 
-                {/* Auth Buttons */}
-                <div className="flex items-center flex-nowrap gap-4 md:gap-6 lg:gap-8 px-4 md:px-0">
-                  <Link to="/kaydol" className="font-pacifico text-base md:text-xl font-normal text-[#090a0c] whitespace-nowrap shrink-0">
-                    Kaydol
+                {/* Desktop Logo and Main Navigation Links (hidden on small screens) */}
+                <div className="hidden md:flex rounded-[40px] bg-[#090a0c] border-2 border-[#42484c] px-5 md:px-7 py-5 items-center gap-4 md:gap-8 lg:gap-16 flex-1">
+                  <Link to="/" className="flex items-center">
+                    {LogoContent}
                   </Link>
-                  <Link to="/giris" className="font-pacifico text-base md:text-xl font-normal text-black whitespace-nowrap shrink-0">
-                    Giriş Yap
-                  </Link>
+                  {mainNavLinks.map((link) => (
+                    <Link key={link.to} to={link.to} className="font-pacifico text-base md:text-xl font-normal text-white whitespace-nowrap shrink-0">
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Desktop Auth Buttons (hidden on small screens) */}
+                <div className="hidden md:flex items-center gap-4 md:gap-6 lg:gap-8 px-4 md:px-0">
+                  {authNavLinks.map((link) => (
+                    <Link key={link.to} to={link.to} className="font-pacifico text-base md:text-xl font-normal text-[#090a0c] whitespace-nowrap shrink-0">
+                      {link.label}
+                    </Link>
+                  ))}
                 </div>
               </div>
             </nav>
