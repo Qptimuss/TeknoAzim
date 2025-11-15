@@ -90,6 +90,7 @@ export const getCommentsForPost = async (postId: string): Promise<CommentWithAut
             id,
             content,
             created_at,
+            user_id,
             profiles ( id, name, avatar_url )
         `)
         .eq('post_id', postId)
@@ -137,6 +138,19 @@ export const addComment = async (commentData: NewComment) => {
         throw error;
     }
     return data;
+};
+
+// Delete a comment
+export const deleteComment = async (commentId: string) => {
+  const { error } = await supabase
+    .from('comments')
+    .delete()
+    .eq('id', commentId);
+
+  if (error) {
+    console.error('Error deleting comment:', error);
+    throw error;
+  }
 };
 
 // Fetch vote counts for a post
