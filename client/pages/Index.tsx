@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export default function Index() {
   return (
     <>
@@ -28,9 +30,12 @@ export default function Index() {
             </p>
 
             <div className="flex justify-center mt-8 md:mt-10">
-              <button className="rounded-full bg-[#151313]/95 border border-[#42484c] px-16 md:px-20 lg:px-24 py-5 md:py-6 font-roboto text-2xl md:text-3xl text-white hover:bg-[#151313] transition-colors">
+              <Link
+                to="/kaydol"
+                className="rounded-full bg-[#151313]/95 border border-[#42484c] px-16 md:px-20 lg:px-24 py-5 md:py-6 font-roboto text-2xl md:text-3xl text-white hover:bg-[#151313] transition-colors text-center"
+              >
                 Başla
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -69,9 +74,12 @@ export default function Index() {
               </p>
 
               <div className="flex justify-start mt-8 md:mt-10 lg:mt-12">
-                <button className="rounded-full bg-[#151313]/95 border border-[#42484c] px-12 md:px-16 py-5 md:py-6 font-roboto text-2xl md:text-3xl text-white font-bold hover:bg-[#151313] transition-colors">
+                <Link
+                  to="/duyurular"
+                  className="rounded-full bg-[#151313]/95 border border-[#42484c] px-12 md:px-16 py-5 md:py-6 font-roboto text-2xl md:text-3xl text-white font-bold hover:bg-[#151313] transition-colors text-center"
+                >
                   Göz at
-                </button>
+                </Link>
               </div>
             </div>
 
