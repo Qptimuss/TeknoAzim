@@ -1,7 +1,6 @@
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -9,6 +8,8 @@ import {
 import { BlogPostWithAuthor } from "@shared/api";
 import { Link } from "react-router-dom";
 import LikeDislikeButtons from "./LikeDislikeButtons";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User as UserIcon } from "lucide-react";
 
 interface BlogCardProps {
   post: BlogPostWithAuthor;
@@ -35,9 +36,17 @@ export default function BlogCard({ post }: BlogCardProps) {
             </div>
           )}
           <CardTitle className="font-outfit text-2xl">{post.title}</CardTitle>
-          <CardDescription className="text-[#eeeeee] pt-2">
-            {post.profiles?.name || "Anonim"} tarafından
-          </CardDescription>
+          <div className="flex items-center gap-2 pt-2">
+            <Avatar className="h-6 w-6">
+              <AvatarImage src={post.profiles?.avatar_url || undefined} alt={post.profiles?.name || ''} />
+              <AvatarFallback>
+                <UserIcon className="h-4 w-4" />
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-sm text-[#eeeeee]">
+              {post.profiles?.name || "Anonim"}
+            </span>
+          </div>
         </CardHeader>
         <CardContent className="flex-grow">
           <p className="text-[#eeeeee] line-clamp-3">{post.content}</p>

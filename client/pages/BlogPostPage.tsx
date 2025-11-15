@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getBlogPostById, getCommentsForPost } from "@/lib/blog-store";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, User as UserIcon } from "lucide-react";
 import { BlogPostWithAuthor, CommentWithAuthor } from "@shared/api";
 import LikeDislikeButtons from "@/components/LikeDislikeButtons";
 import CommentSection from "@/components/CommentSection";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function BlogPostPage() {
   const { id } = useParams<{ id: string }>();
@@ -85,7 +86,15 @@ export default function BlogPostPage() {
           </h1>
           <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground mb-6">
             <div className="flex items-center gap-4">
-              <span>{post.profiles?.name || "Anonim"}</span>
+              <div className="flex items-center gap-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={post.profiles?.avatar_url || undefined} alt={post.profiles?.name || ''} />
+                  <AvatarFallback>
+                    <UserIcon className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
+                <span>{post.profiles?.name || "Anonim"}</span>
+              </div>
               <span>&bull;</span>
               <span>{formattedDate}</span>
             </div>
