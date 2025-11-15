@@ -2,14 +2,14 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Github, Linkedin } from 'lucide-react';
+import { Github, Instagram } from 'lucide-react';
 import XLogo from './XLogo';
 
 const Footer = () => {
   const socialLinks = [
     { name: 'GitHub', icon: Github, url: '#' },
     { name: 'X', icon: XLogo, url: '#' },
-    { name: 'LinkedIn', icon: Linkedin, url: '#' },
+    { name: 'Instagram', icon: Instagram, url: '#' },
   ];
 
   const footerNav = [
