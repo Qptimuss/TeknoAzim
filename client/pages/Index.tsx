@@ -2,7 +2,7 @@ export default function Index() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative min-h-[960px] w-full -mt-32">
+      <section className="relative min-h-[960px] w-full -mt-28">
         {/* Background Image */}
         <img
           loading="lazy"
