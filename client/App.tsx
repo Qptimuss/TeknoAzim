@@ -15,6 +15,9 @@ import Layout from "./components/Layout";
 import Placeholder from "./pages/Placeholder";
 import CreateBlogPage from "./pages/CreateBlogPage";
 import BlogPostPage from "./pages/BlogPostPage";
+import ProfilePage from "./pages/ProfilePage";
+import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -23,27 +26,34 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<Index />} />
-            <Route path="/bloglar" element={<Bloglar />} />
-            <Route path="/bloglar/:id" element={<BlogPostPage />} />
-            <Route path="/blog-olustur" element={<CreateBlogPage />} />
-            <Route path="/duyurular" element={<Placeholder title="Duyurular" />} />
-            <Route path="/hakkimizda" element={<Placeholder title="Hakkımızda" />} />
-            <Route path="/gizlilik-politikasi" element={<Placeholder title="Gizlilik Politikası" />} />
-            <Route path="/kullanim-kosullari" element={<Placeholder title="Kullanım Koşulları" />} />
-          </Route>
-          
-          {/* Auth and other pages without the main layout */}
-          <Route path="/kaydol" element={<Kaydol />} />
-          <Route path="/giris" element={<Giris />} />
-          
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route element={<Layout />}>
+              <Route path="/" element={<Index />} />
+              <Route path="/bloglar" element={<Bloglar />} />
+              <Route path="/bloglar/:id" element={<BlogPostPage />} />
+              <Route path="/duyurular" element={<Placeholder title="Duyurular" />} />
+              <Route path="/hakkimizda" element={<Placeholder title="Hakkımızda" />} />
+              <Route path="/gizlilik-politikasi" element={<Placeholder title="Gizlilik Politikası" />} />
+              <Route path="/kullanim-kosullari" element={<Placeholder title="Kullanım Koşulları" />} />
+
+              {/* Protected Routes */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/blog-olustur" element={<CreateBlogPage />} />
+                <Route path="/profil" element={<ProfilePage />} />
+              </Route>
+            </Route>
+            
+            {/* Auth and other pages without the main layout */}
+            <Route path="/kaydol" element={<Kaydol />} />
+            <Route path="/giris" element={<Giris />} />
+            
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

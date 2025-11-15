@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Kaydol() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -15,6 +16,7 @@ export default function Kaydol() {
   });
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -24,7 +26,6 @@ export default function Kaydol() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Basit doğrulama
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Hata",
@@ -46,19 +47,18 @@ export default function Kaydol() {
     setIsSubmitting(true);
     
     try {
-      // Burada gerçek bir API çağrısı yapılacak
-      // Örnek: await fetch('/api/register', { method: 'POST', body: JSON.stringify(formData) })
-      
-      // Simülasyon için kısa bir gecikme
       await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Simüle edilmiş kullanıcı adı
+      const userName = formData.email.split('@')[0];
+      login({ name: userName, email: formData.email });
       
       toast({
         title: "Başarılı",
-        description: "Hesabınız oluşturuldu! Giriş sayfasına yönlendiriliyorsunuz.",
+        description: "Hesabınız oluşturuldu! Profilinize yönlendiriliyorsunuz.",
       });
       
-      // Başarılı kayıt sonrası giriş sayfasına yönlendir
-      setTimeout(() => navigate("/giris"), 2000);
+      setTimeout(() => navigate("/profil"), 1500);
     } catch (error) {
       toast({
         title: "Hata",
