@@ -9,8 +9,8 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
   };
 
@@ -64,7 +64,7 @@ export default function Navbar() {
                   </Button>
                   <Link to="/profil">
                     <Avatar className="h-9 w-9">
-                      <AvatarImage src={user.avatar} alt={user.name} />
+                      <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
                       <AvatarFallback>
                         <UserIcon className="h-5 w-5" />
                       </AvatarFallback>

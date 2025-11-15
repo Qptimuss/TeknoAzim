@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Giris() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -15,7 +15,6 @@ export default function Giris() {
   });
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -24,39 +23,20 @@ export default function Giris() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.email || !formData.password) {
-      toast({
-        title: "Hata",
-        description: "Lütfen tüm alanları doldurun",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsSubmitting(true);
     
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Simüle edilmiş kullanıcı adı
-      const userName = formData.email.split('@')[0];
-      login({ name: userName, email: formData.email });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password,
+    });
 
-      toast({
-        title: "Başarılı",
-        description: "Giriş başarılı! Profilinize yönlendiriliyorsunuz.",
-      });
-      
-      setTimeout(() => navigate("/profil"), 1500);
-    } catch (error) {
-      toast({
-        title: "Hata",
-        description: "Giriş işlemi sırasında bir hata oluştu",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
+    setIsSubmitting(false);
+
+    if (error) {
+      toast({ title: "Giriş Hatası", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Başarılı", description: "Giriş yapıldı. Yönlendiriliyorsunuz..." });
+      navigate("/profil");
     }
   };
 

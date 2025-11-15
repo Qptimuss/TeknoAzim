@@ -5,18 +5,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Kaydol() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
+    name: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -27,46 +27,30 @@ export default function Kaydol() {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Hata",
-        description: "Şifreler eşleşmiyor",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      toast({
-        title: "Hata",
-        description: "Şifre en az 6 karakter olmalıdır",
-        variant: "destructive",
-      });
+      toast({ title: "Hata", description: "Şifreler eşleşmiyor", variant: "destructive" });
       return;
     }
 
     setIsSubmitting(true);
     
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Simüle edilmiş kullanıcı adı
-      const userName = formData.email.split('@')[0];
-      login({ name: userName, email: formData.email });
-      
-      toast({
-        title: "Başarılı",
-        description: "Hesabınız oluşturuldu! Profilinize yönlendiriliyorsunuz.",
-      });
-      
-      setTimeout(() => navigate("/profil"), 1500);
-    } catch (error) {
-      toast({
-        title: "Hata",
-        description: "Kayıt işlemi sırasında bir hata oluştu",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
+    const { error } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+      options: {
+        data: {
+          name: formData.name,
+          avatar_url: `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(formData.name)}`
+        }
+      }
+    });
+
+    setIsSubmitting(false);
+
+    if (error) {
+      toast({ title: "Kayıt Hatası", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Başarılı", description: "Hesabınız oluşturuldu! Lütfen e-postanızı kontrol ederek hesabınızı doğrulayın." });
+      navigate("/giris");
     }
   };
 
@@ -82,51 +66,24 @@ export default function Kaydol() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="name" className="text-white">İsim</Label>
+              <Input id="name" name="name" type="text" value={formData.name} onChange={handleChange} required className="bg-[#151313] border-[#42484c] text-white placeholder:text-[#999999]" placeholder="Adınız Soyadınız" />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="email" className="text-white">E-posta</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className="bg-[#151313] border-[#42484c] text-white placeholder:text-[#999999]"
-                placeholder="ornek@email.com"
-              />
+              <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} required className="bg-[#151313] border-[#42484c] text-white placeholder:text-[#999999]" placeholder="ornek@email.com" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-white">Şifre</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                className="bg-[#151313] border-[#42484c] text-white placeholder:text-[#999999]"
-                placeholder="••••••••"
-              />
+              <Input id="password" name="password" type="password" value={formData.password} onChange={handleChange} required className="bg-[#151313] border-[#42484c] text-white placeholder:text-[#999999]" placeholder="••••••••" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword" className="text-white">Şifre Tekrar</Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                className="bg-[#151313] border-[#42484c] text-white placeholder:text-[#999999]"
-                placeholder="••••••••"
-              />
+              <Input id="confirmPassword" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required className="bg-[#151313] border-[#42484c] text-white placeholder:text-[#999999]" placeholder="••••••••" />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button 
-              type="submit" 
-              disabled={isSubmitting}
-              className="w-full bg-[#151313]/95 border border-[#42484c] hover:bg-[#151313] text-white"
-            >
+            <Button type="submit" disabled={isSubmitting} className="w-full bg-[#151313]/95 border border-[#42484c] hover:bg-[#151313] text-white">
               {isSubmitting ? "Oluşturuluyor..." : "Hesap Oluştur"}
             </Button>
             <div className="text-center text-sm text-[#eeeeee]">

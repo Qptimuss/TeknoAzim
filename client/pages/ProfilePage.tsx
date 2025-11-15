@@ -15,18 +15,18 @@ import { User as UserIcon } from "lucide-react";
 
 const profileSchema = z.object({
   name: z.string().min(2, "İsim en az 2 karakter olmalıdır."),
-  avatar: z.string().url("Lütfen geçerli bir URL girin.").optional().or(z.literal('')),
+  avatar_url: z.string().url("Lütfen geçerli bir URL girin.").optional().or(z.literal('')),
 });
 
 export default function ProfilePage() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, loading } = useAuth();
   const [userPosts, setUserPosts] = useState<BlogPost[]>([]);
 
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: user?.name || "",
-      avatar: user?.avatar || "",
+      name: "",
+      avatar_url: "",
     },
   });
 
@@ -34,17 +34,25 @@ export default function ProfilePage() {
     if (user) {
       const allPosts = getBlogPosts();
       setUserPosts(allPosts.filter(post => post.author === user.name));
-      form.reset({ name: user.name, avatar: user.avatar || "" });
+      form.reset({ name: user.name || "", avatar_url: user.avatar_url || "" });
     }
   }, [user, form]);
 
-  function onSubmit(values: z.infer<typeof profileSchema>) {
-    updateUser({ name: values.name, avatar: values.avatar });
-    toast.success("Profiliniz başarıyla güncellendi!");
+  async function onSubmit(values: z.infer<typeof profileSchema>) {
+    try {
+      await updateUser({ name: values.name, avatar_url: values.avatar_url || '' });
+      toast.success("Profiliniz başarıyla güncellendi!");
+    } catch (error) {
+      toast.error("Profil güncellenirken bir hata oluştu.");
+    }
+  }
+
+  if (loading) {
+    return <div className="text-white text-center p-12">Yükleniyor...</div>;
   }
 
   if (!user) {
-    return null; // ProtectedRoute zaten yönlendirme yapacak
+    return null; // ProtectedRoute handles redirection
   }
 
   return (
@@ -58,7 +66,7 @@ export default function ProfilePage() {
           <div className="bg-[#090a0c] border border-[#2a2d31] rounded-lg p-8">
             <div className="flex flex-col items-center mb-6">
               <Avatar className="h-24 w-24 mb-4">
-                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
                 <AvatarFallback>
                   <UserIcon className="h-12 w-12 text-muted-foreground" />
                 </AvatarFallback>
@@ -84,12 +92,12 @@ export default function ProfilePage() {
                 />
                 <FormField
                   control={form.control}
-                  name="avatar"
+                  name="avatar_url"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-white">Profil Fotoğrafı URL'si</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://ornek.com/resim.jpg" {...field} className="bg-[#151313] border-[#42484c] text-white" />
+                        <Input placeholder="https://ornek.com/resim.jpg" {...field} value={field.value || ''} className="bg-[#151313] border-[#42484c] text-white" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
