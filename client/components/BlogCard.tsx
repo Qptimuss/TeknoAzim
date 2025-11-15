@@ -35,8 +35,7 @@ export default function BlogCard({ post }: BlogCardProps) {
               />
             </div>
           )}
-          <CardTitle className="font-outfit text-2xl">{post.title}</CardTitle>
-          <div className="flex items-center gap-2 pt-2">
+          <div className="flex items-center gap-2 pb-2">
             <Avatar className="h-6 w-6">
               <AvatarImage src={post.profiles?.avatar_url || undefined} alt={post.profiles?.name || ''} />
               <AvatarFallback>
@@ -47,6 +46,7 @@ export default function BlogCard({ post }: BlogCardProps) {
               {post.profiles?.name || "Anonim"}
             </span>
           </div>
+          <CardTitle className="font-outfit text-2xl">{post.title}</CardTitle>
         </CardHeader>
         <CardContent className="flex-grow">
           <p className="text-[#eeeeee] line-clamp-3">{post.content}</p>

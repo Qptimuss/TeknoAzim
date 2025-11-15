@@ -81,23 +81,20 @@ export default function BlogPostPage() {
           />
         )}
         <div className="p-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={post.profiles?.avatar_url || undefined} alt={post.profiles?.name || ''} />
+              <AvatarFallback>
+                <UserIcon className="h-4 w-4" />
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-sm text-muted-foreground">{post.profiles?.name || "Anonim"}</span>
+          </div>
           <h1 className="text-white text-3xl md:text-5xl font-outfit font-bold mb-4">
             {post.title}
           </h1>
           <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground mb-6">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={post.profiles?.avatar_url || undefined} alt={post.profiles?.name || ''} />
-                  <AvatarFallback>
-                    <UserIcon className="h-4 w-4" />
-                  </AvatarFallback>
-                </Avatar>
-                <span>{post.profiles?.name || "Anonim"}</span>
-              </div>
-              <span>&bull;</span>
-              <span>{formattedDate}</span>
-            </div>
+            <span>{formattedDate}</span>
             <LikeDislikeButtons postId={post.id} />
           </div>
           <div className="text-[#eeeeee] text-lg leading-relaxed whitespace-pre-wrap">
