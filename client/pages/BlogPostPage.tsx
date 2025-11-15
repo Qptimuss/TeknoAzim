@@ -1,27 +1,47 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { getBlogPostById } from "@/lib/blog-store";
+import { getBlogPostById, getCommentsForPost } from "@/lib/blog-store";
 import { ArrowLeft } from "lucide-react";
-import { BlogPost } from "@shared/api";
+import { BlogPostWithAuthor, CommentWithAuthor } from "@shared/api";
 import LikeDislikeButtons from "@/components/LikeDislikeButtons";
 import CommentSection from "@/components/CommentSection";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function BlogPostPage() {
   const { id } = useParams<{ id: string }>();
-  const [post, setPost] = useState<BlogPost | undefined>(undefined);
+  const [post, setPost] = useState<BlogPostWithAuthor | null>(null);
+  const [comments, setComments] = useState<CommentWithAuthor[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (id) {
-      setPost(getBlogPostById(id));
-    }
+  const fetchPostAndComments = useCallback(async () => {
+    if (!id) return;
+    setLoading(true);
+    const [postData, commentsData] = await Promise.all([
+      getBlogPostById(id),
+      getCommentsForPost(id),
+    ]);
+    setPost(postData);
+    setComments(commentsData);
+    setLoading(false);
   }, [id]);
 
-  const handleCommentAdded = () => {
-    if (id) {
-      // Yorum eklendikten sonra en son veriyi almak için post durumunu güncelle
-      setPost(getBlogPostById(id));
-    }
-  };
+  useEffect(() => {
+    fetchPostAndComments();
+  }, [fetchPostAndComments]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-5 py-12 max-w-4xl">
+        <Skeleton className="h-8 w-48 mb-8" />
+        <div className="space-y-4">
+          <Skeleton className="h-96 w-full" />
+          <Skeleton className="h-10 w-3/4" />
+          <Skeleton className="h-6 w-1/2" />
+          <Skeleton className="h-40 w-full" />
+        </div>
+      </div>
+    );
+  }
 
   if (!post) {
     return (
@@ -36,7 +56,7 @@ export default function BlogPostPage() {
     );
   }
 
-  const formattedDate = new Date(post.date).toLocaleDateString("tr-TR", {
+  const formattedDate = new Date(post.created_at).toLocaleDateString("tr-TR", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -52,9 +72,9 @@ export default function BlogPostPage() {
       </Link>
       
       <article className="bg-[#090a0c] border border-[#2a2d31] rounded-lg overflow-hidden">
-        {post.imageUrl && (
+        {post.image_url && (
           <img
-            src={post.imageUrl}
+            src={post.image_url}
             alt={post.title}
             className="w-full h-64 md:h-96 object-cover"
           />
@@ -65,11 +85,11 @@ export default function BlogPostPage() {
           </h1>
           <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground mb-6">
             <div className="flex items-center gap-4">
-              <span>{post.author}</span>
+              <span>{post.profiles?.name || "Anonim"}</span>
               <span>&bull;</span>
               <span>{formattedDate}</span>
             </div>
-            <LikeDislikeButtons postId={post.id} initialLikes={post.likes} initialDislikes={post.dislikes} />
+            <LikeDislikeButtons postId={post.id} />
           </div>
           <div className="text-[#eeeeee] text-lg leading-relaxed whitespace-pre-wrap">
             {post.content}
@@ -77,7 +97,7 @@ export default function BlogPostPage() {
         </div>
       </article>
 
-      <CommentSection postId={post.id} comments={post.comments} onCommentAdded={handleCommentAdded} />
+      <CommentSection postId={post.id} comments={comments} onCommentAdded={fetchPostAndComments} />
     </div>
   );
 }

@@ -1,73 +1,91 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
-import { 
-  incrementLike, 
-  decrementLike, 
-  incrementDislike, 
-  decrementDislike 
-} from "@/lib/blog-store";
+import { getVoteCounts, getUserVote, castVote } from "@/lib/blog-store";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface LikeDislikeButtonsProps {
   postId: string;
-  initialLikes: number;
-  initialDislikes: number;
 }
 
-export default function LikeDislikeButtons({ postId, initialLikes, initialDislikes }: LikeDislikeButtonsProps) {
-  const [likes, setLikes] = useState(initialLikes);
-  const [dislikes, setDislikes] = useState(initialDislikes);
+export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) {
+  const { user } = useAuth();
+  const [likes, setLikes] = useState(0);
+  const [dislikes, setDislikes] = useState(0);
   const [userAction, setUserAction] = useState<'liked' | 'disliked' | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleLike = () => {
-    if (userAction === 'liked') {
-      // Kullanıcı beğeniyi geri alıyor
-      decrementLike(postId);
-      setLikes(prev => prev - 1);
-      setUserAction(null);
-    } else if (userAction === 'disliked') {
-      // Kullanıcı beğenmemekten beğenmeye geçiyor
-      incrementLike(postId);
-      decrementDislike(postId);
-      setLikes(prev => prev + 1);
-      setDislikes(prev => prev - 1);
-      setUserAction('liked');
-    } else {
-      // Kullanıcı ilk kez beğeniyor
-      incrementLike(postId);
-      setLikes(prev => prev + 1);
-      setUserAction('liked');
+  const fetchVotes = useCallback(async () => {
+    const counts = await getVoteCounts(postId);
+    setLikes(counts.likes);
+    setDislikes(counts.dislikes);
+    if (user) {
+      const vote = await getUserVote(postId, user.id);
+      setUserAction(vote);
+    }
+    setIsLoading(false);
+  }, [postId, user]);
+
+  useEffect(() => {
+    fetchVotes();
+  }, [fetchVotes]);
+
+  const handleVote = async (action: 'like' | 'dislike') => {
+    if (!user) {
+      toast.error("Oy vermek için giriş yapmalısınız.");
+      return;
+    }
+
+    let newUserAction: 'liked' | 'disliked' | null = null;
+
+    if (action === 'like') {
+      if (userAction === 'liked') {
+        // Unlike
+        setLikes(l => l - 1);
+        newUserAction = null;
+      } else {
+        // Like
+        setLikes(l => l + 1);
+        if (userAction === 'disliked') setDislikes(d => d - 1);
+        newUserAction = 'liked';
+      }
+    } else { // dislike
+      if (userAction === 'disliked') {
+        // Undislike
+        setDislikes(d => d - 1);
+        newUserAction = null;
+      } else {
+        // Dislike
+        setDislikes(d => d + 1);
+        if (userAction === 'liked') setLikes(l => l - 1);
+        newUserAction = 'disliked';
+      }
+    }
+    
+    setUserAction(newUserAction);
+    
+    try {
+      await castVote(postId, user.id, newUserAction);
+    } catch (error) {
+      toast.error("Oy verilirken bir hata oluştu.");
+      // Revert optimistic update on error
+      fetchVotes();
     }
   };
 
-  const handleDislike = () => {
-    if (userAction === 'disliked') {
-      // Kullanıcı beğenmemeyi geri alıyor
-      decrementDislike(postId);
-      setDislikes(prev => prev - 1);
-      setUserAction(null);
-    } else if (userAction === 'liked') {
-      // Kullanıcı beğenmekten beğenmemeye geçiyor
-      decrementLike(postId);
-      incrementDislike(postId);
-      setLikes(prev => prev - 1);
-      setDislikes(prev => prev + 1);
-      setUserAction('disliked');
-    } else {
-      // Kullanıcı ilk kez beğenmiyor
-      incrementDislike(postId);
-      setDislikes(prev => prev + 1);
-      setUserAction('disliked');
-    }
-  };
+  if (isLoading) {
+    return <div className="flex items-center gap-4 h-8 w-24"><div className="h-4 bg-muted rounded w-full animate-pulse"></div></div>;
+  }
 
   return (
     <div className="flex items-center gap-4">
       <Button 
         variant="ghost" 
         size="sm" 
-        onClick={handleLike} 
+        onClick={() => handleVote('like')} 
+        disabled={!user}
         className={cn(
           "flex items-center gap-2 text-muted-foreground hover:text-white",
           userAction === 'liked' && "text-blue-500 hover:text-blue-400"
@@ -79,7 +97,8 @@ export default function LikeDislikeButtons({ postId, initialLikes, initialDislik
       <Button 
         variant="ghost" 
         size="sm" 
-        onClick={handleDislike} 
+        onClick={() => handleVote('dislike')} 
+        disabled={!user}
         className={cn(
           "flex items-center gap-2 text-muted-foreground hover:text-white",
           userAction === 'disliked' && "text-red-500 hover:text-red-400"

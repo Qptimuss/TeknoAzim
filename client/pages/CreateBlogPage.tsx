@@ -15,30 +15,38 @@ import {
 } from "@/components/ui/form";
 import { toast } from "sonner";
 import { addBlogPost } from "@/lib/blog-store";
+import { useAuth } from "@/contexts/AuthContext";
 
 const blogSchema = z.object({
   title: z.string().min(5, "Başlık en az 5 karakter olmalıdır."),
-  author: z.string().min(2, "Yazar adı en az 2 karakter olmalıdır."),
   content: z.string().min(20, "İçerik en az 20 karakter olmalıdır."),
   imageUrl: z.string().url("Lütfen geçerli bir URL girin.").optional().or(z.literal('')),
 });
 
 export default function CreateBlogPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const form = useForm<z.infer<typeof blogSchema>>({
     resolver: zodResolver(blogSchema),
     defaultValues: {
       title: "",
-      author: "",
       content: "",
       imageUrl: "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof blogSchema>) {
-    addBlogPost(values);
-    toast.success("Blog yazınız başarıyla oluşturuldu!");
-    navigate("/bloglar");
+  async function onSubmit(values: z.infer<typeof blogSchema>) {
+    if (!user) {
+      toast.error("Blog yazısı oluşturmak için giriş yapmalısınız.");
+      return;
+    }
+    try {
+      await addBlogPost({ ...values, userId: user.id });
+      toast.success("Blog yazınız başarıyla oluşturuldu!");
+      navigate("/bloglar");
+    } catch (error) {
+      toast.error("Blog yazısı oluşturulurken bir hata oluştu.");
+    }
   }
 
   return (
@@ -64,25 +72,12 @@ export default function CreateBlogPage() {
             />
             <FormField
               control={form.control}
-              name="author"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-white">Yazar</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Adınız" {...field} className="bg-[#151313] border-[#42484c] text-white" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
               name="imageUrl"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-white">Resim URL'si (İsteğe Bağlı)</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://ornek.com/resim.jpg" {...field} className="bg-[#151313] border-[#42484c] text-white" />
+                    <Input placeholder="https://ornek.com/resim.jpg" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

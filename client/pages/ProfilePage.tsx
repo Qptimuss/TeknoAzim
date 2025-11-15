@@ -3,8 +3,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/contexts/AuthContext";
-import { getBlogPosts } from "@/lib/blog-store";
-import { BlogPost } from "@shared/api";
+import { getPostsByUserId } from "@/lib/blog-store";
+import { BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,8 @@ const profileSchema = z.object({
 
 export default function ProfilePage() {
   const { user, updateUser, loading } = useAuth();
-  const [userPosts, setUserPosts] = useState<BlogPost[]>([]);
+  const [userPosts, setUserPosts] = useState<BlogPostWithAuthor[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
 
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -32,9 +33,14 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
-      const allPosts = getBlogPosts();
-      setUserPosts(allPosts.filter(post => post.author === user.name));
       form.reset({ name: user.name || "", avatar_url: user.avatar_url || "" });
+      const fetchUserPosts = async () => {
+        setPostsLoading(true);
+        const posts = await getPostsByUserId(user.id);
+        setUserPosts(posts);
+        setPostsLoading(false);
+      };
+      fetchUserPosts();
     }
   }, [user, form]);
 
@@ -113,7 +119,9 @@ export default function ProfilePage() {
 
         <div className="lg:col-span-2">
           <h2 className="text-white text-2xl font-outfit font-bold mb-4">Bloglarım ({userPosts.length})</h2>
-          {userPosts.length > 0 ? (
+          {postsLoading ? (
+             <p className="text-muted-foreground">Bloglar yükleniyor...</p>
+          ) : userPosts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {userPosts.map(post => (
                 <BlogCard key={post.id} post={post} />

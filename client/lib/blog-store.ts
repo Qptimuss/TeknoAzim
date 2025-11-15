@@ -1,72 +1,195 @@
-import { BlogPost, Comment } from "@shared/api";
+import { supabase } from "@/integrations/supabase/client";
+import { BlogPostWithAuthor, CommentWithAuthor } from "@shared/api";
 
-// Bu, veritabanı yerine geçen geçici bir bellek içi depodur.
-// Sayfa yenilendiğinde veriler sıfırlanacaktır.
-let posts: BlogPost[] = [
-  {
-    id: "1",
-    title: "Teknoloji Dünyasındaki Son Gelişmeler",
-    content: "Yapay zeka ve makine öğrenmesi alanında yaşanan son gelişmeler, teknoloji dünyasını yeniden şekillendiriyor. Özellikle büyük dil modelleri, insan-bilgisayar etkileşiminde yeni bir çığır açıyor. Bu modeller, metin üretme, çeviri yapma, ve hatta kod yazma gibi karmaşık görevleri başarıyla yerine getirebiliyor. Gelecekte bu teknolojilerin hayatımızın her alanında daha fazla yer alması bekleniyor.",
-    author: "Ahmet Yılmaz",
-    date: "2024-05-15T10:00:00Z",
-    imageUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2070&auto=format&fit=crop",
-    likes: 15,
-    dislikes: 2,
-    comments: [
-      { id: 'c1', author: 'Zeynep', content: 'Harika bir yazı!', date: new Date().toISOString() }
-    ],
-  },
-  {
-    id: "2",
-    title: "Sağlıklı Yaşam İçin 5 Altın Kural",
-    content: "Dengeli beslenme, düzenli egzersiz, yeterli uyku, stresten uzak durma ve bol su tüketimi, sağlıklı bir yaşamın temel taşlarıdır. Bu kuralları hayatınıza entegre ederek yaşam kalitenizi artırabilirsiniz. Özellikle işlenmiş gıdalardan kaçınmak ve taze sebze-meyve tüketimini artırmak, uzun vadede sağlığınız için yapabileceğiniz en iyi yatırımlardan biridir.",
-    author: "Ayşe Kaya",
-    date: "2024-05-14T14:30:00Z",
-    imageUrl: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=2120&auto=format&fit=crop",
-    likes: 32,
-    dislikes: 1,
-    comments: [],
-  },
-];
-
-export const getBlogPosts = (): BlogPost[] => posts;
-
-export const getBlogPostById = (id: string): BlogPost | undefined => posts.find(p => p.id === id);
-
-export const addBlogPost = (postData: Omit<BlogPost, 'id' | 'date' | 'likes' | 'dislikes' | 'comments'>) => {
-  const newPost: BlogPost = {
-    id: Date.now().toString(),
-    ...postData,
-    date: new Date().toISOString(),
-    likes: 0,
-    dislikes: 0,
-    comments: [],
-  };
-  posts = [newPost, ...posts];
-  return newPost;
+// Type for creating a new blog post
+type NewBlogPost = {
+  title: string;
+  content: string;
+  imageUrl?: string;
+  userId: string;
 };
 
-export const incrementLike = (postId: string) => {
-  posts = posts.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p);
+// Type for creating a new comment
+type NewComment = {
+  content: string;
+  postId: string;
+  userId: string;
 };
 
-export const decrementLike = (postId: string) => {
-  posts = posts.map(p => p.id === postId ? { ...p, likes: Math.max(0, p.likes - 1) } : p);
+// Fetch all blog posts with their authors
+export const getBlogPosts = async (): Promise<BlogPostWithAuthor[]> => {
+  const { data, error } = await supabase
+    .from("blog_posts")
+    .select(`
+      id,
+      title,
+      content,
+      image_url,
+      created_at,
+      profiles ( id, name, avatar_url )
+    `)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching blog posts:", error);
+    return [];
+  }
+  return data as any; // Cast because Supabase type gen is not available
 };
 
-export const incrementDislike = (postId: string) => {
-  posts = posts.map(p => p.id === postId ? { ...p, dislikes: p.dislikes + 1 } : p);
+// Fetch a single blog post by ID
+export const getBlogPostById = async (id: string): Promise<BlogPostWithAuthor | null> => {
+  const { data, error } = await supabase
+    .from("blog_posts")
+    .select(`
+      id,
+      title,
+      content,
+      image_url,
+      created_at,
+      profiles ( id, name, avatar_url )
+    `)
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    console.error("Error fetching blog post:", error);
+    return null;
+  }
+  return data as any;
 };
 
-export const decrementDislike = (postId: string) => {
-  posts = posts.map(p => p.id === postId ? { ...p, dislikes: Math.max(0, p.dislikes - 1) } : p);
+// Fetch comments for a specific post
+export const getCommentsForPost = async (postId: string): Promise<CommentWithAuthor[]> => {
+    const { data, error } = await supabase
+        .from('comments')
+        .select(`
+            id,
+            content,
+            created_at,
+            profiles ( id, name, avatar_url )
+        `)
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching comments:', error);
+        return [];
+    }
+    return data as any;
 };
 
-export const addComment = (postId: string, commentData: Omit<Comment, 'id' | 'date'>) => {
-  const newComment: Comment = {
-    id: Date.now().toString(),
-    ...commentData,
-    date: new Date().toISOString(),
-  };
-  posts = posts.map(p => p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p);
+// Add a new blog post
+export const addBlogPost = async (postData: NewBlogPost) => {
+  const { data, error } = await supabase
+    .from("blog_posts")
+    .insert({
+      title: postData.title,
+      content: postData.content,
+      image_url: postData.imageUrl,
+      user_id: postData.userId,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error adding blog post:", error);
+    throw error;
+  }
+  return data;
+};
+
+// Add a new comment
+export const addComment = async (commentData: NewComment) => {
+    const { data, error } = await supabase
+        .from('comments')
+        .insert({
+            content: commentData.content,
+            post_id: commentData.postId,
+            user_id: commentData.userId,
+        });
+
+    if (error) {
+        console.error('Error adding comment:', error);
+        throw error;
+    }
+    return data;
+};
+
+// Fetch vote counts for a post
+export const getVoteCounts = async (postId: string) => {
+    const { data, error } = await supabase
+        .from('post_votes')
+        .select('vote_type')
+        .eq('post_id', postId);
+
+    if (error) {
+        console.error('Error fetching votes:', error);
+        return { likes: 0, dislikes: 0 };
+    }
+
+    const likes = data.filter(v => v.vote_type === 1).length;
+    const dislikes = data.filter(v => v.vote_type === -1).length;
+
+    return { likes, dislikes };
+};
+
+// Get the current user's vote for a post
+export const getUserVote = async (postId: string, userId: string) => {
+    if (!userId) return null;
+    const { data, error } = await supabase
+        .from('post_votes')
+        .select('vote_type')
+        .eq('post_id', postId)
+        .eq('user_id', userId)
+        .single();
+
+    if (error || !data) {
+        return null;
+    }
+    return data.vote_type === 1 ? 'liked' : 'disliked';
+};
+
+// Upsert a vote (like/dislike)
+export const castVote = async (postId: string, userId: string, voteType: 'like' | 'dislike' | null) => {
+    if (voteType === null) {
+        // Remove vote
+        const { error } = await supabase
+            .from('post_votes')
+            .delete()
+            .eq('post_id', postId)
+            .eq('user_id', userId);
+        if (error) throw error;
+    } else {
+        // Add or update vote
+        const { error } = await supabase
+            .from('post_votes')
+            .upsert({
+                post_id: postId,
+                user_id: userId,
+                vote_type: voteType === 'like' ? 1 : -1,
+            }, { onConflict: 'user_id, post_id' });
+        if (error) throw error;
+    }
+};
+
+export const getPostsByUserId = async (userId: string): Promise<BlogPostWithAuthor[]> => {
+  const { data, error } = await supabase
+    .from("blog_posts")
+    .select(`
+      id,
+      title,
+      content,
+      image_url,
+      created_at,
+      profiles ( id, name, avatar_url )
+    `)
+    .eq('user_id', userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching user posts:", error);
+    return [];
+  }
+  return data as any;
 };
