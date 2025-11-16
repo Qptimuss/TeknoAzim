@@ -46,8 +46,12 @@ export default function Giris() {
   };
 
   return (
-    <div className="min-h-screen bg-[#020303] flex items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-md bg-[#090a0c] border-[#2a2d31]">
+    <div className="relative min-h-screen bg-[#020303] flex items-center justify-center px-4 py-12 overflow-hidden">
+      <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+      <div className="absolute top-0 -right-4 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+      <div className="absolute bottom-0 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+
+      <Card className="relative z-10 w-full max-w-md bg-[#090a0c]/80 backdrop-blur-sm border-[#2a2d31]">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-outfit text-white">Giriş Yap</CardTitle>
           <CardDescription className="text-[#eeeeee]">
