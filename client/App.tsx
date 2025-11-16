@@ -1,22 +1,22 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import Bloglar from "./pages/Bloglar";
-import Kaydol from "./pages/Kaydol";
-import Giris from "./pages/Giris";
-import Layout from "./components/Layout";
-import Placeholder from "./pages/Placeholder";
-import CreateBlogPage from "./pages/CreateBlogPage";
-import BlogPostPage from "./pages/BlogPostPage";
-import ProfilePage from "./pages/ProfilePage";
-import { AuthProvider } from "./contexts/AuthContext";
-import ProtectedRoute from "./components/ProtectedRoute";
+import { Toaster } from "@/components/ui/toaster"
+import { Toaster as Sonner } from "@/components/ui/sonner"
+import { TooltipProvider } from "@/components/ui/tooltip"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { BrowserRouter, Routes, Route } from "react-router-dom"
+import Index from "./pages/Index"
+import NotFound from "./pages/NotFound"
+import Bloglar from "./pages/Bloglar"
+import Kaydol from "./pages/Kaydol"
+import Giris from "./pages/Giris"
+import Layout from "./components/Layout"
+import Placeholder from "./pages/Placeholder"
+import CreateBlogPage from "./pages/CreateBlogPage"
+import BlogPostPage from "./pages/BlogPostPage"
+import ProfilePage from "./pages/ProfilePage"
+import { AuthProvider } from "./contexts/AuthContext"
+import ProtectedRoute from "./components/ProtectedRoute"
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient()
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -53,6 +53,6 @@ const App = () => (
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
-);
+)
 
-export default App;
+export default App
