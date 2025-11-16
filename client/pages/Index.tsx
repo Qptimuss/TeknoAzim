@@ -1,60 +1,134 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { Link } from "react-router-dom";
 
-const Index = () => {
+export default function Index() {
   return (
-    <div className="bg-[#020303] text-white">
+    <>
       {/* Hero Section */}
-      <div className="relative h-[75vh] md:h-[85vh] flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-[960px] w-full -mt-28">
         {/* Background Image */}
-        <div
-          className="absolute inset-0 h-full w-full bg-cover bg-center"
-          style={{ backgroundImage: "url('/images/hero-bg.jpg')" }}
+        <img
+          loading="lazy"
+          srcSet="https://api.builder.io/api/v1/image/assets/TEMP/3bc0c855f8b22bc173924caed963ce3a0bbee0ab"
+          src="https://api.builder.io/api/v1/image/assets/TEMP/3bc0c855f8b22bc173924caed963ce3a0bbee0ab"
+          alt="Background"
+          className="absolute inset-0 h-full w-full object-cover object-center"
         />
 
         {/* Gradient Overlay - Black at bottom, transparent at top */}
-        <div className="absolute inset-0 h-full w-full bg-gradient-to-t from-[#020303] from-0% via-[#020303]/80 via-40% to-transparent to-100%" />
+        <div className="absolute inset-0 h-full w-full bg-gradient-to-t from-[#020303] from-0% via-[#020303]/50 via-30% to-transparent to-100%" />
 
         {/* Content Container */}
         <div className="relative z-10 px-5 md:px-10 lg:px-20 pb-8 flex flex-col items-center pt-32">
-          <div className="max-w-3xl text-center">
-            <h1 className="font-outfit text-4xl md:text-6xl font-bold tracking-tight mb-4">
-              Fikirlerinizi Özgür Bırakın
+          <div className="w-full max-w-[1122px]">
+            {/* Hero Content */}
+            <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-outfit font-bold text-center mt-12 md:mt-16 lg:mt-20 px-4">
+              Düşüncelerle derinleşen,yazılarla genişleyen bir dünya.
             </h1>
-            <p className="font-roboto text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-              Düşüncelerinizi, hikayelerinizi ve bilgilerinizi dünyayla paylaşın. Topluluğumuza katılın ve ilham verin.
+
+            <p className="text-[#eeeeee] text-lg md:text-2xl lg:text-[25px] font-roboto font-normal text-center mt-6 md:mt-8 px-4">
+              Hobilerinle ilgili bilgilerini diğer öğrencilerle paylaş.
             </p>
-            <div className="flex justify-center gap-4">
-              <Button asChild size="lg" className="bg-white text-black hover:bg-gray-200">
-                <Link to="/kaydol">
-                  Hemen Başla
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+
+            <div className="flex justify-center mt-8 md:mt-10">
+              <Link
+                to="/kaydol"
+                className="rounded-full bg-[#151313]/95 border border-[#42484c] px-16 md:px-20 lg:px-24 py-5 md:py-6 font-roboto text-2xl md:text-3xl text-white hover:bg-[#151313] transition-colors text-center"
+              >
+                Başla
+              </Link>
             </div>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Black Background Container - Announcements and Security */}
+      <section className="bg-[#020303] w-full">
+        {/* Announcements Section */}
+        <div className="w-full max-w-[1122px] mx-auto px-5 md:px-10 lg:px-20 py-12 md:py-16 lg:py-20">
+          {/* Announcements Header */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-12 md:mb-16 lg:mb-20">
+            <div className="flex flex-col">
+              <h2 className="text-white text-xl md:text-2xl lg:text-[25px] font-outfit font-semibold tracking-[2.5px] uppercase">
+                Duyurular
+              </h2>
+              <p className="text-white text-4xl md:text-5xl lg:text-[70px] font-outfit font-bold leading-tight md:leading-[85px] mt-4 max-w-[647px]">
+                Duyurularda son gelişmelerle İlgili bilgi edin.
+              </p>
+            </div>
+            {/* Megafon görseli buraya taşındı */}
+            <img
+              loading="lazy"
+              srcSet="https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e"
+              src="https://api.builder.io/api/v1/image/assets/TEMP/61d24d093dffa5e4e7ae4c69427cfcb76e11806e"
+              alt="Duyurular"
+              className="w-auto h-auto object-contain max-w-[100px] sm:max-w-[150px] md:max-w-[200px] lg:max-w-[250px] mt-4 md:mt-0 md:ml-8"
+            />
+          </div>
+
+          {/* Announcements Content */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 lg:gap-5 mb-12 md:mb-16 lg:mb-20 items-center">
+            {/* Text Column */}
+            <div className="flex flex-col justify-start">
+              <p className="text-[#eeeeee] text-xl md:text-2xl lg:text-[25px] font-roboto font-medium leading-relaxed md:leading-[40px]">
+                Okulumuzdaki AZİM grubu ve sitedeki güncellemelerle İlgili duyurulara eriş.
+              </p>
+
+              <div className="flex justify-start mt-8 md:mt-10 lg:mt-12">
+                <Link
+                  to="/duyurular"
+                  className="rounded-full bg-[#151313]/95 border border-[#42484c] px-12 md:px-16 py-5 md:py-6 font-roboto text-2xl md:text-3xl text-white font-bold hover:bg-[#151313] transition-colors text-center"
+                >
+                  Göz at
+                </Link>
+              </div>
+            </div>
+
+            {/* Eski görsel sütunu kaldırıldı */}
+            <div></div> 
+          </div>
+        </div>
+
+        {/* Security Section */}
+        <div className="w-full border-t border-[#2a2d31]">
+          <div className="max-w-[1122px] mx-auto px-5 md:px-10 lg:px-20 py-12 md:py-16 lg:py-20">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 lg:gap-5">
+              {/* Image Column */}
+              <div className="relative min-h-[300px] md:min-h-[400px] lg:min-h-[500px] flex items-end justify-end">
+                <img
+                  loading="lazy"
+                  srcSet="https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3182a495439504b4d43051569e264a2f"
+                  src="https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3182a495439504b4d43051569e264a2f"
+                  alt="Güvenlik"
+                  className="w-full h-auto object-contain"
+                />
+              </div>
+
+              {/* Text Column */}
+              <div className="flex flex-col justify-start">
+                <h2 className="text-white text-xl md:text-2xl lg:text-[25px] font-outfit font-semibold tracking-[2.5px] uppercase mb-6 md:mb-8">
+                  Güvenlik
+                </h2>
+
+                <h3 className="text-white text-4xl md:text-5xl lg:text-[70px] font-outfit font-bold leading-tight md:leading-[85px]">
+                  Kötü söz ve İçerikleri filtreleyen yapay zeka desteği
+                </h3>
+
+                <p className="text-[#eeeeee] text-xl md:text-2xl lg:text-[25px] font-roboto font-medium leading-relaxed md:leading-[40px] mt-6 md:mt-8">
+                  Blog, mini-makale ve yorumlarda filtrelenmiş sohbet ile fikirlerini paylaş.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Quote Section */}
-      <div className="py-16 md:py-24 bg-[#090a0c]">
-        <div className="container mx-auto px-5 md:px-10 lg:px-20 text-center">
-          <blockquote className="max-w-3xl mx-auto">
-            <p className="font-outfit text-2xl md:text-3xl font-medium text-gray-200 italic">
-              "Okumayan ve yazmayan insan düşünemez."
-            </p>
-            <footer className="mt-4 font-roboto text-lg text-gray-400">
-              - Ali Fuat Başgil, <cite>Gençlerle Başbaşa</cite>
-            </footer>
-          </blockquote>
-        </div>
-      </div>
-
-      {/* Other sections can be added here */}
-    </div>
+      <section className="px-5 md:px-10 lg:px-40 py-12 md:py-16 lg:py-20">
+        <p className="text-white text-lg md:text-xl lg:text-2xl font-roboto font-medium leading-relaxed md:leading-[40px]">
+          Okumayan ve yazmayan insan düşünemez. (Ali Fuat Başgil,{" "}
+          <span className="italic">Gençlerle Başbaşa</span>)
+        </p>
+      </section>
+    </>
   );
-};
-
-export default Index;
+}
