@@ -15,7 +15,7 @@ export default function Index() {
         />
 
         {/* Gradient Overlay - Black at bottom, transparent at top */}
-        <div className="absolute inset-0 h-full w-full bg-gradient-to-t from-[#020303] from-0% via-[#020303]/50 via-30% to-transparent to-100%" />
+        <div className="absolute inset-0 h-full w-full bg-gradient-to-t from-[#020303] via-[#020303]/70 to-[#020303]/40" />
 
         {/* Content Container */}
         <div className="relative z-10 px-5 md:px-10 lg:px-20 pb-8 flex flex-col items-center pt-32">
