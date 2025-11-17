@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon } from "lucide-react";
 import AppLogo from "./AppLogo";
+import { cn } from "@/lib/utils";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -36,9 +37,13 @@ export default function Navbar() {
       <div className="w-full max-w-[1122px] mx-auto">
         <nav className="rounded-[40px] bg-[#e6e6e6] border-2 border-[#2a2d31] p-1">
           <div className="flex items-center justify-between gap-4 md:gap-6 lg:gap-8">
-            <div className="md:hidden">
-              {/* MobileNav, logo'yu zaten Link ile sardığı için disableLink kullanıyoruz */}
+            <div className="md:hidden flex items-center gap-2">
+              {/* MobileNav Trigger */}
               <MobileNav mainLinks={mainNavLinks} authLinks={user ? authLinks : guestLinks} logo={<AppLogo disableLink />} />
+              {/* Menu Text */}
+              <span className={cn("font-bakbak text-base text-[#090a0c]")}>
+                Menu
+              </span>
             </div>
             <div className="hidden md:flex rounded-[40px] bg-[#090a0c] border-2 border-[#42484c] px-4 md:px-6 py-3 items-center gap-4 md:gap-6 lg:gap-10 flex-1">
               {/* AppLogo, Link'i kendi içinde barındırır */}
