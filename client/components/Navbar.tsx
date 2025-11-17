@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon } from "lucide-react";
+import AppLogo from "./AppLogo";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -30,13 +31,7 @@ export default function Navbar() {
     { to: "/profil", label: "Profil" },
   ];
 
-  const LogoContent = (
-    <div className="rounded-[25px] bg-[#d9d9d9] px-6 md:px-8 py-1 shrink-0">
-      <div className="font-outfit text-lg md:text-xl font-normal text-[#090a0c] whitespace-nowrap">
-        Logo
-      </div>
-    </div>
-  );
+  const LogoContent = <AppLogo />;
 
   return (
     <header className="sticky top-0 z-50 px-5 md:px-10 lg:px-20 py-2 w-full">
