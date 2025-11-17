@@ -17,8 +17,8 @@ const LogoContent = (
     <img
       src={LOGO_IMAGE_URL}
       alt="TeknoAzim Logo"
-      // Görseli rozet konteynerine sığacak şekilde boyutlandırıyoruz. Increased size to h-12
-      className="h-12 w-auto object-contain" 
+      // Görseli rozet konteynerine sığacak şekilde boyutlandırıyoruz. Increased size to h-16
+      className="h-16 w-auto object-contain" 
     />
   </div>
 );
