@@ -14,6 +14,7 @@ export interface CommentWithAuthor {
   id: string;
   content: string;
   created_at: string;
+  user_id: string; // Added for ownership check
   profiles: Profile | null; // The author of the comment
 }
 

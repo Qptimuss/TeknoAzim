@@ -67,7 +67,9 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
     setUserAction(newUserAction);
     
     try {
-      await castVote(postId, user.id, newUserAction);
+      // Map internal state ('liked'/'disliked') to API type ('like'/'dislike')
+      const apiVoteType = newUserAction === 'liked' ? 'like' : newUserAction === 'disliked' ? 'dislike' : null;
+      await castVote(postId, user.id, apiVoteType);
     } catch (error) {
       toast.error("Oy verilirken bir hata oluştu.");
       // Revert optimistic update on error
