@@ -45,7 +45,7 @@ export default function Navbar() {
                 Menü
               </span>
             </div>
-            <div className="hidden md:flex rounded-[40px] bg-[#090a0c] border-2 border-[#42484c] px-2 md:px-3 py-3 items-center gap-2 md:gap-3 lg:gap-4 flex-1">
+            <div className="hidden md:flex rounded-[40px] bg-[#090a0c] border-2 border-[#42484c] px-1 md:px-2 py-3 items-center gap-1 md:gap-2 lg:gap-3 flex-1">
               {/* AppLogo, Link'i kendi içinde barındırır */}
               <AppLogo /> 
               {mainNavLinks.map((link) => (
