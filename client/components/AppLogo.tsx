@@ -12,14 +12,14 @@ const LOGO_IMAGE_URL = "/logo.png";
 
 const LogoContent = (
   // Orijinal boyutları koruyoruz, ancak arka plan rengini kaldırıyoruz.
-  // px-6 md:px-8 -> px-8 md:px-10 olarak güncellendi
+  // px-8 md:px-10 py-1 shrink-0 flex items-center justify-center h-auto
   <div className="rounded-[25px] px-8 md:px-10 py-1 shrink-0 flex items-center justify-center h-auto">
     {/* İstenen görsel logo kullanımı */}
     <img
       src={LOGO_IMAGE_URL}
       alt="TeknoAzim Logo"
-      // Görseli rozet konteynerine sığacak şekilde boyutlandırıyoruz. Set size to h-9
-      className="h-9 w-auto object-contain" 
+      // Görseli rozet konteynerine sığacak şekilde boyutlandırıyoruz. Set size to h-10
+      className="h-10 w-auto object-contain" 
     />
   </div>
 );
