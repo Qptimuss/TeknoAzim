@@ -11,9 +11,8 @@ interface AppLogoProps {
 const LOGO_IMAGE_URL = "/logo.png"; 
 
 const LogoContent = (
-  // Orijinal boyutları koruyoruz, ancak arka plan rengini kaldırıyoruz.
-  // px-8 md:px-10 py-1 shrink-0 flex items-center justify-center h-auto
-  <div className="rounded-[25px] px-8 md:px-10 py-1 shrink-0 flex items-center justify-center h-auto">
+  // Yatay dolguyu azaltarak logoyu daha kompakt hale getiriyoruz.
+  <div className="rounded-[25px] px-4 md:px-6 py-1 shrink-0 flex items-center justify-center h-auto">
     {/* İstenen görsel logo kullanımı */}
     <img
       src={LOGO_IMAGE_URL}
