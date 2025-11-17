@@ -45,11 +45,11 @@ export default function Navbar() {
                 Menü
               </span>
             </div>
-            <div className="hidden md:flex rounded-[40px] bg-[#090a0c] border-2 border-[#42484c] px-4 md:px-6 py-3 items-center gap-4 md:gap-6 lg:gap-10 flex-1">
+            <div className="hidden md:flex rounded-[40px] bg-[#090a0c] border-2 border-[#42484c] px-3 md:px-4 py-3 items-center gap-3 md:gap-4 lg:gap-6 flex-1">
               {/* AppLogo, Link'i kendi içinde barındırır */}
               <AppLogo /> 
               {mainNavLinks.map((link) => (
-                <Link key={link.to} to={link.to} className="font-bakbak text-base md:text-lg font-normal text-white whitespace-nowrap shrink-0">
+                <Link key={link.to} to={link.to} className="font-bakbak text-base md:text-base font-normal text-white whitespace-nowrap shrink-0">
                   {link.label}
                 </Link>
               ))}
