@@ -1,8 +1,9 @@
+"use client";
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Github, Instagram } from 'lucide-react';
 import XLogo from './XLogo';
-import AppLogo from './AppLogo';
 
 const Footer = () => {
   const location = useLocation();
@@ -36,8 +37,11 @@ const Footer = () => {
           {/* Logo and Description */}
           <div className="flex flex-col items-center md:items-start text-center md:text-left">
             <Link to="/" className="flex items-center mb-4">
-              {/* Using AppLogo component with slightly adjusted styling for the footer */}
-              <AppLogo className="px-4 py-1" imageClassName="h-5 w-auto" />
+              <div className="rounded-[25px] bg-[#d9d9d9] px-6 py-1 shrink-0">
+                <div className="font-outfit text-lg font-normal text-[#090a0c] whitespace-nowrap">
+                  Logo
+                </div>
+              </div>
             </Link>
             <p className="text-sm text-[#eeeeee] max-w-xs">
               Düşüncelerle derinleşen, yazılarla genişleyen bir dünya.
