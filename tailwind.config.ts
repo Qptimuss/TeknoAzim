@@ -18,6 +18,7 @@ export default {
         outfit: ['Outfit', 'sans-serif'],
         pacifico: ['Pacifico', 'cursive'],
         roboto: ['Roboto', 'sans-serif'],
+        bakbak: ['Bakbak One', 'cursive'], // Yeni font eklendi
       },
       colors: {
         border: "hsl(var(--border))",

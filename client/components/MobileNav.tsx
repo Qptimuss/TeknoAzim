@@ -34,7 +34,7 @@ export function MobileNav({ mainLinks, authLinks, logo }: MobileNavProps) {
               <Link
                 key={link.to}
                 to={link.to}
-                className="font-pacifico text-xl text-[#090a0c] hover:text-gray-700"
+                className="font-bakbak text-xl text-[#090a0c] hover:text-gray-700"
               >
                 {link.label}
               </Link>
@@ -46,7 +46,7 @@ export function MobileNav({ mainLinks, authLinks, logo }: MobileNavProps) {
                 key={link.to}
                 to={link.to}
                 className={cn(
-                  "font-pacifico text-xl",
+                  "font-bakbak text-xl",
                   link.to === "/giris" ? "text-black" : "text-[#090a0c]",
                   "hover:text-gray-700"
                 )}

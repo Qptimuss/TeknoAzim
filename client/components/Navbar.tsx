@@ -44,7 +44,7 @@ export default function Navbar() {
               {/* AppLogo, Link'i kendi içinde barındırır */}
               <AppLogo /> 
               {mainNavLinks.map((link) => (
-                <Link key={link.to} to={link.to} className="font-pacifico text-base md:text-lg font-normal text-white whitespace-nowrap shrink-0">
+                <Link key={link.to} to={link.to} className="font-bakbak text-base md:text-lg font-normal text-white whitespace-nowrap shrink-0">
                   {link.label}
                 </Link>
               ))}
@@ -52,7 +52,7 @@ export default function Navbar() {
             <div className="hidden md:flex items-center gap-4 md:gap-6 lg:gap-8 px-4 md:px-0">
               {user ? (
                 <>
-                  <Button onClick={handleLogout} variant="ghost" className="font-pacifico text-base md:text-lg font-normal text-[#090a0c] whitespace-nowrap shrink-0 p-0 hover:bg-transparent">
+                  <Button onClick={handleLogout} variant="ghost" className="font-bakbak text-base md:text-lg font-normal text-[#090a0c] whitespace-nowrap shrink-0 p-0 hover:bg-transparent">
                     Çıkış Yap
                   </Button>
                   <Link to="/profil">
@@ -66,7 +66,7 @@ export default function Navbar() {
                 </>
               ) : (
                 guestLinks.map((link) => (
-                  <Link key={link.to} to={link.to} className="font-pacifico text-base md:text-lg font-normal text-[#090a0c] whitespace-nowrap shrink-0">
+                  <Link key={link.to} to={link.to} className="font-bakbak text-base md:text-lg font-normal text-[#090a0c] whitespace-nowrap shrink-0">
                     {link.label}
                   </Link>
                 ))
