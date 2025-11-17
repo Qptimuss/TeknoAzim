@@ -42,7 +42,7 @@ export default function Navbar() {
               <MobileNav mainLinks={mainNavLinks} authLinks={user ? authLinks : guestLinks} logo={<AppLogo disableLink />} />
               {/* Menu Text */}
               <span className={cn("font-bakbak text-xl text-[#090a0c]")}>
-                Menu
+                Menü
               </span>
             </div>
             <div className="hidden md:flex rounded-[40px] bg-[#090a0c] border-2 border-[#42484c] px-4 md:px-6 py-3 items-center gap-4 md:gap-6 lg:gap-10 flex-1">
