@@ -50,7 +50,7 @@ export default function Navbar() {
               {/* AppLogo, Link'i kendi içinde barındırır */}
               <AppLogo /> 
               {mainNavLinks.map((link) => (
-                <Link key={link.to} to={link.to} className="font-bakbak text-base md:text-base font-normal text-white whitespace-nowrap shrink-0 px-2 md:px-2 lg:px-3">
+                <Link key={link.to} to={link.to} className="font-bakbak text-sm md:text-sm font-normal text-white whitespace-nowrap shrink-0 px-1 md:px-1 lg:px-2">
                   {link.label}
                 </Link>
               ))}
