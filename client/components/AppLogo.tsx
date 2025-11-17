@@ -7,12 +7,12 @@ interface AppLogoProps {
   disableLink?: boolean;
 }
 
-// Geçici logo görseli olarak yerel placeholder.svg kullanılıyor.
-const LOGO_IMAGE_URL = "/placeholder.svg"; 
+// Yeni logo görseli yolu
+const LOGO_IMAGE_URL = "/logo.png"; 
 
 const LogoContent = (
-  // Orijinal metin logosunun boyutlarını ve arka plan stilini koruyoruz.
-  <div className="rounded-[25px] bg-[#d9d9d9] px-6 md:px-8 py-1 shrink-0 flex items-center justify-center h-auto">
+  // Orijinal boyutları koruyoruz, ancak arka plan rengini kaldırıyoruz.
+  <div className="rounded-[25px] px-6 md:px-8 py-1 shrink-0 flex items-center justify-center h-auto">
     {/* İstenen görsel logo kullanımı */}
     <img
       src={LOGO_IMAGE_URL}
