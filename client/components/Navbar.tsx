@@ -41,7 +41,7 @@ export default function Navbar() {
               {/* MobileNav Trigger */}
               <MobileNav mainLinks={mainNavLinks} authLinks={user ? authLinks : guestLinks} logo={<AppLogo disableLink />} />
               {/* Menu Text */}
-              <span className={cn("font-bakbak text-base text-[#090a0c]")}>
+              <span className={cn("font-bakbak text-xl text-[#090a0c]")}>
                 Menu
               </span>
             </div>
