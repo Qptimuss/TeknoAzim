@@ -44,7 +44,6 @@ export default function Navbar() {
                 Menü
               </span>
             </div>
-            <AppLogo />
           </div>
 
           {/* Desktop View */}
