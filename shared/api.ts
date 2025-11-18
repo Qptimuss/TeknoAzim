@@ -7,6 +7,7 @@ export interface Profile {
   id: string;
   name: string | null;
   avatar_url: string | null;
+  description: string | null;
 }
 
 // This will represent a row in the `comments` table, joined with the author's profile

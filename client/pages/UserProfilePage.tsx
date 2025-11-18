@@ -75,6 +75,9 @@ export default function UserProfilePage() {
         <h1 className="text-white text-4xl md:text-5xl font-outfit font-bold">
           {profile.name}
         </h1>
+        {profile.description && (
+          <p className="text-muted-foreground mt-4 max-w-lg">{profile.description}</p>
+        )}
       </div>
 
       <h2 className="text-white text-2xl font-outfit font-bold mb-8">
