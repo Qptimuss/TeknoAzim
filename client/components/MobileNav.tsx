@@ -24,7 +24,8 @@ export function MobileNav({ mainLinks, authLinks, logo, onMouseEnter, onMouseLea
       <SheetTrigger asChild>
         <Button 
           variant="ghost" 
-          className="md:hidden h-auto p-2 flex items-center gap-2 text-[#090a0c] transition-all duration-200"
+          // Arka planı her zaman şeffaf yapıyoruz.
+          className="md:hidden h-auto p-2 flex items-center gap-2 text-[#090a0c] bg-transparent hover:bg-transparent transition-all duration-200 hover:-translate-y-0.5"
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
         >

@@ -39,6 +39,7 @@ export default function Navbar() {
       <div className="w-full max-w-[1122px] mx-auto">
         <nav className={cn(
           "inline-block md:block rounded-[40px] bg-[#e6e6e6] border-2 border-[#2a2d31] p-1 transition-all duration-300 origin-top",
+          // Sadece büyüme ve gölge efekti
           isMobileMenuHovered && "transform scale-[1.01] shadow-xl shadow-black/20"
         )}>
           {/* Mobile View */}
