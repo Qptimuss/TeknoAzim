@@ -144,7 +144,7 @@ export default function CreateBlogPage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" size="lg" disabled={form.formState.isSubmitting} className="w-full bg-[#151313]/95 border border-[#42484c] text-white text-lg transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-white/10">
+            <Button type="submit" size="lg" disabled={form.formState.isSubmitting} className="w-full bg-[#151313]/95 border border-[#42484c] text-white text-lg transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:shadow-white/10">
               {form.formState.isSubmitting ? "Yayınlanıyor..." : "Yayınla"}
             </Button>
           </form>

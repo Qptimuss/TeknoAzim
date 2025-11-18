@@ -128,7 +128,7 @@ export default function ProfilePage() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full bg-[#151313]/95 border border-[#42484c] text-white transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-white/10">
+                <Button type="submit" className="w-full bg-[#151313]/95 border border-[#42484c] text-white transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:shadow-white/10">
                   Kaydet
                 </Button>
               </form>

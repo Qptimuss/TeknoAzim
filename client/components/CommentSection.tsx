@@ -151,7 +151,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                 </FormItem>
               )}
             />
-            <Button type="submit" className="bg-[#151313]/95 border border-[#42484c] text-white transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-white/10">
+            <Button type="submit" className="bg-[#151313]/95 border border-[#42484c] text-white transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:shadow-white/10">
               Yorum Gönder
             </Button>
           </form>
