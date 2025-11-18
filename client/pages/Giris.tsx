@@ -45,6 +45,15 @@ export default function Giris() {
     }
   };
 
+  // Yönlendirme sırasında e-posta ve şifreyi URL parametreleri olarak ekleyen fonksiyon
+  const handleNavigateToRegister = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (formData.email) params.set('email', formData.email);
+    if (formData.password) params.set('password', formData.password);
+    navigate(`/kaydol?${params.toString()}`);
+  };
+
   return (
     <div className="relative min-h-screen bg-[#020303] flex items-center justify-center px-4 py-12 overflow-hidden">
       <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full filter blur-xl opacity-70 animate-blob"></div>
@@ -97,7 +106,7 @@ export default function Giris() {
             </Button>
             <div className="text-center text-sm text-[#eeeeee]">
               Hesabınız yok mu?{" "}
-              <Link to="/kaydol" className="text-white hover:underline">
+              <Link to="/kaydol" onClick={handleNavigateToRegister} className="text-white hover:underline">
                 Kayıt ol
               </Link>
             </div>

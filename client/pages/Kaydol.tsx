@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,13 +9,29 @@ import { supabase } from "@/integrations/supabase/client";
 
 export default function Kaydol() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchParams] = useSearchParams();
+  
+  const initialEmail = searchParams.get('email') || "";
+  const initialPassword = searchParams.get('password') || "";
+
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+    email: initialEmail,
+    password: initialPassword,
+    confirmPassword: initialPassword,
   });
   const navigate = useNavigate();
+
+  // useEffect to handle initial form data from URL params
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      email: initialEmail,
+      password: initialPassword,
+      confirmPassword: initialPassword,
+    }));
+  }, [initialEmail, initialPassword]);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -66,6 +82,15 @@ export default function Kaydol() {
     }
   };
 
+  // Yönlendirme sırasında e-posta ve şifreyi URL parametreleri olarak ekleyen fonksiyon
+  const handleNavigateToLogin = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (formData.email) params.set('email', formData.email);
+    if (formData.password) params.set('password', formData.password);
+    navigate(`/giris?${params.toString()}`);
+  };
+
   return (
     <div className="relative min-h-screen bg-[#020303] flex items-center justify-center px-4 py-12 overflow-hidden">
       <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full filter blur-xl opacity-70 animate-blob"></div>
@@ -104,7 +129,7 @@ export default function Kaydol() {
             </Button>
             <div className="text-center text-sm text-[#eeeeee]">
               Zaten hesabınız var mı?{" "}
-              <Link to="/giris" className="text-white hover:underline">
+              <Link to="/giris" onClick={handleNavigateToLogin} className="text-white hover:underline">
                 Giriş yap
               </Link>
             </div>
