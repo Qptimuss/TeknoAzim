@@ -24,7 +24,7 @@ export function MobileNav({ mainLinks, authLinks, logo }: MobileNavProps) {
           <span className="sr-only">Toggle navigation menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[250px] sm:w-[300px] bg-[#e6e6e6] p-4 h-auto bottom-auto mt-16 rounded-br-lg">
+      <SheetContent side="left" className="w-[250px] sm:w-[300px] bg-[#e6e6e6] p-4 h-auto bottom-auto">
         <div className="flex flex-col gap-4">
           <Link to="/" className="flex items-center gap-2">
             {logo}
