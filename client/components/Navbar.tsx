@@ -37,13 +37,12 @@ export default function Navbar() {
       <div className="w-full max-w-[1122px] mx-auto">
         <nav className="inline-block md:block rounded-[40px] bg-[#e6e6e6] border-2 border-[#2a2d31] p-1">
           {/* Mobile View */}
-          <div className="md:hidden flex items-center">
-            <div className="flex items-center gap-2">
-              <MobileNav mainLinks={mainNavLinks} authLinks={user ? authLinks : guestLinks} logo={<AppLogo disableLink />} />
-              <span className={cn("font-bakbak text-xl text-[#090a0c]")}>
-                Menü
-              </span>
-            </div>
+          <div className="md:hidden flex items-center justify-between">
+            {/* MobileNav artık hem simgeyi hem de metni içeriyor ve tıklanabilir. */}
+            <MobileNav mainLinks={mainNavLinks} authLinks={user ? authLinks : guestLinks} logo={<AppLogo disableLink />} />
+            
+            {/* Sağ tarafta boşluk bırakmak için buraya bir şey ekleyebiliriz veya sadece justify-between kullanabiliriz. */}
+            {/* Şu anki haliyle MobileNav içeriği kadar yer kaplayacak ve sağda boşluk kalacak. */}
           </div>
 
           {/* Desktop View */}

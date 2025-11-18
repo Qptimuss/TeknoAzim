@@ -20,8 +20,12 @@ export function MobileNav({ mainLinks, authLinks, logo }: MobileNavProps) {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="md:hidden">
-          <Menu className="h-6 w-6 text-black" />
+        {/* Menü simgesi ve metnini içeren tek bir tıklanabilir alan */}
+        <Button variant="ghost" className="md:hidden h-auto p-2 flex items-center gap-2 text-[#090a0c] hover:bg-gray-200">
+          <Menu className="h-6 w-6" />
+          <span className={cn("font-bakbak text-xl")}>
+            Menü
+          </span>
           <span className="sr-only">Toggle navigation menu</span>
         </Button>
       </SheetTrigger>
