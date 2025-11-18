@@ -45,12 +45,12 @@ export default function Giris() {
     }
   };
 
-  // Yönlendirme sırasında sadece e-posta bilgisini URL parametresi olarak ekleyen fonksiyon
+  // Yönlendirme sırasında e-posta ve şifre bilgilerini URL parametresi olarak ekleyen fonksiyon
   const handleNavigateToRegister = (e: React.MouseEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
     if (formData.email) params.set('email', formData.email);
-    // Şifre parametresi kaldırıldı
+    if (formData.password) params.set('password', formData.password);
     navigate(`/kaydol?${params.toString()}`);
   };
 
