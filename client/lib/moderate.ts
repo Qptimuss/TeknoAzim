@@ -12,14 +12,20 @@ export const moderateContent = async (text: string): Promise<boolean> => {
       const errorData = await response.json();
       console.error('Moderation check failed on the server:', errorData);
       
-      // Sunucu hatası durumunda kullanıcıya bilgi ver
-      if (errorData.error === "Server configuration error.") {
+      const details = errorData.details || "İçerik kontrolü sırasında bir sorun oluştu.";
+
+      // Too Many Requests hatasını özel olarak ele al
+      if (details.includes("Too Many Requests") || response.status === 429) {
+        toast.error("Hız Limiti Aşıldı", { 
+          description: "Çok fazla istek gönderdiniz. Lütfen birkaç saniye bekleyip tekrar deneyin." 
+        });
+      } else if (errorData.error === "Server configuration error.") {
         toast.error("Moderasyon Hatası", { description: "Sunucu yapılandırma hatası: OpenAI API anahtarı eksik." });
       } else if (errorData.error === "OpenAI API hatası") {
-        // Yeni eklediğimiz detaylı hata mesajını gösteriyoruz
-        toast.error("OpenAI API Hatası", { description: errorData.details || "İçerik kontrolü sırasında bir sorun oluştu." });
+        // Diğer OpenAI hatalarını göster
+        toast.error("OpenAI API Hatası", { description: details });
       } else {
-        toast.error("Moderasyon Hatası", { description: "İçerik kontrolü sırasında bir sorun oluştu." });
+        toast.error("Moderasyon Hatası", { description: details });
       }
       
       // Sunucu hatası durumunda kullanıcıyı engellememek için true dönüyoruz.
