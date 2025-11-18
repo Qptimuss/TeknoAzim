@@ -36,18 +36,20 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 px-5 md:px-10 lg:px-20 py-2 w-full">
       <div className="w-full max-w-[1122px] mx-auto">
         <nav className="rounded-[40px] bg-[#e6e6e6] border-2 border-[#2a2d31] p-1">
-          <div className="flex items-center justify-between gap-4 md:gap-6 lg:gap-8">
-            <div className="md:hidden flex items-center gap-2">
-              {/* MobileNav Trigger */}
+          {/* Mobile View */}
+          <div className="md:hidden flex items-center justify-between">
+            <div className="flex items-center gap-2">
               <MobileNav mainLinks={mainNavLinks} authLinks={user ? authLinks : guestLinks} logo={<AppLogo disableLink />} />
-              {/* Menu Text */}
               <span className={cn("font-bakbak text-xl text-[#090a0c]")}>
                 Menü
               </span>
             </div>
-            {/* Masaüstü Navigasyon: Logoyu sola yasla (px-0) ve öğeleri sıkıştır (gap-1) */}
-            <div className="hidden md:flex rounded-[40px] bg-[#090a0c] border-2 border-[#42484c] px-0 py-3 items-center gap-0 flex-1">
-              {/* AppLogo, Link'i kendi içinde barındırır */}
+            <AppLogo />
+          </div>
+
+          {/* Desktop View */}
+          <div className="hidden md:flex items-center justify-between gap-4">
+            <div className="flex rounded-[40px] bg-[#090a0c] border-2 border-[#42484c] px-0 py-3 items-center gap-0 flex-1">
               <AppLogo /> 
               {mainNavLinks.map((link) => (
                 <Link key={link.to} to={link.to} className="font-bakbak text-sm md:text-sm font-normal text-white whitespace-nowrap shrink-0 px-1 md:px-1 lg:px-2">
@@ -55,7 +57,7 @@ export default function Navbar() {
                 </Link>
               ))}
             </div>
-            <div className="hidden md:flex items-center gap-4 md:gap-6 lg:gap-8 px-2">
+            <div className="flex items-center gap-4 md:gap-6 lg:gap-8 px-2">
               {user ? (
                 <>
                   <Button onClick={handleLogout} variant="ghost" className="font-bakbak text-base md:text-base font-normal text-[#090a0c] whitespace-nowrap shrink-0 p-0 hover:bg-transparent">
