@@ -94,7 +94,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
                     {comment.profiles ? (
-                      <Link to={`/kullanici/${comment.profiles.id}`} className="inline-flex items-center gap-2 rounded-full bg-[#151313] px-3 py-1 border border-[#42484c] transition-all duration-200 hover:border-white/50 hover:-translate-y-0.5 hover:shadow-md hover:shadow-white/5">
+                      <Link to={`/kullanici/${comment.profiles.id}`} className="inline-flex items-center gap-2 rounded-full bg-[#151313] px-3 py-1 border border-[#42484c] transition-all duration-200 hover:border-[#6b7280] hover:-translate-y-0.5 hover:shadow-md hover:shadow-white/5">
                         <Avatar className="h-6 w-6">
                           <AvatarImage src={comment.profiles?.avatar_url || undefined} />
                           <AvatarFallback>{comment.profiles?.name?.charAt(0) || 'A'}</AvatarFallback>

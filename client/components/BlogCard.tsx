@@ -23,7 +23,7 @@ export default function BlogCard({ post }: BlogCardProps) {
   });
 
   return (
-    <Card className="w-full bg-[#090a0c] border-[#2a2d31] text-white flex flex-col transition-all hover:border-white/50 hover:scale-105">
+    <Card className="w-full bg-[#090a0c] border-[#2a2d31] text-white flex flex-col transition-all hover:border-[#6b7280] hover:scale-105">
       <Link to={`/bloglar/${post.id}`} className="flex flex-col flex-grow">
         <CardHeader>
           {post.image_url && (
@@ -38,7 +38,7 @@ export default function BlogCard({ post }: BlogCardProps) {
           {post.profiles && (
             <Link 
               to={`/kullanici/${post.profiles.id}`} 
-              className="inline-flex items-center gap-2 z-10 relative w-fit rounded-full bg-[#151313] px-3 py-1 border border-[#42484c] transition-all duration-200 hover:border-white/50 hover:-translate-y-0.5 hover:shadow-md hover:shadow-white/5"
+              className="inline-flex items-center gap-2 z-10 relative w-fit rounded-full bg-[#151313] px-3 py-1 border border-[#42484c] transition-all duration-200 hover:border-[#6b7280] hover:-translate-y-0.5 hover:shadow-md hover:shadow-white/5"
               onClick={(e) => e.stopPropagation()}
             >
               <Avatar className="h-6 w-6">

@@ -82,7 +82,7 @@ export default function BlogPostPage() {
         )}
         <div className="p-8">
           {post.profiles && (
-            <Link to={`/kullanici/${post.profiles.id}`} className="inline-flex items-center gap-2 mb-4 w-fit rounded-full bg-[#151313] px-3 py-1 border border-[#42484c] transition-all duration-200 hover:border-white/50 hover:-translate-y-0.5 hover:shadow-md hover:shadow-white/5">
+            <Link to={`/kullanici/${post.profiles.id}`} className="inline-flex items-center gap-2 mb-4 w-fit rounded-full bg-[#151313] px-3 py-1 border border-[#42484c] transition-all duration-200 hover:border-[#6b7280] hover:-translate-y-0.5 hover:shadow-md hover:shadow-white/5">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={post.profiles?.avatar_url || undefined} alt={post.profiles?.name || ''} />
                 <AvatarFallback>
