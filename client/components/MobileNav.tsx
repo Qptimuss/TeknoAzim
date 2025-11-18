@@ -14,19 +14,16 @@ interface MobileNavProps {
   mainLinks: NavLink[];
   authLinks: NavLink[];
   logo: React.ReactNode;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
 }
 
-export function MobileNav({ mainLinks, authLinks, logo, onMouseEnter, onMouseLeave }: MobileNavProps) {
+export function MobileNav({ mainLinks, authLinks, logo }: MobileNavProps) {
   return (
     <Sheet>
       <SheetTrigger asChild>
+        {/* Menü simgesi ve metnini içeren tek bir tıklanabilir alan */}
         <Button 
           variant="ghost" 
-          className="md:hidden h-auto p-2 flex items-center gap-2 text-[#090a0c] hover:bg-gray-200"
-          onMouseEnter={onMouseEnter}
-          onMouseLeave={onMouseLeave}
+          className="md:hidden h-auto p-2 flex items-center gap-2 text-[#090a0c] hover:bg-gray-200 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-black/50"
         >
           <Menu className="h-6 w-6" />
           <span className={cn("font-bakbak text-xl")}>
