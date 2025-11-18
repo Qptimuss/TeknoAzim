@@ -47,13 +47,13 @@ const App = () => (
                 <Route path="/blog-olustur" element={<CreateBlogPage />} />
                 <Route path="/profil" element={<ProfilePage />} />
               </Route>
-
-              {/* Auth routes now with layout */}
-              <Route path="/kaydol" element={<Kaydol />} />
-              <Route path="/giris" element={<Giris />} />
-              <Route path="/sifremi-unuttum" element={<SifremiUnuttum />} />
-              <Route path="/sifre-sifirla" element={<SifreSifirla />} />
             </Route>
+            
+            {/* Auth and other pages without the main layout */}
+            <Route path="/kaydol" element={<Kaydol />} />
+            <Route path="/giris" element={<Giris />} />
+            <Route path="/sifremi-unuttum" element={<SifremiUnuttum />} />
+            <Route path="/sifre-sifirla" element={<SifreSifirla />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
