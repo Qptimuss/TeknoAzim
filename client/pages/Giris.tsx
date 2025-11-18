@@ -108,7 +108,7 @@ export default function Giris() {
               <div className="flex items-center justify-between">
                 <Label htmlFor="password" className="text-white">Şifre</Label>
                 <Link to="/sifremi-unuttum" className="text-sm text-white hover:underline">
-                  Şifremi Unuttum?
+                  Şifreni mi unuttun?
                 </Link>
               </div>
               <Input
