@@ -41,7 +41,7 @@ export function MobileNav({ mainLinks, authLinks, logo }: MobileNavProps) {
               </Link>
             ))}
           </div>
-          <Separator className="my-2 bg-[#090a0c] h-0.5 rounded-full mx-2" />
+          <Separator className="my-2 bg-[#090a0c] h-0.5 rounded-full w-11/12 mx-auto" />
           <div className="flex flex-col gap-2">
             {authLinks.map((link) => (
               <Link
