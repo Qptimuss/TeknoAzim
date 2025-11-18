@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { addBlogPost, uploadBlogImage } from "@/lib/blog-store";
 import { useAuth } from "@/contexts/AuthContext";
+import { moderateContent } from "@/lib/moderate";
 
 const blogSchema = z.object({
   title: z.string().min(5, "Başlık en az 5 karakter olmalıdır."),
@@ -48,9 +49,21 @@ export default function CreateBlogPage() {
       return;
     }
 
+    // Moderation check
+    const isTitleAppropriate = await moderateContent(values.title);
+    const isContentAppropriate = await moderateContent(values.content);
+
+    if (!isTitleAppropriate || !isContentAppropriate) {
+      toast.error("Uygunsuz içerik tespit edildi.", {
+        description: "Lütfen topluluk kurallarına uygun bir dil kullanın.",
+      });
+      return;
+    }
+
     let imageUrl: string | undefined = undefined;
 
     try {
+      form.formState.isSubmitting = true;
       // Upload image if selected
       if (values.imageFile && values.imageFile.length > 0) {
         toast.info("Resim yükleniyor...");
@@ -74,6 +87,8 @@ export default function CreateBlogPage() {
     } catch (error) {
       toast.error("Blog yazısı oluşturulurken bir hata oluştu.");
       console.error(error);
+    } finally {
+      form.formState.isSubmitting = false;
     }
   }
 

@@ -22,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { moderateContent } from "@/lib/moderate";
 
 const commentSchema = z.object({
   content: z.string().min(3, "Yorum en az 3 karakter olmalıdır."),
@@ -46,6 +47,16 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
       toast.error("Yorum yapmak için giriş yapmalısınız.");
       return;
     }
+
+    // Moderation check
+    const isAppropriate = await moderateContent(values.content);
+    if (!isAppropriate) {
+      toast.error("Uygunsuz içerik tespit edildi.", {
+        description: "Lütfen topluluk kurallarına uygun bir dil kullanın.",
+      });
+      return;
+    }
+
     try {
       await addComment({ postId, userId: user.id, content: values.content });
       toast.success("Yorumunuz eklendi!");
