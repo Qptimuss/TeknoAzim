@@ -17,6 +17,8 @@ import CreateBlogPage from "./pages/CreateBlogPage";
 import BlogPostPage from "./pages/BlogPostPage";
 import ProfilePage from "./pages/ProfilePage";
 import UserProfilePage from "./pages/UserProfilePage";
+import SifremiUnuttum from "./pages/SifremiUnuttum";
+import SifreSifirla from "./pages/SifreSifirla";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -50,6 +52,8 @@ const App = () => (
             {/* Auth and other pages without the main layout */}
             <Route path="/kaydol" element={<Kaydol />} />
             <Route path="/giris" element={<Giris />} />
+            <Route path="/sifremi-unuttum" element={<SifremiUnuttum />} />
+            <Route path="/sifre-sifirla" element={<SifreSifirla />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

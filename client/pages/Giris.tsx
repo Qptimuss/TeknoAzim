@@ -105,7 +105,12 @@ export default function Giris() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-white">Şifre</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-white">Şifre</Label>
+                <Link to="/sifremi-unuttum" className="text-sm text-white hover:underline">
+                  Şifremi Unuttum?
+                </Link>
+              </div>
               <Input
                 id="password"
                 name="password"
