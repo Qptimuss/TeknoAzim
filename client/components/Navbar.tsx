@@ -35,9 +35,9 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 px-5 md:px-10 lg:px-20 py-2 w-full">
       <div className="w-full max-w-[1122px] mx-auto">
-        <nav className="rounded-[40px] bg-[#e6e6e6] border-2 border-[#2a2d31] p-1">
+        <nav className="inline-block md:block rounded-[40px] bg-[#e6e6e6] border-2 border-[#2a2d31] p-1">
           {/* Mobile View */}
-          <div className="md:hidden flex items-center justify-between">
+          <div className="md:hidden flex items-center">
             <div className="flex items-center gap-2">
               <MobileNav mainLinks={mainNavLinks} authLinks={user ? authLinks : guestLinks} logo={<AppLogo disableLink />} />
               <span className={cn("font-bakbak text-xl text-[#090a0c]")}>
