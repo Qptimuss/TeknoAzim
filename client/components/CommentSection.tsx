@@ -90,27 +90,26 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
         {comments.length > 0 ? (
           comments.map((comment) => (
             <div key={comment.id} className="flex items-start gap-4 group">
-              {comment.profiles ? (
-                <Link to={`/kullanici/${comment.profiles.id}`}>
-                  <Avatar>
-                    <AvatarImage src={comment.profiles?.avatar_url || undefined} />
-                    <AvatarFallback>{comment.profiles?.name?.charAt(0) || 'A'}</AvatarFallback>
-                  </Avatar>
-                </Link>
-              ) : (
-                <Avatar>
-                  <AvatarFallback>{'A'}</AvatarFallback>
-                </Avatar>
-              )}
               <div className="flex-1 bg-[#151313]/50 p-4 rounded-lg border border-[#2a2d31]">
                 <div className="flex items-center justify-between mb-2">
-                  {comment.profiles ? (
-                    <Link to={`/kullanici/${comment.profiles.id}`} className="font-semibold text-white hover:underline">
-                      {comment.profiles?.name || "Anonim"}
-                    </Link>
-                  ) : (
-                    <p className="font-semibold text-white">Anonim</p>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {comment.profiles ? (
+                      <Link to={`/kullanici/${comment.profiles.id}`} className="inline-flex items-center gap-2 rounded-full bg-[#090a0c]/80 px-3 py-1 border border-transparent transition-all duration-200 hover:border-[#42484c] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-white/10">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={comment.profiles?.avatar_url || undefined} />
+                          <AvatarFallback>{comment.profiles?.name?.charAt(0) || 'A'}</AvatarFallback>
+                        </Avatar>
+                        <span className="font-semibold text-white">{comment.profiles?.name || "Anonim"}</span>
+                      </Link>
+                    ) : (
+                      <div className="inline-flex items-center gap-2 rounded-full bg-[#090a0c]/80 px-3 py-1">
+                        <Avatar className="h-6 w-6">
+                          <AvatarFallback>{'A'}</AvatarFallback>
+                        </Avatar>
+                        <p className="font-semibold text-white">Anonim</p>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex items-center gap-4">
                     <p className="text-xs text-muted-foreground">
                       {new Date(comment.created_at).toLocaleString("tr-TR")}
@@ -127,7 +126,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                     )}
                   </div>
                 </div>
-                <p className="text-[#eeeeee] whitespace-pre-wrap">{comment.content}</p>
+                <p className="text-[#eeeeee] whitespace-pre-wrap pt-2">{comment.content}</p>
               </div>
             </div>
           ))
