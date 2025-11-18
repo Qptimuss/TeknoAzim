@@ -18,7 +18,7 @@ export default function Kaydol() {
     name: "",
     email: initialEmail,
     password: initialPassword,
-    confirmPassword: initialPassword,
+    confirmPassword: "", // Şifre tekrarı alanını boş bıraktık
   });
   const navigate = useNavigate();
 
@@ -28,7 +28,7 @@ export default function Kaydol() {
       ...prev,
       email: initialEmail,
       password: initialPassword,
-      confirmPassword: initialPassword,
+      confirmPassword: "", // Şifre tekrarı alanını her zaman boş bırak
     }));
   }, [initialEmail, initialPassword]);
 
