@@ -32,17 +32,12 @@ export function MobileNav({ mainLinks, authLinks, logo }: MobileNavProps) {
           <span className="sr-only">Toggle navigation menu</span>
         </Button>
       </SheetTrigger>
-      {/* side="bottom" olarak değiştirildi ve stil buna göre ayarlandı */}
-      <SheetContent 
-        side="bottom" 
-        className="w-full max-w-md mx-auto bg-[#e6e6e6] p-6 h-auto bottom-0 rounded-t-2xl border-t-2 border-[#2a2d31] shadow-2xl"
-      >
+      <SheetContent side="left" className="w-[250px] sm:w-[300px] bg-[#e6e6e6] p-4 h-auto bottom-auto rounded-br-lg">
         <div className="flex flex-col gap-4">
-          <Link to="/" className="flex items-center gap-2 justify-center">
+          <Link to="/" className="flex items-center gap-2">
             {logo}
           </Link>
-          <Separator className="my-2 bg-[#090a0c] h-0.5 rounded-full w-full" />
-          <div className="flex flex-col gap-2 text-center">
+          <div className="flex flex-col gap-2">
             {mainLinks.map((link) => (
               <Link
                 key={link.to}
@@ -53,8 +48,8 @@ export function MobileNav({ mainLinks, authLinks, logo }: MobileNavProps) {
               </Link>
             ))}
           </div>
-          <Separator className="my-2 bg-[#090a0c] h-0.5 rounded-full w-full" />
-          <div className="flex flex-col gap-2 text-center">
+          <Separator className="my-2 bg-[#090a0c] h-0.5 rounded-full w-11/12 mx-auto" />
+          <div className="flex flex-col gap-2">
             {authLinks.map((link) => (
               <Link
                 key={link.to}
