@@ -9,7 +9,16 @@ export const moderateContent = async (text: string): Promise<boolean> => {
     });
 
     if (!response.ok) {
-      console.error('Moderation check failed on the server.');
+      const errorData = await response.json();
+      console.error('Moderation check failed on the server:', errorData);
+      
+      // Sunucu hatası durumunda kullanıcıya bilgi ver
+      if (errorData.error === "Server configuration error.") {
+        toast.error("Moderasyon Hatası", { description: "Sunucu yapılandırma hatası: OpenAI API anahtarı eksik." });
+      } else {
+        toast.error("Moderasyon Hatası", { description: "İçerik kontrolü sırasında bir sorun oluştu." });
+      }
+      
       // Sunucu hatası durumunda kullanıcıyı engellememek için true dönüyoruz.
       return true;
     }
@@ -19,6 +28,7 @@ export const moderateContent = async (text: string): Promise<boolean> => {
   } catch (error) {
     console.error('Error during moderation check:', error);
     // Ağ hatası gibi durumlarda da kullanıcıyı engellememek için true dönüyoruz.
+    toast.error("Ağ Hatası", { description: "Moderasyon servisine ulaşılamadı." });
     return true;
   }
 };
