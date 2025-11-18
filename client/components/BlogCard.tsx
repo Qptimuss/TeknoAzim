@@ -35,17 +35,23 @@ export default function BlogCard({ post }: BlogCardProps) {
               />
             </div>
           )}
-          <div className="flex items-center gap-2 pb-2">
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={post.profiles?.avatar_url || undefined} alt={post.profiles?.name || ''} />
-              <AvatarFallback>
-                <UserIcon className="h-4 w-4" />
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-sm text-[#eeeeee]">
-              {post.profiles?.name || "Anonim"}
-            </span>
-          </div>
+          {post.profiles && (
+            <Link 
+              to={`/kullanici/${post.profiles.id}`} 
+              className="flex items-center gap-2 pb-2 z-10 relative hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={post.profiles?.avatar_url || undefined} alt={post.profiles?.name || ''} />
+                <AvatarFallback>
+                  <UserIcon className="h-4 w-4" />
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm text-[#eeeeee]">
+                {post.profiles?.name || "Anonim"}
+              </span>
+            </Link>
+          )}
           <CardTitle className="font-outfit text-2xl">{post.title}</CardTitle>
         </CardHeader>
         <CardContent className="flex-grow">

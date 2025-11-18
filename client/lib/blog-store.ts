@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { BlogPostWithAuthor, CommentWithAuthor } from "@shared/api";
+import { BlogPostWithAuthor, CommentWithAuthor, Profile } from "@shared/api";
 
 // Type for creating a new blog post
 type NewBlogPost = {
@@ -229,4 +229,19 @@ export const getPostsByUserId = async (userId: string): Promise<BlogPostWithAuth
     return [];
   }
   return data as any;
+};
+
+// Fetch a single profile by ID
+export const getProfileById = async (userId: string): Promise<Profile | null> => {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select('id, name, avatar_url')
+    .eq('id', userId)
+    .single();
+
+  if (error) {
+    console.error("Error fetching profile:", error);
+    return null;
+  }
+  return data;
 };

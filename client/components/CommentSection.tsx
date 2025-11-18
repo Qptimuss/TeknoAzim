@@ -23,6 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { moderateContent } from "@/lib/moderate";
+import { Link } from "react-router-dom";
 
 const commentSchema = z.object({
   content: z.string().min(3, "Yorum en az 3 karakter olmalıdır."),
@@ -89,13 +90,27 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
         {comments.length > 0 ? (
           comments.map((comment) => (
             <div key={comment.id} className="flex items-start gap-4 group">
-              <Avatar>
-                <AvatarImage src={comment.profiles?.avatar_url || undefined} />
-                <AvatarFallback>{comment.profiles?.name?.charAt(0) || 'A'}</AvatarFallback>
-              </Avatar>
+              {comment.profiles ? (
+                <Link to={`/kullanici/${comment.profiles.id}`}>
+                  <Avatar>
+                    <AvatarImage src={comment.profiles?.avatar_url || undefined} />
+                    <AvatarFallback>{comment.profiles?.name?.charAt(0) || 'A'}</AvatarFallback>
+                  </Avatar>
+                </Link>
+              ) : (
+                <Avatar>
+                  <AvatarFallback>{'A'}</AvatarFallback>
+                </Avatar>
+              )}
               <div className="flex-1 bg-[#151313]/50 p-4 rounded-lg border border-[#2a2d31]">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="font-semibold text-white">{comment.profiles?.name || "Anonim"}</p>
+                  {comment.profiles ? (
+                    <Link to={`/kullanici/${comment.profiles.id}`} className="font-semibold text-white hover:underline">
+                      {comment.profiles?.name || "Anonim"}
+                    </Link>
+                  ) : (
+                    <p className="font-semibold text-white">Anonim</p>
+                  )}
                   <div className="flex items-center gap-4">
                     <p className="text-xs text-muted-foreground">
                       {new Date(comment.created_at).toLocaleString("tr-TR")}
