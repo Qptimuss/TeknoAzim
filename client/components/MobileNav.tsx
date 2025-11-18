@@ -3,6 +3,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 interface NavLink {
   to: string;
@@ -24,7 +25,7 @@ export function MobileNav({ mainLinks, authLinks, logo }: MobileNavProps) {
           <span className="sr-only">Toggle navigation menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[250px] sm:w-[300px] bg-[#e6e6e6] p-4 h-auto bottom-auto">
+      <SheetContent side="left" className="w-[250px] sm:w-[300px] bg-[#e6e6e6] p-4 h-auto bottom-auto rounded-br-lg">
         <div className="flex flex-col gap-4">
           <Link to="/" className="flex items-center gap-2">
             {logo}
@@ -40,7 +41,8 @@ export function MobileNav({ mainLinks, authLinks, logo }: MobileNavProps) {
               </Link>
             ))}
           </div>
-          <div className="flex flex-col gap-2 border-t pt-4 mt-4">
+          <Separator className="my-2 bg-[#090a0c] h-0.5 rounded-full mx-2" />
+          <div className="flex flex-col gap-2">
             {authLinks.map((link) => (
               <Link
                 key={link.to}
