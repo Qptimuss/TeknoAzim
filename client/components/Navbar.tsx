@@ -6,10 +6,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon } from "lucide-react";
 import AppLogo from "./AppLogo";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [isMobileMenuHovered, setIsMobileMenuHovered] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -35,14 +37,19 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 px-5 md:px-10 lg:px-20 py-2 w-full">
       <div className="w-full max-w-[1122px] mx-auto">
-        <nav className="inline-block md:block rounded-[40px] bg-[#e6e6e6] border-2 border-[#2a2d31] p-1">
+        <nav className={cn(
+          "inline-block md:block rounded-[40px] bg-[#e6e6e6] border-2 border-[#2a2d31] p-1 transition-all duration-300 origin-top",
+          isMobileMenuHovered && "transform -translate-y-1 scale-[1.01] shadow-xl shadow-black/20"
+        )}>
           {/* Mobile View */}
           <div className="md:hidden flex items-center justify-between">
-            {/* MobileNav artık hem simgeyi hem de metni içeriyor ve tıklanabilir. */}
-            <MobileNav mainLinks={mainNavLinks} authLinks={user ? authLinks : guestLinks} logo={<AppLogo disableLink />} />
-            
-            {/* Sağ tarafta boşluk bırakmak için buraya bir şey ekleyebiliriz veya sadece justify-between kullanabiliriz. */}
-            {/* Şu anki haliyle MobileNav içeriği kadar yer kaplayacak ve sağda boşluk kalacak. */}
+            <MobileNav 
+              mainLinks={mainNavLinks} 
+              authLinks={user ? authLinks : guestLinks} 
+              logo={<AppLogo disableLink />} 
+              onMouseEnter={() => setIsMobileMenuHovered(true)}
+              onMouseLeave={() => setIsMobileMenuHovered(false)}
+            />
           </div>
 
           {/* Desktop View */}
