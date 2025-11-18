@@ -38,7 +38,7 @@ export default function BlogCard({ post }: BlogCardProps) {
           {post.profiles && (
             <Link 
               to={`/kullanici/${post.profiles.id}`} 
-              className="inline-flex items-center gap-2 z-10 relative w-fit rounded-full bg-[#151313]/80 px-3 py-1 border border-transparent transition-all duration-200 hover:border-[#42484c] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-white/10"
+              className="inline-flex items-center gap-2 z-10 relative w-fit rounded-full bg-[#151313] px-3 py-1 border border-[#42484c] transition-all duration-200 hover:border-white/50 hover:-translate-y-0.5 hover:shadow-md hover:shadow-white/5"
               onClick={(e) => e.stopPropagation()}
             >
               <Avatar className="h-6 w-6">
