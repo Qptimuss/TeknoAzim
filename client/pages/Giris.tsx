@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export default function Giris() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [showResendLink, setShowResendLink] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -23,6 +25,7 @@ export default function Giris() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setShowResendLink(false);
     
     const { error } = await supabase.auth.signInWithPassword({
       email: formData.email,
@@ -36,6 +39,7 @@ export default function Giris() {
         toast.error("Giriş Hatası", { description: "Geçersiz e-posta veya şifre." });
       } else if (error.message === 'Email not confirmed') {
         toast.error("Giriş Hatası", { description: "Giriş yapmadan önce lütfen e-postanızı doğrulayın." });
+        setShowResendLink(true);
       } else {
         toast.error("Giriş Hatası", { description: error.message });
       }
@@ -45,7 +49,25 @@ export default function Giris() {
     }
   };
 
-  // Yönlendirme sırasında e-posta ve şifre bilgilerini URL parametresi olarak ekleyen fonksiyon
+  const handleResendVerification = async () => {
+    if (isResending || !formData.email) return;
+    setIsResending(true);
+
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: formData.email,
+    });
+
+    setIsResending(false);
+
+    if (error) {
+      toast.error("Gönderim Hatası", { description: error.message });
+    } else {
+      toast.success("Doğrulama e-postası gönderildi!", { description: "Lütfen gelen kutunuzu kontrol edin." });
+      setShowResendLink(false);
+    }
+  };
+
   const handleNavigateToRegister = (e: React.MouseEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
@@ -104,6 +126,20 @@ export default function Giris() {
             >
               {isSubmitting ? "Giriş yapılıyor..." : "Giriş Yap"}
             </Button>
+            {showResendLink && (
+              <div className="text-center text-sm text-[#eeeeee] w-full">
+                E-postanızı doğrulamadınız.{" "}
+                <Button
+                  type="button"
+                  variant="link"
+                  className="p-0 h-auto text-white hover:underline"
+                  onClick={handleResendVerification}
+                  disabled={isResending}
+                >
+                  {isResending ? "Gönderiliyor..." : "Tekrar gönder"}
+                </Button>
+              </div>
+            )}
             <div className="text-center text-sm text-[#eeeeee]">
               Hesabınız yok mu?{" "}
               <Link to="/kaydol" onClick={handleNavigateToRegister} className="text-white hover:underline">
