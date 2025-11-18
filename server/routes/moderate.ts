@@ -27,7 +27,13 @@ export const handleModerate: RequestHandler = async (req, res) => {
     if (!response.ok) {
       const errorData = await response.json();
       console.error("OpenAI API error:", errorData);
-      throw new Error(`OpenAI API responded with status ${response.status}`);
+      
+      // OpenAI'den gelen hatayı istemciye iletmek için 400/401/403 gibi bir durum kodu kullanıyoruz.
+      // Hata mesajını doğrudan errorData'dan alıp döndürüyoruz.
+      return res.status(response.status).json({ 
+        error: "OpenAI API hatası", 
+        details: errorData.error?.message || `API yanıtı başarısız oldu: ${response.status}` 
+      });
     }
 
     const data = await response.json();

@@ -15,6 +15,9 @@ export const moderateContent = async (text: string): Promise<boolean> => {
       // Sunucu hatası durumunda kullanıcıya bilgi ver
       if (errorData.error === "Server configuration error.") {
         toast.error("Moderasyon Hatası", { description: "Sunucu yapılandırma hatası: OpenAI API anahtarı eksik." });
+      } else if (errorData.error === "OpenAI API hatası") {
+        // Yeni eklediğimiz detaylı hata mesajını gösteriyoruz
+        toast.error("OpenAI API Hatası", { description: errorData.details || "İçerik kontrolü sırasında bir sorun oluştu." });
       } else {
         toast.error("Moderasyon Hatası", { description: "İçerik kontrolü sırasında bir sorun oluştu." });
       }
