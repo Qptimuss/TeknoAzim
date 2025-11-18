@@ -94,7 +94,7 @@ export default function SifreSifirla() {
             <Button 
               type="submit" 
               disabled={isSubmitting}
-              className="w-full bg-[#151313]/95 border border-[#42484c] hover:bg-[#151313] text-white"
+              className="w-full bg-[#151313]/95 border border-[#42484c] hover:bg-[#2a2d31] text-white transition-colors duration-200"
             >
               {isSubmitting ? "Kaydediliyor..." : "Şifreyi Güncelle"}
             </Button>
