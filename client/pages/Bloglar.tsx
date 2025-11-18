@@ -26,7 +26,7 @@ export default function Bloglar() {
         <h1 className="text-white text-4xl md:text-5xl font-outfit font-bold">
           Bloglar
         </h1>
-        <Button asChild size="lg" className="bg-[#151313]/95 border border-[#42484c] hover:bg-[#2a2d31] text-white text-lg px-8 py-6 transition-colors duration-200">
+        <Button asChild size="lg" className="bg-[#151313]/95 border border-[#42484c] text-white text-lg px-8 py-6 transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-white/10">
           <Link to="/blog-olustur">
             Kendi Bloğunu Oluştur
           </Link>

@@ -130,7 +130,7 @@ export default function Kaydol() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" disabled={isSubmitting} className="w-full bg-[#151313]/95 border border-[#42484c] hover:bg-[#2a2d31] text-white transition-colors duration-200">
+              <Button type="submit" disabled={isSubmitting} className="w-full bg-[#151313]/95 border border-[#42484c] text-white transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-white/10">
                 {isSubmitting ? "Oluşturuluyor..." : "Hesap Oluştur"}
               </Button>
               <div className="text-center text-sm text-[#eeeeee]">
@@ -155,7 +155,7 @@ export default function Kaydol() {
           <AlertDialogFooter>
             <AlertDialogAction 
               onClick={() => navigate("/giris")} 
-              className="bg-[#151313]/95 border border-[#42484c] hover:bg-[#2a2d31] text-white transition-colors duration-200"
+              className="bg-[#151313]/95 border border-[#42484c] text-white transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-white/10"
             >
               Giriş Yap Sayfasına Git
             </AlertDialogAction>
