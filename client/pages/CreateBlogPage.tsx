@@ -70,6 +70,10 @@ export default function CreateBlogPage() {
     let imageUrl: string | undefined = undefined;
 
     try {
+      // Check if this is the user's first post BEFORE adding the new one
+      const userPosts = await getPostsByUserId(user.id);
+      const isFirstPost = userPosts.length === 0;
+
       // Upload image if selected
       if (values.imageFile && values.imageFile.length > 0) {
         toast.info("Resim yükleniyor...");
@@ -80,10 +84,6 @@ export default function CreateBlogPage() {
         }
       }
 
-      // Check if this is the user's first post
-      const userPosts = await getPostsByUserId(user.id);
-      const isFirstPost = userPosts.length === 0;
-
       // Add blog post to database
       await addBlogPost({ 
         title: values.title,
@@ -92,17 +92,20 @@ export default function CreateBlogPage() {
         imageUrl,
       });
 
-      // Award EXP and potentially a badge
-      const updatedProfileData = await addExp(user.id, 25);
-      if (updatedProfileData) {
-        updateUser(updatedProfileData);
+      // --- Gamification Logic ---
+      
+      // 1. Award EXP
+      const expUpdate = await addExp(user.id, 25);
+      
+      // 2. Award 'İlk Blog' badge if it's the first post
+      let badgeUpdate = null;
+      if (isFirstPost) {
+        badgeUpdate = await awardBadge(user.id, "İlk Blog");
       }
 
-      if (isFirstPost) {
-        const updatedBadges = await awardBadge(user.id, "İlk Blog");
-        if (updatedBadges) {
-          updateUser(updatedBadges);
-        }
+      // 3. Update Auth Context with combined changes
+      if (expUpdate || badgeUpdate) {
+        updateUser({ ...expUpdate, ...badgeUpdate });
       }
 
       toast.success("Blog yazınız başarıyla oluşturuldu!");
