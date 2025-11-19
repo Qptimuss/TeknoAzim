@@ -203,10 +203,10 @@ export default function ProfilePage() {
              <p className="text-muted-foreground">Bloglar yükleniyor...</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <CreateBlogCard />
               {userPosts.map(post => (
                 <BlogCard key={post.id} post={post} />
               ))}
+              <CreateBlogCard />
             </div>
           )}
         </div>
