@@ -1,20 +1,15 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User as SupabaseUser } from "@supabase/supabase-js";
+import { Profile } from "@shared/api";
 
-export interface User {
-  id: string;
-  email?: string;
-  name: string | null;
-  avatar_url: string | null;
-  description: string | null;
-}
+export type User = Profile;
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   logout: () => Promise<void>;
-  updateUser: (newUserData: { name: string; avatar_url: string; description: string }) => Promise<void>;
+  updateUser: (newUserData: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,7 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('name, avatar_url, description')
+      .select('id, name, avatar_url, description, level, exp, badges')
       .eq('id', supabaseUser.id)
       .single();
 
@@ -36,10 +31,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     
     return {
-      id: supabaseUser.id,
+      ...profile,
       email: supabaseUser.email,
-      ...profile
-    };
+    } as User;
   };
 
   useEffect(() => {
@@ -74,22 +68,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
-  const updateUser = async (newUserData: { name: string; avatar_url: string; description: string }) => {
+  const updateUser = async (newUserData: Partial<User>) => {
     if (!user) return;
-    const { data, error } = await supabase
+    // We only update fields that are passed in newUserData
+    const { error } = await supabase
       .from('profiles')
-      .update({ name: newUserData.name, avatar_url: newUserData.avatar_url, description: newUserData.description })
-      .eq('id', user.id)
-      .select()
-      .single();
+      .update(newUserData)
+      .eq('id', user.id);
 
     if (error) {
       console.error("Error updating profile:", error);
       throw error;
     }
 
-    if (data) {
-      setUser(prevUser => prevUser ? ({ ...prevUser, name: data.name, avatar_url: data.avatar_url, description: data.description }) : null);
+    // Refetch the full profile to ensure consistency
+    const updatedProfile = await fetchUserProfile({ id: user.id } as SupabaseUser);
+    if (updatedProfile) {
+      setUser(updatedProfile);
     }
   };
 

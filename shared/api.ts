@@ -8,6 +8,9 @@ export interface Profile {
   name: string | null;
   avatar_url: string | null;
   description: string | null;
+  level: number;
+  exp: number;
+  badges: string[];
 }
 
 // This will represent a row in the `comments` table, joined with the author's profile

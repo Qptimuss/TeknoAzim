@@ -12,7 +12,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon } from "lucide-react";
+import { User as UserIcon, Star } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { LEVEL_THRESHOLDS, getExpForNextLevel } from "@/lib/gamification";
 
 const profileSchema = z.object({
   name: z.string().min(2, "İsim en az 2 karakter olmalıdır."),
@@ -64,6 +67,10 @@ export default function ProfilePage() {
     return null; // ProtectedRoute handles redirection
   }
 
+  const currentLevelExp = LEVEL_THRESHOLDS[user.level - 1] || 0;
+  const nextLevelExp = getExpForNextLevel(user.level);
+  const expProgress = nextLevelExp === Infinity ? 100 : ((user.exp - currentLevelExp) / (nextLevelExp - currentLevelExp)) * 100;
+
   return (
     <div className="container mx-auto px-5 py-12">
       <h1 className="text-white text-4xl md:text-5xl font-outfit font-bold mb-8">
@@ -86,7 +93,48 @@ export default function ProfilePage() {
                 <p className="text-white mt-4 text-sm">{user.description}</p>
               )}
             </div>
-            <h3 className="text-white text-xl font-outfit font-bold mb-4 border-t border-[#2a2d31] pt-6">Bilgileri Güncelle</h3>
+
+            {/* Gamification Section */}
+            <div className="mb-6 border-t border-b border-[#2a2d31] py-6">
+              <h3 className="text-white text-xl font-outfit font-bold mb-4 text-center">Seviye {user.level}</h3>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger className="w-full">
+                    <Progress value={expProgress} className="w-full" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{user.exp} / {nextLevelExp} EXP</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <div className="text-center text-sm text-muted-foreground mt-2">
+                Sonraki seviye için {Math.max(0, nextLevelExp - user.exp)} EXP
+              </div>
+
+              {user.badges && user.badges.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-white font-semibold text-center mb-2">Rozetler</h4>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {user.badges.map(badge => (
+                      <TooltipProvider key={badge}>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <div className="bg-[#151313] p-2 rounded-full border border-[#42484c]">
+                              <Star className="h-5 w-5 text-yellow-400" />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{badge}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <h3 className="text-white text-xl font-outfit font-bold mb-4">Bilgileri Güncelle</h3>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField

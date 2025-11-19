@@ -14,9 +14,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "sonner";
-import { addBlogPost, uploadBlogImage } from "@/lib/blog-store";
+import { addBlogPost, uploadBlogImage, getPostsByUserId } from "@/lib/blog-store";
 import { useAuth } from "@/contexts/AuthContext";
 import { moderateContent } from "@/lib/moderate";
+import { addExp, awardBadge } from "@/lib/gamification";
 
 const blogSchema = z.object({
   title: z.string().min(5, "Başlık en az 5 karakter olmalıdır."),
@@ -32,7 +33,7 @@ const blogSchema = z.object({
 
 export default function CreateBlogPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const form = useForm<z.infer<typeof blogSchema>>({
     resolver: zodResolver(blogSchema),
     defaultValues: {
@@ -74,6 +75,10 @@ export default function CreateBlogPage() {
         }
       }
 
+      // Check if this is the user's first post
+      const userPosts = await getPostsByUserId(user.id);
+      const isFirstPost = userPosts.length === 0;
+
       // Add blog post to database
       await addBlogPost({ 
         title: values.title,
@@ -81,6 +86,19 @@ export default function CreateBlogPage() {
         userId: user.id,
         imageUrl,
       });
+
+      // Award EXP and potentially a badge
+      const updatedProfileData = await addExp(user.id, 25);
+      if (updatedProfileData) {
+        updateUser(updatedProfileData);
+      }
+
+      if (isFirstPost) {
+        const updatedBadges = await awardBadge(user.id, "İlk Blog");
+        if (updatedBadges) {
+          updateUser(updatedBadges);
+        }
+      }
 
       toast.success("Blog yazınız başarıyla oluşturuldu!");
       navigate("/bloglar");

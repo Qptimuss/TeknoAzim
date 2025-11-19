@@ -5,7 +5,10 @@ import { BlogPostWithAuthor, Profile } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, ArrowLeft } from "lucide-react";
+import { User as UserIcon, ArrowLeft, Star } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { LEVEL_THRESHOLDS, getExpForNextLevel } from "@/lib/gamification";
 
 export default function UserProfilePage() {
   const { userId } = useParams<{ userId: string }>();
@@ -63,6 +66,10 @@ export default function UserProfilePage() {
     );
   }
 
+  const currentLevelExp = LEVEL_THRESHOLDS[profile.level - 1] || 0;
+  const nextLevelExp = getExpForNextLevel(profile.level);
+  const expProgress = nextLevelExp === Infinity ? 100 : ((profile.exp - currentLevelExp) / (nextLevelExp - currentLevelExp)) * 100;
+
   return (
     <div className="container mx-auto px-5 py-12">
       <div className="flex flex-col items-center text-center mb-12">
@@ -78,6 +85,39 @@ export default function UserProfilePage() {
         {profile.description && (
           <p className="text-muted-foreground mt-4 max-w-lg">{profile.description}</p>
         )}
+        
+        {/* Gamification Info */}
+        <div className="mt-6 w-full max-w-sm bg-[#090a0c] border border-[#2a2d31] rounded-lg p-4">
+          <h3 className="text-white text-lg font-outfit font-bold mb-3">Seviye {profile.level}</h3>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger className="w-full">
+                <Progress value={expProgress} className="w-full" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{profile.exp} / {nextLevelExp} EXP</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          {profile.badges && profile.badges.length > 0 && (
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {profile.badges.map(badge => (
+                <TooltipProvider key={badge}>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <div className="bg-[#151313] p-2 rounded-full border border-[#42484c]">
+                        <Star className="h-5 w-5 text-yellow-400" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{badge}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <h2 className="text-white text-2xl font-outfit font-bold mb-8">
