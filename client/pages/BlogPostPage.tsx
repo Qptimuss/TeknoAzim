@@ -1,18 +1,35 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
-import { getBlogPostById, getCommentsForPost } from "@/lib/blog-store";
-import { ArrowLeft, User as UserIcon } from "lucide-react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { getBlogPostById, getCommentsForPost, deleteBlogPost } from "@/lib/blog-store";
+import { ArrowLeft, User as UserIcon, Trash2 } from "lucide-react";
 import { BlogPostWithAuthor, CommentWithAuthor } from "@shared/api";
 import LikeDislikeButtons from "@/components/LikeDislikeButtons";
 import CommentSection from "@/components/CommentSection";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 export default function BlogPostPage() {
   const { id } = useParams<{ id: string }>();
   const [post, setPost] = useState<BlogPostWithAuthor | null>(null);
   const [comments, setComments] = useState<CommentWithAuthor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const fetchPostAndComments = useCallback(async () => {
     if (!id) return;
@@ -29,6 +46,23 @@ export default function BlogPostPage() {
   useEffect(() => {
     fetchPostAndComments();
   }, [fetchPostAndComments]);
+
+  const handleDelete = async () => {
+    if (!post || !user || user.id !== post.profiles?.id) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteBlogPost(post.id, post.image_url);
+      toast.success("Blog yazısı başarıyla silindi.");
+      navigate("/bloglar");
+    } catch (error) {
+      toast.error("Blog yazısı silinirken bir hata oluştu.");
+      console.error(error);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -65,47 +99,81 @@ export default function BlogPostPage() {
     minute: "2-digit",
   });
 
-  return (
-    <div className="container mx-auto px-5 py-12 max-w-4xl">
-      <Link to="/bloglar" className="text-white hover:underline flex items-center gap-2 mb-8">
-        <ArrowLeft size={20} />
-        Tüm Bloglara Geri Dön
-      </Link>
-      
-      <article className="bg-[#090a0c] border border-[#2a2d31] rounded-lg overflow-hidden">
-        {post.image_url && (
-          <img
-            src={post.image_url}
-            alt={post.title}
-            className="w-full h-64 md:h-96 object-cover"
-          />
-        )}
-        <div className="p-8">
-          {post.profiles && (
-            <Link to={`/kullanici/${post.profiles.id}`} className="inline-flex items-center gap-2 mb-4 w-fit rounded-full bg-[#151313] px-3 py-1 border border-[#42484c] transition-all duration-200 hover:border-[#6b7280] hover:-translate-y-0.5 hover:shadow-md hover:shadow-white/5">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={post.profiles?.avatar_url || undefined} alt={post.profiles?.name || ''} />
-                <AvatarFallback>
-                  <UserIcon className="h-4 w-4" />
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm text-muted-foreground">{post.profiles?.name || "Anonim"}</span>
-            </Link>
-          )}
-          <h1 className="text-white text-3xl md:text-5xl font-outfit font-bold mb-4">
-            {post.title}
-          </h1>
-          <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground mb-6">
-            <span>{formattedDate}</span>
-            <LikeDislikeButtons postId={post.id} />
-          </div>
-          <div className="text-[#eeeeee] text-lg leading-relaxed whitespace-pre-wrap">
-            {post.content}
-          </div>
-        </div>
-      </article>
+  const isAuthor = user && post.profiles && user.id === post.profiles.id;
 
-      <CommentSection postId={post.id} comments={comments} onCommentAdded={fetchPostAndComments} />
-    </div>
+  return (
+    <>
+      <div className="container mx-auto px-5 py-12 max-w-4xl">
+        <Link to="/bloglar" className="text-white hover:underline flex items-center gap-2 mb-8">
+          <ArrowLeft size={20} />
+          Tüm Bloglara Geri Dön
+        </Link>
+        
+        <article className="bg-[#090a0c] border border-[#2a2d31] rounded-lg overflow-hidden">
+          {post.image_url && (
+            <img
+              src={post.image_url}
+              alt={post.title}
+              className="w-full h-64 md:h-96 object-cover"
+            />
+          )}
+          <div className="p-8">
+            {post.profiles && (
+              <Link to={`/kullanici/${post.profiles.id}`} className="inline-flex items-center gap-2 mb-4 w-fit rounded-full bg-[#151313] px-3 py-1 border border-[#42484c] transition-all duration-200 hover:border-[#6b7280] hover:-translate-y-0.5 hover:shadow-md hover:shadow-white/5">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={post.profiles?.avatar_url || undefined} alt={post.profiles?.name || ''} />
+                  <AvatarFallback>
+                    <UserIcon className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm text-muted-foreground">{post.profiles?.name || "Anonim"}</span>
+              </Link>
+            )}
+            <h1 className="text-white text-3xl md:text-5xl font-outfit font-bold mb-4">
+              {post.title}
+            </h1>
+            <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground mb-6">
+              <div className="flex items-center gap-4">
+                <span>{formattedDate}</span>
+                {isAuthor && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-500 hover:bg-red-500/10 hover:text-red-500"
+                    onClick={() => setShowDeleteDialog(true)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Sil
+                  </Button>
+                )}
+              </div>
+              <LikeDislikeButtons postId={post.id} />
+            </div>
+            <div className="text-[#eeeeee] text-lg leading-relaxed whitespace-pre-wrap">
+              {post.content}
+            </div>
+          </div>
+        </article>
+
+        <CommentSection postId={post.id} comments={comments} onCommentAdded={fetchPostAndComments} />
+      </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="bg-[#090a0c] border-[#2a2d31] text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Blog Yazısını Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[#eeeeee]">
+              Bu işlem geri alınamaz. Blog yazınız, tüm yorumları ve oylarıyla birlikte kalıcı olarak silinecektir.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-transparent border-[#42484c] hover:bg-[#151313]">İptal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 text-white">
+              {isDeleting ? "Siliniyor..." : "Sil"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

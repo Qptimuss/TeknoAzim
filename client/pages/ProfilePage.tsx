@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/contexts/AuthContext";
-import { getPostsByUserId, uploadAvatar } from "@/lib/blog-store";
+import { getPostsByUserId, uploadAvatar, deleteBlogPost } from "@/lib/blog-store";
 import { BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const profileSchema = z.object({
   name: z.string().min(2, "İsim en az 2 karakter olmalıdır."),
@@ -45,6 +55,8 @@ export default function ProfilePage() {
   const [postsLoading, setPostsLoading] = useState(true);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [postToDelete, setPostToDelete] = useState<{id: string, imageUrl?: string | null} | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -104,7 +116,7 @@ export default function ProfilePage() {
         name: values.name,
         description: values.description || '',
         avatar_url: newAvatarUrl,
-        selected_title: values.selected_title || null, // Seçili ünvanı gönder
+        selected_title: values.selected_title === 'none' ? null : values.selected_title || null,
       };
 
       await updateUser(profileUpdateData);
@@ -119,6 +131,25 @@ export default function ProfilePage() {
     }
   }
 
+  const handleDeleteRequest = (postId: string, imageUrl?: string | null) => {
+    setPostToDelete({ id: postId, imageUrl });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!postToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteBlogPost(postToDelete.id, postToDelete.imageUrl);
+      setUserPosts(prev => prev.filter(p => p.id !== postToDelete.id));
+      toast.success("Blog yazısı başarıyla silindi.");
+    } catch (error) {
+      toast.error("Blog yazısı silinirken bir hata oluştu.");
+    } finally {
+      setIsDeleting(false);
+      setPostToDelete(null);
+    }
+  };
+
   if (loading) {
     return <div className="text-white text-center p-12">Yükleniyor...</div>;
   }
@@ -131,7 +162,6 @@ export default function ProfilePage() {
   const expInCurrentLevel = (user.exp || 0) - currentLevelExp;
   const expProgress = expForNextLevel === 0 ? 100 : (expInCurrentLevel / expForNextLevel) * 100;
 
-  // Kullanıcının seviyesine göre kilidi açılmış ünvanları al
   const unlockedTitles = Object.entries(TITLES)
     .filter(([levelKey]) => level >= parseInt(levelKey))
     .map(([, title]) => title);
@@ -169,7 +199,6 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* Gamification Section */}
             <div className="mb-6 border-t border-[#2a2d31] pt-6">
               <h3 className="text-white text-xl font-outfit font-bold mb-4 text-center">Seviye {level}</h3>
               <TooltipProvider>
@@ -187,7 +216,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Badges Section */}
             <div className="mb-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-white text-xl font-outfit font-bold">Rozetler</h3>
@@ -266,14 +294,13 @@ export default function ProfilePage() {
                     </FormItem>
                   )}
                 />
-                {/* Ünvan Seçim Alanı */}
                 <FormField
                   control={form.control}
                   name="selected_title"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-white">Ünvan</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value || 'none'}>
                         <FormControl>
                           <SelectTrigger className="bg-[#151313] border-[#42484c] text-white">
                             <SelectValue placeholder="Bir ünvan seç..." />
@@ -305,13 +332,35 @@ export default function ProfilePage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {userPosts.map(post => (
-                <BlogCard key={post.id} post={post} />
+                <BlogCard 
+                  key={post.id} 
+                  post={post} 
+                  showDelete={true}
+                  onDelete={handleDeleteRequest}
+                />
               ))}
               <CreateBlogCard />
             </div>
           )}
         </div>
       </div>
+
+      <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
+        <AlertDialogContent className="bg-[#090a0c] border-[#2a2d31] text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Blog Yazısını Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[#eeeeee]">
+              Bu işlem geri alınamaz. Blog yazınız, tüm yorumları ve oylarıyla birlikte kalıcı olarak silinecektir.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-transparent border-[#42484c] hover:bg-[#151313]">İptal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 text-white">
+              {isDeleting ? "Siliniyor..." : "Sil"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -149,6 +149,42 @@ export const addBlogPost = async (postData: NewBlogPost) => {
   return data;
 };
 
+// Delete a blog post and its associated image
+export const deleteBlogPost = async (postId: string, imageUrl?: string | null) => {
+  // 1. Delete the image from storage if it exists
+  if (imageUrl) {
+    try {
+      const url = new URL(imageUrl);
+      // Path is everything after the bucket name
+      const imagePath = url.pathname.split('/blog_images/')[1];
+      if (imagePath) {
+        const { error: storageError } = await supabase.storage
+          .from('blog_images')
+          .remove([imagePath]);
+        if (storageError) {
+          // Log the error but don't block post deletion
+          console.error("Error deleting blog image from storage:", storageError);
+        }
+      }
+    } catch (e) {
+      console.error("Could not parse image URL to delete from storage:", e);
+    }
+  }
+
+  // 2. Delete the blog post from the database.
+  // RLS policies ensure only the owner can delete.
+  // Cascading deletes in the DB will handle associated comments and votes.
+  const { error } = await supabase
+    .from('blog_posts')
+    .delete()
+    .eq('id', postId);
+
+  if (error) {
+    console.error('Error deleting blog post:', error);
+    throw error;
+  }
+};
+
 // Add a new comment
 export const addComment = async (commentData: NewComment) => {
     const { data, error } = await supabase

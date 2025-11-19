@@ -9,13 +9,16 @@ import { BlogPostWithAuthor } from "@shared/api";
 import { Link } from "react-router-dom";
 import LikeDislikeButtons from "./LikeDislikeButtons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon } from "lucide-react";
+import { User as UserIcon, Trash2 } from "lucide-react";
+import { Button } from "./ui/button";
 
 interface BlogCardProps {
   post: BlogPostWithAuthor;
+  showDelete?: boolean;
+  onDelete?: (postId: string, imageUrl?: string | null) => void;
 }
 
-export default function BlogCard({ post }: BlogCardProps) {
+export default function BlogCard({ post, showDelete = false, onDelete }: BlogCardProps) {
   const formattedDate = new Date(post.created_at).toLocaleDateString("tr-TR", {
     year: "numeric",
     month: "long",
@@ -23,7 +26,22 @@ export default function BlogCard({ post }: BlogCardProps) {
   });
 
   return (
-    <Card className="w-full bg-[#090a0c] border-[#2a2d31] text-white flex flex-col transition-all hover:border-[#6b7280] hover:scale-105">
+    <Card className="w-full bg-[#090a0c] border-[#2a2d31] text-white flex flex-col transition-all hover:border-[#6b7280] hover:scale-105 relative">
+      {showDelete && onDelete && (
+        <Button
+          variant="destructive"
+          size="icon"
+          className="absolute top-2 right-2 z-20 h-8 w-8"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onDelete(post.id, post.image_url);
+          }}
+          aria-label="Delete post"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      )}
       <Link to={`/bloglar/${post.id}`} className="flex flex-col flex-grow">
         <CardHeader>
           {post.image_url && (
