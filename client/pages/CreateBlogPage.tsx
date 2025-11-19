@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +35,8 @@ const blogSchema = z.object({
 export default function CreateBlogPage() {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
   const form = useForm<z.infer<typeof blogSchema>>({
     resolver: zodResolver(blogSchema),
     defaultValues: {
@@ -41,6 +44,21 @@ export default function CreateBlogPage() {
       content: "",
     },
   });
+
+  const imageFile = form.watch("imageFile");
+
+  useEffect(() => {
+    if (imageFile && imageFile.length > 0) {
+      const file = imageFile[0];
+      const newUrl = URL.createObjectURL(file);
+      setImagePreview(newUrl);
+
+      // Cleanup the object URL on component unmount or when file changes
+      return () => URL.revokeObjectURL(newUrl);
+    } else {
+      setImagePreview(null);
+    }
+  }, [imageFile]);
 
   const imageFileRef = form.register("imageFile");
 
@@ -149,6 +167,17 @@ export default function CreateBlogPage() {
                 </FormItem>
               )}
             />
+            
+            {imagePreview && (
+              <div className="mt-4">
+                <img
+                  src={imagePreview}
+                  alt="Seçilen resim önizlemesi"
+                  className="w-full max-h-64 object-contain rounded-md border border-[#42484c]"
+                />
+              </div>
+            )}
+
             <FormField
               control={form.control}
               name="content"
