@@ -126,7 +126,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* New Badges Section */}
+            {/* Badges Section - Updated to show details directly */}
             <div className="mb-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-white text-xl font-outfit font-bold">Rozetler</h3>
@@ -134,34 +134,31 @@ export default function ProfilePage() {
                   {user.badges?.length || 0} / {ALL_BADGES.length}
                 </span>
               </div>
-              <div className="grid grid-cols-4 gap-4 p-4 bg-[#151313] rounded-lg border border-[#2a2d31]">
+              <div className="grid grid-cols-1 gap-4 p-4 bg-[#151313] rounded-lg border border-[#2a2d31]">
                 {ALL_BADGES.map((badge) => {
                   const hasBadge = user.badges?.includes(badge.name);
                   const Icon = badge.icon;
                   return (
-                    <TooltipProvider key={badge.name}>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <div
-                            className={cn(
-                              "flex items-center justify-center bg-[#090a0c] p-2 rounded-full border border-[#42484c] transition-all aspect-square",
-                              !hasBadge && "opacity-30 grayscale"
-                            )}
-                          >
-                            <Icon className="h-5 w-5 text-yellow-400" />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="font-bold">{badge.name}</p>
-                          <p className="text-sm">{badge.description}</p>
-                          {!hasBadge && <p className="text-xs text-muted-foreground">(Henüz kazanılmadı)</p>}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <div key={badge.name} className="flex items-start gap-4">
+                      <div
+                        className={cn(
+                          "flex items-center justify-center bg-[#090a0c] p-3 rounded-full border border-[#42484c] shrink-0",
+                          !hasBadge && "opacity-30 grayscale"
+                        )}
+                      >
+                        <Icon className="h-6 w-6 text-yellow-400" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-white">{badge.name}</p>
+                        <p className="text-sm text-muted-foreground">{badge.description}</p>
+                        {!hasBadge && <p className="text-xs text-red-400 mt-1">(Henüz kazanılmadı)</p>}
+                      </div>
+                    </div>
                   );
                 })}
               </div>
             </div>
+            {/* End of Badges Section */}
 
             <h3 className="text-white text-xl font-outfit font-bold mb-4 border-t border-[#2a2d31] pt-6">Bilgileri Güncelle</h3>
             <Form {...form}>
