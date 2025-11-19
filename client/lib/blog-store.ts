@@ -9,6 +9,13 @@ type NewBlogPost = {
   userId: string;
 };
 
+// Type for updating an existing blog post
+type UpdateBlogPost = {
+  title: string;
+  content: string;
+  imageUrl?: string | null;
+};
+
 // Type for creating a new comment
 type NewComment = {
   content: string;
@@ -70,6 +77,7 @@ export const getBlogPostById = async (id: string): Promise<BlogPostWithAuthor | 
       content,
       image_url,
       created_at,
+      user_id,
       profiles ( id, name, avatar_url )
     `)
     .eq("id", id)
@@ -118,6 +126,26 @@ export const addBlogPost = async (postData: NewBlogPost) => {
 
   if (error) {
     console.error("Error adding blog post:", error);
+    throw error;
+  }
+  return data;
+};
+
+// Update an existing blog post
+export const updateBlogPost = async (postId: string, postData: UpdateBlogPost) => {
+  const { data, error } = await supabase
+    .from("blog_posts")
+    .update({
+      title: postData.title,
+      content: postData.content,
+      image_url: postData.imageUrl,
+    })
+    .eq('id', postId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating blog post:", error);
     throw error;
   }
   return data;

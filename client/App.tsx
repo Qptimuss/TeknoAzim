@@ -16,6 +16,7 @@ import Placeholder from "./pages/Placeholder";
 import CreateBlogPage from "./pages/CreateBlogPage";
 import BlogPostPage from "./pages/BlogPostPage";
 import ProfilePage from "./pages/ProfilePage";
+import EditBlogPage from "./pages/EditBlogPage"; // Yeni import
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -41,6 +42,7 @@ const App = () => (
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>
                 <Route path="/blog-olustur" element={<CreateBlogPage />} />
+                <Route path="/bloglar/:id/duzenle" element={<EditBlogPage />} /> {/* Yeni Rota */}
                 <Route path="/profil" element={<ProfilePage />} />
               </Route>
             </Route>

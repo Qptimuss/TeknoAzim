@@ -1,16 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getBlogPostById, getCommentsForPost } from "@/lib/blog-store";
-import { ArrowLeft, User as UserIcon } from "lucide-react";
+import { ArrowLeft, User as UserIcon, Edit } from "lucide-react";
 import { BlogPostWithAuthor, CommentWithAuthor } from "@shared/api";
 import LikeDislikeButtons from "@/components/LikeDislikeButtons";
 import CommentSection from "@/components/CommentSection";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 export default function BlogPostPage() {
   const { id } = useParams<{ id: string }>();
-  const [post, setPost] = useState<BlogPostWithAuthor | null>(null);
+  const { user } = useAuth();
+  const [post, setPost] = useState<BlogPostWithAuthor & { user_id?: string } | null>(null);
   const [comments, setComments] = useState<CommentWithAuthor[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -64,13 +67,25 @@ export default function BlogPostPage() {
     hour: "2-digit",
     minute: "2-digit",
   });
+  
+  const isAuthor = user && user.id === post.user_id;
 
   return (
     <div className="container mx-auto px-5 py-12 max-w-4xl">
-      <Link to="/bloglar" className="text-white hover:underline flex items-center gap-2 mb-8">
-        <ArrowLeft size={20} />
-        Tüm Bloglara Geri Dön
-      </Link>
+      <div className="flex justify-between items-center mb-8">
+        <Link to="/bloglar" className="text-white hover:underline flex items-center gap-2">
+          <ArrowLeft size={20} />
+          Tüm Bloglara Geri Dön
+        </Link>
+        {isAuthor && (
+          <Button asChild variant="outline" className="bg-[#151313]/95 border border-[#42484c] hover:bg-[#151313] text-white">
+            <Link to={`/bloglar/${post.id}/duzenle`} className="flex items-center gap-2">
+              <Edit className="h-4 w-4" />
+              Düzenle
+            </Link>
+          </Button>
+        )}
+      </div>
       
       <article className="bg-[#090a0c] border border-[#2a2d31] rounded-lg overflow-hidden">
         {post.image_url && (

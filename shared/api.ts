@@ -25,5 +25,6 @@ export interface BlogPostWithAuthor {
   content: string;
   image_url?: string | null;
   created_at: string;
+  user_id: string; // Added user_id for ownership checks
   profiles: Profile | null; // The author of the blog post
 }
