@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { LEVEL_THRESHOLDS, getExpForNextLevel, ALL_BADGES } from "@/lib/gamification";
+import { calculateLevel, ALL_BADGES } from "@/lib/gamification";
 import { cn } from "@/lib/utils";
 
 export default function UserProfilePage() {
@@ -46,19 +46,14 @@ export default function UserProfilePage() {
     return <div className="text-white text-center p-12">Kullanıcı bulunamadı.</div>;
   }
 
-  const hasGamificationData = typeof userProfile.level === 'number' && typeof userProfile.exp === 'number';
-  const level = hasGamificationData ? userProfile.level : 1;
-  const exp = hasGamificationData ? userProfile.exp : 0;
-
-  const currentLevelThreshold = LEVEL_THRESHOLDS[level - 1] || 0;
-  const nextLevelThreshold = getExpForNextLevel(level);
+  const exp = userProfile.exp || 0;
+  const { level, expForNextLevel, currentLevelExp } = calculateLevel(exp);
   
-  const expInCurrentLevel = exp - currentLevelThreshold;
-  const expNeededForLevelUp = nextLevelThreshold - currentLevelThreshold;
+  const expInCurrentLevel = exp - currentLevelExp;
   
-  const expProgress = expNeededForLevelUp === Infinity || expNeededForLevelUp === 0 
+  const expProgress = expForNextLevel === 0 
     ? 100 
-    : (expInCurrentLevel / expNeededForLevelUp) * 100;
+    : (expInCurrentLevel / expForNextLevel) * 100;
 
   return (
     <div className="container mx-auto px-5 py-12">
@@ -94,9 +89,9 @@ export default function UserProfilePage() {
                 </Tooltip>
               </TooltipProvider>
               <div className="text-center text-sm text-muted-foreground mt-2">
-                {expNeededForLevelUp === Infinity 
+                {expForNextLevel === Infinity 
                   ? 'Maksimum Seviye' 
-                  : `${expInCurrentLevel} / ${expNeededForLevelUp} EXP`}
+                  : `${expInCurrentLevel} / ${expForNextLevel} EXP`}
               </div>
             </div>
 
