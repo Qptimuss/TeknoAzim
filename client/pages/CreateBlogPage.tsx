@@ -67,14 +67,13 @@ export default function CreateBlogPage() {
       return;
     }
 
-    let imageUrl: string | undefined = undefined;
-
     try {
-      // Check if this is the user's first post BEFORE adding the new one
+      // Yeni gönderiyi eklemeden ÖNCE kullanıcının ilk gönderisi olup olmadığını kontrol et
       const userPosts = await getPostsByUserId(user.id);
       const isFirstPost = userPosts.length === 0;
 
-      // Upload image if selected
+      let imageUrl: string | undefined = undefined;
+      // Resim seçildiyse yükle
       if (values.imageFile && values.imageFile.length > 0) {
         toast.info("Resim yükleniyor...");
         const file = values.imageFile[0];
@@ -84,7 +83,7 @@ export default function CreateBlogPage() {
         }
       }
 
-      // Add blog post to database
+      // Blog gönderisini veritabanına ekle
       await addBlogPost({ 
         title: values.title,
         content: values.content,
@@ -92,20 +91,23 @@ export default function CreateBlogPage() {
         imageUrl,
       });
 
-      // --- Gamification Logic ---
+      // --- Oyunlaştırma Mantığı ---
       
-      // 1. Award EXP
-      const expUpdate = await addExp(user.id, 25);
+      // 1. Blog yayınladığı için 25 EXP ver.
+      let latestProfileState = await addExp(user.id, 25);
       
-      // 2. Award 'İlk Blog' badge if it's the first post
-      let badgeUpdate = null;
+      // 2. Eğer ilk gönderisiyse, "İlk Blog" rozetini ver (bu işlem +50 EXP de verecek).
       if (isFirstPost) {
-        badgeUpdate = await awardBadge(user.id, "İlk Blog");
+        const badgeUpdate = await awardBadge(user.id, "İlk Blog");
+        // Rozet başarıyla verildiyse, en güncel profil durumu badgeUpdate'ten gelir.
+        if (badgeUpdate) {
+          latestProfileState = badgeUpdate;
+        }
       }
 
-      // 3. Update Auth Context with combined changes
-      if (expUpdate || badgeUpdate) {
-        updateUser({ ...expUpdate, ...badgeUpdate });
+      // 3. Auth Context'i en güncel ve nihai profil durumuyla güncelle.
+      if (latestProfileState) {
+        updateUser(latestProfileState);
       }
 
       toast.success("Blog yazınız başarıyla oluşturuldu!");
