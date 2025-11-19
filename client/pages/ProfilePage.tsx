@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/contexts/AuthContext";
-import { getPostsByUserId } from "@/lib/blog-store";
+import { getPostsByUserId, deleteBlogPost } from "@/lib/blog-store";
 import { BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,19 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon } from "lucide-react";
+import { User as UserIcon, Trash2, Edit } from "lucide-react";
+import { Link } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const profileSchema = z.object({
   name: z.string().min(2, "İsim en az 2 karakter olmalıdır."),
@@ -22,6 +34,7 @@ export default function ProfilePage() {
   const { user, updateUser, loading } = useAuth();
   const [userPosts, setUserPosts] = useState<BlogPostWithAuthor[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
+  const [postToDelete, setPostToDelete] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -31,16 +44,17 @@ export default function ProfilePage() {
     },
   });
 
+  const fetchUserPosts = async (userId: string) => {
+    setPostsLoading(true);
+    const posts = await getPostsByUserId(userId);
+    setUserPosts(posts);
+    setPostsLoading(false);
+  };
+
   useEffect(() => {
     if (user) {
       form.reset({ name: user.name || "", avatar_url: user.avatar_url || "" });
-      const fetchUserPosts = async () => {
-        setPostsLoading(true);
-        const posts = await getPostsByUserId(user.id);
-        setUserPosts(posts);
-        setPostsLoading(false);
-      };
-      fetchUserPosts();
+      fetchUserPosts(user.id);
     }
   }, [user, form]);
 
@@ -52,6 +66,21 @@ export default function ProfilePage() {
       toast.error("Profil güncellenirken bir hata oluştu.");
     }
   }
+
+  const handleDeletePost = async () => {
+    if (!postToDelete || !user) return;
+    try {
+      await deleteBlogPost(postToDelete);
+      toast.success("Blog yazısı başarıyla silindi.");
+      // Refresh posts list
+      await fetchUserPosts(user.id);
+    } catch (error) {
+      toast.error("Blog yazısı silinirken bir hata oluştu.");
+      console.error(error);
+    } finally {
+      setPostToDelete(null);
+    }
+  };
 
   if (loading) {
     return <div className="text-white text-center p-12">Yükleniyor...</div>;
@@ -124,7 +153,23 @@ export default function ProfilePage() {
           ) : userPosts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {userPosts.map(post => (
-                <BlogCard key={post.id} post={post} />
+                <div key={post.id} className="relative group">
+                  <BlogCard post={post} />
+                  <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button asChild size="icon" variant="secondary" className="bg-[#151313]/95 border border-[#42484c] hover:bg-[#151313] text-white">
+                      <Link to={`/bloglar/${post.id}/duzenle`}>
+                        <Edit className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <Button 
+                      size="icon" 
+                      variant="destructive" 
+                      onClick={() => setPostToDelete(post.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               ))}
             </div>
           ) : (
@@ -134,6 +179,24 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
+        <AlertDialogContent className="bg-[#090a0c] border-[#2a2d31] text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Blog Yazısını Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[#eeeeee]">
+              Bu işlem geri alınamaz. Seçtiğiniz blog yazısı kalıcı olarak silinecektir.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-transparent border-[#42484c] hover:bg-[#151313]">İptal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePost} className="bg-red-600 hover:bg-red-700 text-white">
+              Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
