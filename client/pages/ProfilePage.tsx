@@ -12,16 +12,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon } from "lucide-react";
+import { User as UserIcon, CheckCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { LEVEL_THRESHOLDS, getExpForNextLevel, ALL_BADGES } from "@/lib/gamification";
+import { calculateLevel, getExpForNextLevel, ALL_BADGES, TITLES } from "@/lib/gamification";
 import CreateBlogCard from "@/components/CreateBlogCard";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const profileSchema = z.object({
   name: z.string().min(2, "İsim en az 2 karakter olmalıdır."),
   description: z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").optional(),
+  selected_title: z.string().optional(), // Ünvan alanı eklendi
   avatarFile: z
     .instanceof(FileList)
     .optional()
@@ -43,6 +51,7 @@ export default function ProfilePage() {
     defaultValues: {
       name: "",
       description: "",
+      selected_title: "",
     },
   });
 
@@ -61,7 +70,11 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
-      form.reset({ name: user.name || "", description: user.description || "" });
+      form.reset({ 
+        name: user.name || "", 
+        description: user.description || "",
+        selected_title: user.selected_title || "",
+      });
       const fetchUserPosts = async () => {
         setPostsLoading(true);
         const posts = await getPostsByUserId(user.id);
@@ -91,6 +104,7 @@ export default function ProfilePage() {
         name: values.name,
         description: values.description || '',
         avatar_url: newAvatarUrl,
+        selected_title: values.selected_title || null, // Seçili ünvanı gönder
       };
 
       await updateUser(profileUpdateData);
@@ -113,19 +127,14 @@ export default function ProfilePage() {
     return null; // ProtectedRoute handles redirection
   }
 
-  const hasGamificationData = typeof user.level === 'number' && typeof user.exp === 'number';
-  const level = hasGamificationData ? user.level : 1;
-  const exp = hasGamificationData ? user.exp : 0;
+  const { level, expForNextLevel, currentLevelExp } = calculateLevel(user.exp || 0);
+  const expInCurrentLevel = (user.exp || 0) - currentLevelExp;
+  const expProgress = expForNextLevel === 0 ? 100 : (expInCurrentLevel / expForNextLevel) * 100;
 
-  const currentLevelThreshold = LEVEL_THRESHOLDS[level - 1] || 0;
-  const nextLevelThreshold = getExpForNextLevel(level);
-  
-  const expInCurrentLevel = exp - currentLevelThreshold;
-  const expNeededForLevelUp = nextLevelThreshold - currentLevelThreshold;
-  
-  const expProgress = expNeededForLevelUp === Infinity || expNeededForLevelUp === 0 
-    ? 100 
-    : (expInCurrentLevel / expNeededForLevelUp) * 100;
+  // Kullanıcının seviyesine göre kilidi açılmış ünvanları al
+  const unlockedTitles = Object.entries(TITLES)
+    .filter(([levelKey]) => level >= parseInt(levelKey))
+    .map(([, title]) => title);
 
   return (
     <div className="container mx-auto px-5 py-12">
@@ -149,7 +158,12 @@ export default function ProfilePage() {
                 </div>
               </button>
               <h2 className="text-white text-2xl font-outfit font-bold">{user.name}</h2>
-              <p className="text-muted-foreground">{user.email}</p>
+              {user.selected_title && (
+                <p className="text-yellow-400 font-semibold text-sm mt-1 flex items-center gap-1">
+                  <CheckCircle className="h-4 w-4" /> {user.selected_title}
+                </p>
+              )}
+              <p className="text-muted-foreground mt-1">{user.email}</p>
               {user.description && (
                 <p className="text-white mt-4 text-sm">{user.description}</p>
               )}
@@ -164,14 +178,12 @@ export default function ProfilePage() {
                     <Progress value={expProgress} className="w-full" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Toplam Deneyim: {exp} EXP</p>
+                    <p>Toplam Deneyim: {user.exp || 0} EXP</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
               <div className="text-center text-sm text-muted-foreground mt-2">
-                {expNeededForLevelUp === Infinity 
-                  ? 'Maksimum Seviye' 
-                  : `${expInCurrentLevel} / ${expNeededForLevelUp} EXP`}
+                {`${expInCurrentLevel} / ${expForNextLevel} EXP`}
               </div>
             </div>
 
@@ -250,6 +262,30 @@ export default function ProfilePage() {
                       <FormControl>
                         <Textarea placeholder="Kendinizden bahsedin..." {...field} value={field.value || ''} className="bg-[#151313] border-[#42484c] text-white" />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {/* Ünvan Seçim Alanı */}
+                <FormField
+                  control={form.control}
+                  name="selected_title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-white">Ünvan</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="bg-[#151313] border-[#42484c] text-white">
+                            <SelectValue placeholder="Bir ünvan seç..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="bg-[#151313] border-[#42484c] text-white">
+                          <SelectItem value="none">Ünvan Yok</SelectItem>
+                          {unlockedTitles.map(title => (
+                            <SelectItem key={title} value={title}>{title}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
