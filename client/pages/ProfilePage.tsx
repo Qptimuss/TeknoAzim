@@ -16,6 +16,7 @@ import { User as UserIcon, Star } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { LEVEL_THRESHOLDS, getExpForNextLevel } from "@/lib/gamification";
+import CreateBlogCard from "@/components/CreateBlogCard";
 
 const profileSchema = z.object({
   name: z.string().min(2, "İsim en az 2 karakter olmalıdır."),
@@ -200,15 +201,12 @@ export default function ProfilePage() {
           <h2 className="text-white text-2xl font-outfit font-bold mb-4">Bloglarım ({userPosts.length})</h2>
           {postsLoading ? (
              <p className="text-muted-foreground">Bloglar yükleniyor...</p>
-          ) : userPosts.length > 0 ? (
+          ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <CreateBlogCard />
               {userPosts.map(post => (
                 <BlogCard key={post.id} post={post} />
               ))}
-            </div>
-          ) : (
-            <div className="bg-[#090a0c] border border-[#2a2d31] rounded-lg p-8 text-center">
-              <p className="text-muted-foreground">Henüz hiç blog yazısı oluşturmadınız.</p>
             </div>
           )}
         </div>
