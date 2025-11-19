@@ -66,9 +66,15 @@ export default function UserProfilePage() {
     );
   }
 
-  const currentLevelExp = LEVEL_THRESHOLDS[profile.level - 1] || 0;
-  const nextLevelExp = getExpForNextLevel(profile.level);
-  const expProgress = nextLevelExp === Infinity ? 100 : ((profile.exp - currentLevelExp) / (nextLevelExp - currentLevelExp)) * 100;
+  const currentLevelThreshold = LEVEL_THRESHOLDS[profile.level - 1] || 0;
+  const nextLevelThreshold = getExpForNextLevel(profile.level);
+
+  const expInCurrentLevel = profile.exp - currentLevelThreshold;
+  const expNeededForLevelUp = nextLevelThreshold - currentLevelThreshold;
+
+  const expProgress = expNeededForLevelUp === Infinity || expNeededForLevelUp === 0
+    ? 100
+    : (expInCurrentLevel / expNeededForLevelUp) * 100;
 
   return (
     <div className="container mx-auto px-5 py-12">
@@ -95,10 +101,15 @@ export default function UserProfilePage() {
                 <Progress value={expProgress} className="w-full" />
               </TooltipTrigger>
               <TooltipContent>
-                <p>{profile.exp} / {nextLevelExp} EXP</p>
+                <p>Toplam Deneyim: {profile.exp} EXP</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          <div className="text-center text-sm text-muted-foreground mt-2">
+            {expNeededForLevelUp === Infinity 
+              ? 'Maksimum Seviye' 
+              : `${expInCurrentLevel} / ${expNeededForLevelUp} EXP`}
+          </div>
           {profile.badges && profile.badges.length > 0 && (
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               {profile.badges.map(badge => (

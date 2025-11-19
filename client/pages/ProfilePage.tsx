@@ -67,9 +67,15 @@ export default function ProfilePage() {
     return null; // ProtectedRoute handles redirection
   }
 
-  const currentLevelExp = LEVEL_THRESHOLDS[user.level - 1] || 0;
-  const nextLevelExp = getExpForNextLevel(user.level);
-  const expProgress = nextLevelExp === Infinity ? 100 : ((user.exp - currentLevelExp) / (nextLevelExp - currentLevelExp)) * 100;
+  const currentLevelThreshold = LEVEL_THRESHOLDS[user.level - 1] || 0;
+  const nextLevelThreshold = getExpForNextLevel(user.level);
+  
+  const expInCurrentLevel = user.exp - currentLevelThreshold;
+  const expNeededForLevelUp = nextLevelThreshold - currentLevelThreshold;
+  
+  const expProgress = expNeededForLevelUp === Infinity || expNeededForLevelUp === 0 
+    ? 100 
+    : (expInCurrentLevel / expNeededForLevelUp) * 100;
 
   return (
     <div className="container mx-auto px-5 py-12">
@@ -103,12 +109,14 @@ export default function ProfilePage() {
                     <Progress value={expProgress} className="w-full" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{user.exp} / {nextLevelExp} EXP</p>
+                    <p>Toplam Deneyim: {user.exp} EXP</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
               <div className="text-center text-sm text-muted-foreground mt-2">
-                Sonraki seviye için {Math.max(0, nextLevelExp - user.exp)} EXP
+                {expNeededForLevelUp === Infinity 
+                  ? 'Maksimum Seviye' 
+                  : `${expInCurrentLevel} / ${expNeededForLevelUp} EXP`}
               </div>
 
               {user.badges && user.badges.length > 0 && (
