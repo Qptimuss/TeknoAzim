@@ -22,17 +22,25 @@
       padding: 40px;
       text-align: center;
     }
+    .header {
+      margin-bottom: 20px;
+    }
     .header h1 {
       font-family: 'Outfit', sans-serif;
       font-size: 28px;
       color: #ffffff;
       margin: 0;
     }
+    .logo {
+      max-width: 150px; /* Logo boyutunu belirle */
+      height: auto;
+      margin-bottom: 20px;
+    }
     .content p {
       font-size: 18px;
       line-height: 1.6;
       margin: 20px 0;
-      color: #ffffff; /* Explicitly set to white for visibility */
+      color: #ffffff;
     }
     .button {
       display: inline-block;
@@ -63,6 +71,7 @@
 <body>
   <div class="container">
     <div class="header">
+      <img src="{{ .SiteURL }}/logo.png" alt="TeknoAzim Logo" class="logo">
       <h1>TeknoAzim'e Hoş Geldin!</h1>
     </div>
     <div class="content">
