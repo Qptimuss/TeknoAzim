@@ -4,7 +4,7 @@ import { getProfileById, getPostsByUserId } from "@/lib/blog-store";
 import { Profile, BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Star } from "lucide-react";
+import { User as UserIcon } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { LEVEL_THRESHOLDS, getExpForNextLevel, ALL_BADGES } from "@/lib/gamification";
@@ -77,10 +77,7 @@ export default function UserProfilePage() {
                 </AvatarFallback>
               </Avatar>
               <h2 className="text-white text-2xl font-outfit font-bold">{userProfile.name}</h2>
-              <p className="text-muted-foreground">{userProfile.email}</p>
-              {userProfile.description && (
-                <p className="text-white mt-4 text-sm">{userProfile.description}</p>
-              )}
+              <p className="text-muted-foreground">{userProfile.description}</p>
             </div>
 
             {/* Gamification Section */}
@@ -103,7 +100,7 @@ export default function UserProfilePage() {
               </div>
             </div>
 
-            {/* New Badges Section (Copied from ProfilePage.tsx) */}
+            {/* Badges Section */}
             <div className="mb-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-white text-xl font-outfit font-bold">Rozetler</h3>
@@ -114,6 +111,7 @@ export default function UserProfilePage() {
               <div className="grid grid-cols-4 gap-4 p-4 bg-[#151313] rounded-lg border border-[#2a2d31]">
                 {ALL_BADGES.map((badge) => {
                   const hasBadge = userProfile.badges?.includes(badge.name);
+                  const Icon = badge.icon;
                   return (
                     <TooltipProvider key={badge.name}>
                       <Tooltip>
@@ -124,7 +122,7 @@ export default function UserProfilePage() {
                               !hasBadge && "opacity-30 grayscale"
                             )}
                           >
-                            <Star className="h-5 w-5 text-yellow-400" />
+                            <Icon className="h-5 w-5 text-yellow-400" />
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -138,7 +136,7 @@ export default function UserProfilePage() {
                 })}
               </div>
             </div>
-            {/* End of New Badges Section */}
+            {/* End of Badges Section */}
 
           </div>
         </div>

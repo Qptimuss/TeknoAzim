@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Star } from "lucide-react";
+import { User as UserIcon } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { LEVEL_THRESHOLDS, getExpForNextLevel, ALL_BADGES } from "@/lib/gamification";
@@ -137,6 +137,7 @@ export default function ProfilePage() {
               <div className="grid grid-cols-4 gap-4 p-4 bg-[#151313] rounded-lg border border-[#2a2d31]">
                 {ALL_BADGES.map((badge) => {
                   const hasBadge = user.badges?.includes(badge.name);
+                  const Icon = badge.icon;
                   return (
                     <TooltipProvider key={badge.name}>
                       <Tooltip>
@@ -147,7 +148,7 @@ export default function ProfilePage() {
                               !hasBadge && "opacity-30 grayscale"
                             )}
                           >
-                            <Star className="h-5 w-5 text-yellow-400" />
+                            <Icon className="h-5 w-5 text-yellow-400" />
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>

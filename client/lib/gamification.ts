@@ -1,6 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Profile } from "@shared/api";
 import { toast } from "sonner";
+import { BookOpen, MessageSquare, Users, Heart } from "lucide-react";
+import React from "react";
 
 // Seviye atlamak için gereken toplam EXP miktarları
 // Seviye 1: 0-24 EXP, Seviye 2: 25-74 EXP, Seviye 3: 75-149 EXP vb.
@@ -9,13 +11,14 @@ export const LEVEL_THRESHOLDS = [0, 25, 75, 150, 300, 500, 1000];
 export type BadgeDefinition = {
   name: string;
   description: string;
+  icon: React.ComponentType<{ className?: string }>;
 };
 
 export const ALL_BADGES: BadgeDefinition[] = [
-  { name: "İlk Blog", description: "İlk blog yazını başarıyla yayınladın!" },
-  { name: "Yorum Ustası", description: "Bir gönderiye ilk yorumu sen yaptın." },
-  { name: "Topluluk Katılımcısı", description: "Platforma katıldığın için teşekkürler!" },
-  { name: "Beğenilen Yazar", description: "Bir blog yazın 10'dan fazla beğeni aldı." },
+  { name: "İlk Blog", description: "İlk blog yazını başarıyla yayınladın!", icon: BookOpen },
+  { name: "Yorum Ustası", description: "Bir gönderiye ilk yorumu sen yaptın.", icon: MessageSquare },
+  { name: "Topluluk Katılımcısı", description: "Platforma katıldığın için teşekkürler!", icon: Users },
+  { name: "Beğenilen Yazar", description: "Bir blog yazın 5'ten fazla beğeni aldı.", icon: Heart },
 ];
 
 export const calculateLevel = (exp: number) => {
