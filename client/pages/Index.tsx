@@ -93,13 +93,12 @@ export default function Index() {
           <div className="max-w-[1122px] mx-auto px-5 md:px-10 lg:px-20 py-12 md:py-16 lg:py-20">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 lg:gap-5">
               {/* Image Column */}
-              <div className="relative min-h-[300px] md:min-h-[400px] lg:min-h-[500px] flex items-end justify-end">
+              <div className="relative min-h-[300px] md:min-h-[400px] lg:min-h-[500px] flex items-center justify-center">
                 <img
                   loading="lazy"
-                  srcSet="https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3182a495439504b4d43051569e264a2f"
-                  src="https://api.builder.io/api/v1/image/assets/TEMP/000e1e6d3182a495439504b4d43051569e264a2f"
+                  src="/security-ai.png"
                   alt="Güvenlik"
-                  className="w-full h-auto object-contain"
+                  className="w-full h-auto object-contain max-w-md"
                 />
               </div>
 
