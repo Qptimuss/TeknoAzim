@@ -28,7 +28,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
         <Toaster />
         <Sonner />
         <AuthProvider>
