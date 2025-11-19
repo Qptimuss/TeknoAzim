@@ -110,7 +110,7 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
         onClick={() => handleVote('like')} 
         disabled={!user}
         className={cn(
-          "flex items-center gap-2 text-muted-foreground hover:text-white",
+          "flex items-center gap-2 text-muted-foreground hover:text-foreground",
           userAction === 'liked' && "text-blue-500 hover:text-blue-400"
         )}
       >
@@ -123,7 +123,7 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
         onClick={() => handleVote('dislike')} 
         disabled={!user}
         className={cn(
-          "flex items-center gap-2 text-muted-foreground hover:text-white",
+          "flex items-center gap-2 text-muted-foreground hover:text-foreground",
           userAction === 'disliked' && "text-red-500 hover:text-red-400"
         )}
       >

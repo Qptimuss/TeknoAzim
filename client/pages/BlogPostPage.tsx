@@ -81,9 +81,9 @@ export default function BlogPostPage() {
   if (!post) {
     return (
       <div className="container mx-auto px-5 py-12 text-center">
-        <h1 className="text-white text-4xl font-bold mb-4">Blog Yazısı Bulunamadı</h1>
-        <p className="text-[#eeeeee] mb-8">Aradığınız blog yazısı mevcut değil veya silinmiş olabilir.</p>
-        <Link to="/bloglar" className="text-white hover:underline flex items-center justify-center gap-2">
+        <h1 className="text-foreground text-4xl font-bold mb-4">Blog Yazısı Bulunamadı</h1>
+        <p className="text-muted-foreground mb-8">Aradığınız blog yazısı mevcut değil veya silinmiş olabilir.</p>
+        <Link to="/bloglar" className="text-foreground hover:underline flex items-center justify-center gap-2">
           <ArrowLeft size={20} />
           Tüm Bloglara Geri Dön
         </Link>
@@ -104,12 +104,12 @@ export default function BlogPostPage() {
   return (
     <>
       <div className="container mx-auto px-5 py-12 max-w-4xl">
-        <Link to="/bloglar" className="text-white hover:underline flex items-center gap-2 mb-8">
+        <Link to="/bloglar" className="text-foreground hover:underline flex items-center gap-2 mb-8">
           <ArrowLeft size={20} />
           Tüm Bloglara Geri Dön
         </Link>
         
-        <article className="bg-[#090a0c] border border-[#2a2d31] rounded-lg overflow-hidden">
+        <article className="bg-card border border-border rounded-lg overflow-hidden">
           {post.image_url && (
             <img
               src={post.image_url}
@@ -119,7 +119,7 @@ export default function BlogPostPage() {
           )}
           <div className="p-8">
             {post.profiles && (
-              <Link to={`/kullanici/${post.profiles.id}`} className="inline-flex items-center gap-2 mb-4 w-fit rounded-full bg-[#151313] px-3 py-1 border border-[#42484c] transition-all duration-200 hover:border-[#6b7280] hover:-translate-y-0.5 hover:shadow-md hover:shadow-white/5">
+              <Link to={`/kullanici/${post.profiles.id}`} className="inline-flex items-center gap-2 mb-4 w-fit rounded-full bg-background px-3 py-1 border border-border transition-all duration-200 hover:border-primary hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={post.profiles?.avatar_url || undefined} alt={post.profiles?.name || ''} />
                   <AvatarFallback>
@@ -129,7 +129,7 @@ export default function BlogPostPage() {
                 <span className="text-sm text-muted-foreground">{post.profiles?.name || "Anonim"}</span>
               </Link>
             )}
-            <h1 className="text-white text-3xl md:text-5xl font-outfit font-bold mb-4">
+            <h1 className="text-card-foreground text-3xl md:text-5xl font-outfit font-bold mb-4">
               {post.title}
             </h1>
             <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground mb-6">
@@ -149,7 +149,7 @@ export default function BlogPostPage() {
               </div>
               <LikeDislikeButtons postId={post.id} />
             </div>
-            <div className="text-[#eeeeee] text-lg leading-relaxed whitespace-pre-wrap">
+            <div className="text-card-foreground text-lg leading-relaxed whitespace-pre-wrap">
               {post.content}
             </div>
           </div>
@@ -159,15 +159,15 @@ export default function BlogPostPage() {
       </div>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="bg-[#090a0c] border-[#2a2d31] text-white">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Blog Yazısını Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[#eeeeee]">
+            <AlertDialogDescription>
               Bu işlem geri alınamaz. Blog yazınız, tüm yorumları ve oylarıyla birlikte kalıcı olarak silinecektir.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-transparent border-[#42484c] hover:bg-[#151313]">İptal</AlertDialogCancel>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 text-white">
               {isDeleting ? "Siliniyor..." : "Sil"}
             </AlertDialogAction>

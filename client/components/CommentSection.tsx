@@ -94,30 +94,30 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
 
   return (
     <div className="mt-12">
-      <Separator className="bg-[#2a2d31] mb-8" />
-      <h2 className="text-white text-3xl font-outfit font-bold mb-6">Yorumlar ({comments.length})</h2>
+      <Separator className="bg-border mb-8" />
+      <h2 className="text-foreground text-3xl font-outfit font-bold mb-6">Yorumlar ({comments.length})</h2>
       
       <div className="space-y-6 mb-8">
         {comments.length > 0 ? (
           comments.map((comment) => (
             <div key={comment.id} className="flex items-start gap-4 group">
-              <div className="flex-1 bg-[#151313]/50 p-4 rounded-lg border border-[#2a2d31]">
+              <div className="flex-1 bg-muted p-4 rounded-lg border border-border">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
                     {comment.profiles ? (
-                      <Link to={`/kullanici/${comment.profiles.id}`} className="inline-flex items-center gap-2 rounded-full bg-[#151313] px-3 py-1 border border-[#42484c] transition-all duration-200 hover:border-[#6b7280] hover:-translate-y-0.5 hover:shadow-md hover:shadow-white/5">
+                      <Link to={`/kullanici/${comment.profiles.id}`} className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-1 border border-border transition-all duration-200 hover:border-primary hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5">
                         <Avatar className="h-6 w-6">
                           <AvatarImage src={comment.profiles?.avatar_url || undefined} />
                           <AvatarFallback>{comment.profiles?.name?.charAt(0) || 'A'}</AvatarFallback>
                         </Avatar>
-                        <span className="font-semibold text-white">{comment.profiles?.name || "Anonim"}</span>
+                        <span className="font-semibold text-foreground">{comment.profiles?.name || "Anonim"}</span>
                       </Link>
                     ) : (
-                      <div className="inline-flex items-center gap-2 rounded-full bg-[#151313] px-3 py-1 border border-[#42484c]">
+                      <div className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-1 border border-border">
                         <Avatar className="h-6 w-6">
                           <AvatarFallback>{'A'}</AvatarFallback>
                         </Avatar>
-                        <p className="font-semibold text-white">Anonim</p>
+                        <p className="font-semibold text-foreground">Anonim</p>
                       </div>
                     )}
                   </div>
@@ -137,7 +137,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                     )}
                   </div>
                 </div>
-                <p className="text-[#eeeeee] whitespace-pre-wrap pt-2">{comment.content}</p>
+                <p className="text-foreground whitespace-pre-wrap pt-2">{comment.content}</p>
               </div>
             </div>
           ))
@@ -154,15 +154,15 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
               name="content"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white">Yorum Ekle</FormLabel>
+                  <FormLabel>Yorum Ekle</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Yorumunuzu buraya yazın..." {...field} className="bg-[#151313] border-[#42484c] text-white" />
+                    <Textarea placeholder="Yorumunuzu buraya yazın..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full bg-[#151313]/95 border border-[#42484c] text-white transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:shadow-white/10">
+            <Button type="submit" className="w-full">
               Yorum Gönder
             </Button>
           </form>
@@ -172,15 +172,15 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
       )}
 
       <AlertDialog open={!!commentToDelete} onOpenChange={(open) => !open && setCommentToDelete(null)}>
-        <AlertDialogContent className="bg-[#090a0c] border-[#2a2d31] text-white">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Yorumu Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[#eeeeee]">
+            <AlertDialogDescription>
               Bu işlem geri alınamaz. Yorumunuz kalıcı olarak silinecektir.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-transparent border-[#42484c] hover:bg-[#151313]">İptal</AlertDialogCancel>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700 text-white">
               Sil
             </AlertDialogAction>

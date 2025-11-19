@@ -23,10 +23,10 @@ export default function Bloglar() {
   return (
     <div className="container mx-auto px-5 py-12">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-white text-4xl md:text-5xl font-outfit font-bold">
+        <h1 className="text-foreground text-4xl md:text-5xl font-outfit font-bold">
           Bloglar
         </h1>
-        <Button asChild size="lg" className="bg-[#151313]/95 border border-[#42484c] text-white text-lg px-8 py-6 transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:shadow-white/10">
+        <Button asChild size="lg" className="text-lg px-8 py-6 transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/20">
           <Link to="/blog-olustur">
             Kendi Bloğunu Oluştur
           </Link>

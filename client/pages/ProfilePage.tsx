@@ -151,7 +151,7 @@ export default function ProfilePage() {
   };
 
   if (loading) {
-    return <div className="text-white text-center p-12">Yükleniyor...</div>;
+    return <div className="text-foreground text-center p-12">Yükleniyor...</div>;
   }
 
   if (!user) {
@@ -168,13 +168,13 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto px-5 py-12">
-      <h1 className="text-white text-4xl md:text-5xl font-outfit font-bold mb-8">
+      <h1 className="text-foreground text-4xl md:text-5xl font-outfit font-bold mb-8">
         Profilim
       </h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1">
-          <div className="bg-[#090a0c] border border-[#2a2d31] rounded-lg p-8">
+          <div className="bg-card border border-border rounded-lg p-8">
             <div className="flex flex-col items-center mb-6 text-center">
               <button type="button" onClick={() => fileInputRef.current?.click()} className="relative group cursor-pointer">
                 <Avatar className="h-24 w-24 mb-4">
@@ -187,7 +187,7 @@ export default function ProfilePage() {
                   <p className="text-white text-xs font-bold">Değiştir</p>
                 </div>
               </button>
-              <h2 className="text-white text-2xl font-outfit font-bold">{user.name}</h2>
+              <h2 className="text-card-foreground text-2xl font-outfit font-bold">{user.name}</h2>
               {user.selected_title && (
                 <p className="text-yellow-400 font-semibold text-sm mt-1 flex items-center gap-1">
                   <CheckCircle className="h-4 w-4" /> {user.selected_title}
@@ -195,12 +195,12 @@ export default function ProfilePage() {
               )}
               <p className="text-muted-foreground mt-1">{user.email}</p>
               {user.description && (
-                <p className="text-white mt-4 text-sm">{user.description}</p>
+                <p className="text-card-foreground mt-4 text-sm">{user.description}</p>
               )}
             </div>
 
-            <div className="mb-6 border-t border-[#2a2d31] pt-6">
-              <h3 className="text-white text-xl font-outfit font-bold mb-4 text-center">Seviye {level}</h3>
+            <div className="mb-6 border-t border-border pt-6">
+              <h3 className="text-card-foreground text-xl font-outfit font-bold mb-4 text-center">Seviye {level}</h3>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger className="w-full">
@@ -218,12 +218,12 @@ export default function ProfilePage() {
 
             <div className="mb-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-white text-xl font-outfit font-bold">Rozetler</h3>
+                <h3 className="text-card-foreground text-xl font-outfit font-bold">Rozetler</h3>
                 <span className="text-sm text-muted-foreground">
                   {user.badges?.length || 0} / {ALL_BADGES.length}
                 </span>
               </div>
-              <div className="grid grid-cols-1 gap-4 p-4 bg-[#151313] rounded-lg border border-[#2a2d31]">
+              <div className="grid grid-cols-1 gap-4 p-4 bg-background rounded-lg border border-border">
                 {ALL_BADGES.map((badge) => {
                   const hasBadge = user.badges?.includes(badge.name);
                   const Icon = badge.icon;
@@ -231,14 +231,14 @@ export default function ProfilePage() {
                     <div key={badge.name} className="flex items-start gap-4">
                       <div
                         className={cn(
-                          "flex items-center justify-center bg-[#090a0c] p-3 rounded-full border border-[#42484c] shrink-0",
+                          "flex items-center justify-center bg-card p-3 rounded-full border border-border shrink-0",
                           !hasBadge && "opacity-30 grayscale"
                         )}
                       >
                         <Icon className="h-6 w-6 text-yellow-400" />
                       </div>
                       <div>
-                        <p className="font-bold text-white">{badge.name}</p>
+                        <p className="font-bold text-foreground">{badge.name}</p>
                         <p className="text-sm text-muted-foreground">{badge.description}</p>
                         {!hasBadge && <p className="text-xs text-red-400 mt-1">(Henüz kazanılmadı)</p>}
                       </div>
@@ -248,7 +248,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <h3 className="text-white text-xl font-outfit font-bold mb-4 border-t border-[#2a2d31] pt-6">Bilgileri Güncelle</h3>
+            <h3 className="text-card-foreground text-xl font-outfit font-bold mb-4 border-t border-border pt-6">Bilgileri Güncelle</h3>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
@@ -273,9 +273,9 @@ export default function ProfilePage() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-white">Kullanıcı Adı</FormLabel>
+                      <FormLabel>Kullanıcı Adı</FormLabel>
                       <FormControl>
-                        <Input {...field} className="bg-[#151313] border-[#42484c] text-white" />
+                        <Input {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -286,9 +286,9 @@ export default function ProfilePage() {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-white">Açıklama (Maks 200 karakter)</FormLabel>
+                      <FormLabel>Açıklama (Maks 200 karakter)</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Kendinizden bahsedin..." {...field} value={field.value || ''} className="bg-[#151313] border-[#42484c] text-white" />
+                        <Textarea placeholder="Kendinizden bahsedin..." {...field} value={field.value || ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -299,14 +299,14 @@ export default function ProfilePage() {
                   name="selected_title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-white">Ünvan</FormLabel>
+                      <FormLabel>Ünvan</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value || 'none'}>
                         <FormControl>
-                          <SelectTrigger className="bg-[#151313] border-[#42484c] text-white">
+                          <SelectTrigger>
                             <SelectValue placeholder="Bir ünvan seç..." />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="bg-[#151313] border-[#42484c] text-white">
+                        <SelectContent>
                           <SelectItem value="none">Ünvan Yok</SelectItem>
                           {unlockedTitles.map(title => (
                             <SelectItem key={title} value={title}>{title}</SelectItem>
@@ -317,7 +317,7 @@ export default function ProfilePage() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" disabled={form.formState.isSubmitting} className="w-full bg-[#151313]/95 border border-[#42484c] text-white transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:shadow-white/10">
+                <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
                   {form.formState.isSubmitting ? "Kaydediliyor..." : "Kaydet"}
                 </Button>
               </form>
@@ -326,7 +326,7 @@ export default function ProfilePage() {
         </div>
 
         <div className="lg:col-span-2">
-          <h2 className="text-white text-2xl font-outfit font-bold mb-4">Bloglarım ({userPosts.length})</h2>
+          <h2 className="text-foreground text-2xl font-outfit font-bold mb-4">Bloglarım ({userPosts.length})</h2>
           {postsLoading ? (
              <p className="text-muted-foreground">Bloglar yükleniyor...</p>
           ) : (
@@ -346,15 +346,15 @@ export default function ProfilePage() {
       </div>
 
       <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
-        <AlertDialogContent className="bg-[#090a0c] border-[#2a2d31] text-white">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Blog Yazısını Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[#eeeeee]">
+            <AlertDialogDescription>
               Bu işlem geri alınamaz. Blog yazınız, tüm yorumları ve oylarıyla birlikte kalıcı olarak silinecektir.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-transparent border-[#42484c] hover:bg-[#151313]">İptal</AlertDialogCancel>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfirm} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 text-white">
               {isDeleting ? "Siliniyor..." : "Sil"}
             </AlertDialogAction>

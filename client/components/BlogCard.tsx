@@ -26,7 +26,7 @@ export default function BlogCard({ post, showDelete = false, onDelete }: BlogCar
   });
 
   return (
-    <Card className="w-full bg-[#090a0c] border-[#2a2d31] text-white flex flex-col transition-all hover:border-[#6b7280] hover:scale-105 relative">
+    <Card className="w-full flex flex-col transition-all hover:border-primary hover:scale-105 relative">
       {showDelete && onDelete && (
         <Button
           variant="destructive"
@@ -56,7 +56,7 @@ export default function BlogCard({ post, showDelete = false, onDelete }: BlogCar
           {post.profiles && (
             <Link 
               to={`/kullanici/${post.profiles.id}`} 
-              className="inline-flex items-center gap-2 z-10 relative w-fit rounded-full bg-[#151313] px-3 py-1 border border-[#42484c] transition-all duration-200 hover:border-[#6b7280] hover:-translate-y-0.5 hover:shadow-md hover:shadow-white/5"
+              className="inline-flex items-center gap-2 z-10 relative w-fit rounded-full bg-background px-3 py-1 border border-border transition-all duration-200 hover:border-primary hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10"
               onClick={(e) => e.stopPropagation()}
             >
               <Avatar className="h-6 w-6">
@@ -65,7 +65,7 @@ export default function BlogCard({ post, showDelete = false, onDelete }: BlogCar
                   <UserIcon className="h-4 w-4" />
                 </AvatarFallback>
               </Avatar>
-              <span className="text-sm text-[#eeeeee]">
+              <span className="text-sm text-foreground">
                 {post.profiles?.name || "Anonim"}
               </span>
             </Link>
@@ -73,7 +73,7 @@ export default function BlogCard({ post, showDelete = false, onDelete }: BlogCar
           <CardTitle className="font-outfit text-2xl pt-2">{post.title}</CardTitle>
         </CardHeader>
         <CardContent className="flex-grow">
-          <p className="text-[#eeeeee] line-clamp-3">{post.content}</p>
+          <p className="text-card-foreground line-clamp-3">{post.content}</p>
         </CardContent>
       </Link>
       <CardFooter className="flex justify-between items-center pt-4">

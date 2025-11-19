@@ -4,7 +4,7 @@ import Navbar from "./Navbar";
 
 const Layout = () => {
   return (
-    <div className="bg-[#020303] flex flex-col min-h-screen">
+    <div className="bg-background flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow">
         <Outlet />

@@ -120,10 +120,10 @@ export default function CreateBlogPage() {
 
   return (
     <div className="container mx-auto px-5 py-12 max-w-3xl">
-      <h1 className="text-white text-4xl md:text-5xl font-outfit font-bold mb-8">
+      <h1 className="text-foreground text-4xl md:text-5xl font-outfit font-bold mb-8">
         Yeni Blog Oluştur
       </h1>
-      <div className="bg-[#090a0c] border border-[#2a2d31] rounded-lg p-8">
+      <div className="bg-card border border-border rounded-lg p-8">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -131,9 +131,9 @@ export default function CreateBlogPage() {
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white">Başlık</FormLabel>
+                  <FormLabel>Başlık</FormLabel>
                   <FormControl>
-                    <Input placeholder="Blog Başlığı" {...field} className="bg-[#151313] border-[#42484c] text-white" />
+                    <Input placeholder="Blog Başlığı" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -144,13 +144,13 @@ export default function CreateBlogPage() {
               name="imageFile"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white">Kapak Resmi (İsteğe Bağlı, Maks 2MB)</FormLabel>
+                  <FormLabel>Kapak Resmi (İsteğe Bağlı, Maks 2MB)</FormLabel>
                   <FormControl>
                     <Input 
                       type="file" 
                       accept="image/*"
                       {...imageFileRef}
-                      className="bg-[#151313] border-[#42484c] text-white file:text-white"
+                      className="file:text-foreground"
                     />
                   </FormControl>
                   <FormMessage />
@@ -163,7 +163,7 @@ export default function CreateBlogPage() {
                 <img
                   src={imagePreview}
                   alt="Seçilen resim önizlemesi"
-                  className="w-full max-h-64 object-contain rounded-md border border-[#42484c]"
+                  className="w-full max-h-64 object-contain rounded-md border border-border"
                 />
               </div>
             )}
@@ -173,15 +173,15 @@ export default function CreateBlogPage() {
               name="content"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white">İçerik</FormLabel>
+                  <FormLabel>İçerik</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Blog içeriğini buraya yazın..." {...field} className="bg-[#151313] border-[#42484c] text-white min-h-[200px]" />
+                    <Textarea placeholder="Blog içeriğini buraya yazın..." {...field} className="min-h-[200px]" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" size="lg" disabled={form.formState.isSubmitting} className="w-full bg-[#151313]/95 border border-[#42484c] text-white text-lg transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:shadow-white/10">
+            <Button type="submit" size="lg" disabled={form.formState.isSubmitting} className="w-full text-lg">
               {form.formState.isSubmitting ? "Yayınlanıyor..." : "Yayınla"}
             </Button>
           </form>

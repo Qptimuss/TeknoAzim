@@ -39,9 +39,9 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 px-5 md:px-10 lg:px-20 py-2 w-full">
       <div className="w-full max-w-[1122px] mx-auto">
         <nav className={cn(
-          "inline-block md:block rounded-[40px] bg-[#e6e6e6] border-2 border-[#2a2d31] p-1 transition-all duration-300 origin-top",
+          "inline-block md:block rounded-[40px] bg-muted border-2 border-border p-1 transition-all duration-300 origin-top",
           // Sadece büyüme ve gölge efekti
-          isMobileMenuHovered && "transform scale-[1.01] shadow-xl shadow-black/20"
+          isMobileMenuHovered && "transform scale-[1.01] shadow-xl shadow-black/20 dark:shadow-white/5"
         )}>
           {/* Mobile View */}
           <div className="md:hidden flex items-center justify-between">
@@ -56,10 +56,10 @@ export default function Navbar() {
 
           {/* Desktop View */}
           <div className="hidden md:flex items-center justify-between gap-4">
-            <div className="flex rounded-[40px] bg-[#090a0c] border-2 border-[#42484c] px-0 py-3 items-center gap-0 flex-1">
+            <div className="flex rounded-[40px] bg-card border-2 border-border px-0 py-3 items-center gap-0 flex-1">
               <AppLogo /> 
               {mainNavLinks.map((link) => (
-                <Link key={link.to} to={link.to} className="font-bakbak text-sm md:text-sm font-normal text-white whitespace-nowrap shrink-0 px-1 md:px-1 lg:px-2">
+                <Link key={link.to} to={link.to} className="font-bakbak text-sm md:text-sm font-normal text-card-foreground whitespace-nowrap shrink-0 px-1 md:px-1 lg:px-2">
                   {link.label}
                 </Link>
               ))}
@@ -67,7 +67,7 @@ export default function Navbar() {
             <div className="flex items-center gap-4 md:gap-6 lg:gap-8 px-2">
               {user ? (
                 <>
-                  <Button onClick={handleLogout} variant="ghost" className="font-bakbak text-base md:text-base font-normal text-[#090a0c] whitespace-nowrap shrink-0 p-0 hover:bg-transparent">
+                  <Button onClick={handleLogout} variant="ghost" className="font-bakbak text-base md:text-base font-normal text-foreground whitespace-nowrap shrink-0 p-0 hover:bg-transparent">
                     Çıkış Yap
                   </Button>
                   <Link to="/profil">
@@ -81,7 +81,7 @@ export default function Navbar() {
                 </>
               ) : (
                 guestLinks.map((link) => (
-                  <Link key={link.to} to={link.to} className="font-bakbak text-base md:text-base font-normal text-[#090a0c] whitespace-nowrap shrink-0">
+                  <Link key={link.to} to={link.to} className="font-bakbak text-base md:text-base font-normal text-foreground whitespace-nowrap shrink-0">
                     {link.label}
                   </Link>
                 ))
