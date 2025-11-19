@@ -157,24 +157,27 @@ export default function BlogPostPage() {
             {post.profiles && (
               <>
                 <Separator className="my-8" />
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 bg-muted p-6 rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-16 w-16">
-                      <AvatarImage src={post.profiles.avatar_url || undefined} alt={post.profiles.name || ''} />
-                      <AvatarFallback>
-                        <UserIcon className="h-8 w-8" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-bold text-lg text-foreground">{post.profiles.name}</p>
-                      <p className="text-sm text-muted-foreground mt-1">{post.profiles.description}</p>
+                <div>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-2">Yazar:</h3>
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-6 bg-muted p-6 rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-16 w-16">
+                        <AvatarImage src={post.profiles.avatar_url || undefined} alt={post.profiles.name || ''} />
+                        <AvatarFallback>
+                          <UserIcon className="h-8 w-8" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-bold text-lg text-foreground">{post.profiles.name}</p>
+                        <p className="text-sm text-muted-foreground mt-1">{post.profiles.description}</p>
+                      </div>
                     </div>
+                    <Button asChild variant="outline">
+                      <Link to={`/kullanici/${post.profiles.id}`}>
+                        Kullanıcının profiline erişmek için tıkla
+                      </Link>
+                    </Button>
                   </div>
-                  <Button asChild variant="outline">
-                    <Link to={`/kullanici/${post.profiles.id}`}>
-                      Kullanıcının profiline erişmek için tıkla
-                    </Link>
-                  </Button>
                 </div>
               </>
             )}
