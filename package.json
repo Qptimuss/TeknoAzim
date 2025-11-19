@@ -24,7 +24,6 @@
     "@supabase/supabase-js": "^2.81.1",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
-    "react-image-crop": "^11.0.10",
     "zod": "^3.25.76"
   },
   "devDependencies": {
