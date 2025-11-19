@@ -12,6 +12,7 @@ import {
   handleDeleteComment, 
   handleCastVote 
 } from "./routes/blog.ts";
+import { handleUpdateProfile } from "./routes/profile.ts";
 
 export function createServer() {
   const app = express();
@@ -32,8 +33,11 @@ export function createServer() {
   // Moderation route
   app.post("/api/moderate", handleModerate);
 
-  // --- Secure Blog Routes (Requires Authentication) ---
+  // --- Secure Routes (Requires Authentication) ---
   
+  // Profile
+  app.put("/api/profile", requireAuth, handleUpdateProfile);
+
   // Posts
   app.post("/api/blog/post", requireAuth, handleCreatePost);
   app.put("/api/blog/post/:id", requireAuth, handleUpdatePost);

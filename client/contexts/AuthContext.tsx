@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User as SupabaseUser } from "@supabase/supabase-js";
+import { getAuthHeaders } from "@/lib/api-utils";
 
 export interface User {
   id: string;
@@ -76,20 +77,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUser = async (newUserData: { name: string; avatar_url: string; description: string }) => {
     if (!user) return;
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({ name: newUserData.name, avatar_url: newUserData.avatar_url, description: newUserData.description })
-      .eq('id', user.id)
-      .select()
-      .single();
+    
+    const headers = await getAuthHeaders();
 
-    if (error) {
-      console.error("Error updating profile:", error);
-      throw error;
+    // Use the secure server endpoint to update the profile
+    const response = await fetch('/api/profile', {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(newUserData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to update profile via server.");
     }
+    
+    const updatedProfile = await response.json();
 
-    if (data) {
-      setUser(prevUser => prevUser ? ({ ...prevUser, name: data.name, avatar_url: data.avatar_url, description: data.description }) : null);
+    // Update local state with the data returned from the server
+    if (updatedProfile) {
+      setUser(prevUser => prevUser ? ({ 
+        ...prevUser, 
+        name: updatedProfile.name, 
+        avatar_url: updatedProfile.avatar_url, 
+        description: updatedProfile.description 
+      }) : null);
     }
   };
 

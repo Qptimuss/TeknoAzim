@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { BlogPostWithAuthor, CommentWithAuthor, Profile } from "@shared/api";
+import { getAuthHeaders } from "./api-utils";
 
 // Type for creating a new blog post
 type NewBlogPost = {
@@ -22,21 +23,6 @@ type NewComment = {
   postId: string;
   userId: string; // This is now only used for image upload path, not DB insertion
 };
-
-/**
- * Helper function to get the current user's JWT for server authentication.
- */
-const getAuthHeaders = async () => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    throw new Error("User not authenticated.");
-  }
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${session.access_token}`,
-  };
-};
-
 
 // Upload a blog image to Supabase Storage
 export const uploadBlogImage = async (file: File, userId: string): Promise<string | null> => {
