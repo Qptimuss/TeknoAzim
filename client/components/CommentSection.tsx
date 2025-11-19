@@ -37,7 +37,7 @@ interface CommentSectionProps {
 }
 
 export default function CommentSection({ postId, comments, onCommentAdded: onCommentsChange }: CommentSectionProps) {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
   const form = useForm<z.infer<typeof commentSchema>>({
     resolver: zodResolver(commentSchema),
@@ -65,7 +65,10 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
       await addComment({ postId, userId: user.id, content: values.content });
       
       if (isFirstComment) {
-        await awardBadge(user.id, "İlk Yorumcu");
+        const badgeUpdate = await awardBadge(user.id, "İlk Yorumcu");
+        if (badgeUpdate) {
+          updateUser(badgeUpdate);
+        }
       }
 
       toast.success("Yorumunuz eklendi!");

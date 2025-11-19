@@ -13,7 +13,7 @@ interface LikeDislikeButtonsProps {
 }
 
 export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [likes, setLikes] = useState(0);
   const [dislikes, setDislikes] = useState(0);
   const [userAction, setUserAction] = useState<'liked' | 'disliked' | null>(null);
@@ -84,7 +84,11 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
           }
 
           if (post && post.user_id) {
-            await awardBadge(post.user_id, "Beğeni Mıknatısı");
+            const badgeUpdate = await awardBadge(post.user_id, "Beğeni Mıknatısı");
+            // Eğer rozeti kazanan kişi şu anki kullanıcı ise, context'i güncelle
+            if (badgeUpdate && post.user_id === user.id) {
+              updateUser(badgeUpdate);
+            }
           }
         }
       }
