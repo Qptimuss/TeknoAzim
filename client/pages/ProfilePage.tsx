@@ -246,6 +246,9 @@ export default function ProfilePage() {
                   );
                 })}
               </div>
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                Bir blog oluşturmak 25 EXP, bir rozet kazanmak 50 EXP verir.
+              </p>
             </div>
 
             <h3 className="text-card-foreground text-xl font-outfit font-bold mb-4 border-t border-border pt-6">Bilgileri Güncelle</h3>
