@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getProfileById } from "./blog-store";
 import { toast } from "sonner";
-import { Award, BookUser } from "lucide-react";
+import { Award, BookUser, MessageSquarePlus, Heart } from "lucide-react";
 
 export const LEVEL_THRESHOLDS = [
   0, 100, 250, 500, 1000, 2000, 4000, 8000, 15000, 30000
@@ -9,8 +9,9 @@ export const LEVEL_THRESHOLDS = [
 
 export const ALL_BADGES = [
   { name: "İlk Blog", description: "İlk blog yazını yayınladın.", icon: BookUser },
+  { name: "İlk Yorumcu", description: "Bir gönderiye ilk yorumu sen yaptın.", icon: MessageSquarePlus },
+  { name: "Beğeni Mıknatısı", description: "Bir gönderin 5 beğeniye ulaştı.", icon: Heart },
   { name: "Topluluk Üyesi", description: "Platforma kayıt oldun.", icon: Award },
-  // Gelecekteki rozetler buraya eklenebilir
 ];
 
 export function getExpForNextLevel(level: number): number {

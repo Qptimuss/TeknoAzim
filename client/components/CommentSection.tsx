@@ -23,6 +23,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Link } from "react-router-dom";
+import { awardBadge } from "@/lib/gamification";
+import { supabase } from "@/integrations/supabase/client";
 
 const commentSchema = z.object({
   content: z.string().min(3, "Yorum en az 3 karakter olmalıdır."),
@@ -47,11 +49,25 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
       toast.error("Yorum yapmak için giriş yapmalısınız.");
       return;
     }
-
-    // Moderation check kaldırıldı.
     
     try {
+      const { count, error: countError } = await supabase
+        .from('comments')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_id', postId);
+
+      if (countError) {
+        console.error("Error checking comment count:", countError);
+      }
+
+      const isFirstComment = count === 0;
+
       await addComment({ postId, userId: user.id, content: values.content });
+      
+      if (isFirstComment) {
+        await awardBadge(user.id, "İlk Yorumcu");
+      }
+
       toast.success("Yorumunuz eklendi!");
       form.reset();
       onCommentsChange();

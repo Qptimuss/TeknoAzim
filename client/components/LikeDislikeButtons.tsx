@@ -5,6 +5,8 @@ import { getVoteCounts, getUserVote, castVote } from "@/lib/blog-store";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { awardBadge } from "@/lib/gamification";
 
 interface LikeDislikeButtonsProps {
   postId: string;
@@ -38,26 +40,23 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
       return;
     }
 
+    const isLiking = action === 'like' && userAction !== 'liked';
     let newUserAction: 'liked' | 'disliked' | null = null;
 
     if (action === 'like') {
       if (userAction === 'liked') {
-        // Unlike
         setLikes(l => l - 1);
         newUserAction = null;
       } else {
-        // Like
         setLikes(l => l + 1);
         if (userAction === 'disliked') setDislikes(d => d - 1);
         newUserAction = 'liked';
       }
-    } else { // dislike
+    } else {
       if (userAction === 'disliked') {
-        // Undislike
         setDislikes(d => d - 1);
         newUserAction = null;
       } else {
-        // Dislike
         setDislikes(d => d + 1);
         if (userAction === 'liked') setLikes(l => l - 1);
         newUserAction = 'disliked';
@@ -67,12 +66,30 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
     setUserAction(newUserAction);
     
     try {
-      // Map internal state ('liked'/'disliked') to API type ('like'/'dislike')
       const apiVoteType = newUserAction === 'liked' ? 'like' : newUserAction === 'disliked' ? 'dislike' : null;
       await castVote(postId, user.id, apiVoteType);
+
+      if (isLiking) {
+        const { likes: newLikes } = await getVoteCounts(postId);
+        if (newLikes === 5) {
+          const { data: post, error: postError } = await supabase
+            .from('blog_posts')
+            .select('user_id')
+            .eq('id', postId)
+            .single();
+          
+          if (postError) {
+            console.error("Error fetching post author for badge:", postError);
+            return;
+          }
+
+          if (post && post.user_id) {
+            await awardBadge(post.user_id, "Beğeni Mıknatısı");
+          }
+        }
+      }
     } catch (error) {
       toast.error("Oy verilirken bir hata oluştu.");
-      // Revert optimistic update on error
       fetchVotes();
     }
   };
