@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, CheckCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { calculateLevel, getExpForNextLevel, ALL_BADGES, TITLES } from "@/lib/gamification";
+import { calculateLevel, ALL_BADGES, TITLES } from "@/lib/gamification";
 import CreateBlogCard from "@/components/CreateBlogCard";
 import { cn } from "@/lib/utils";
 import {
@@ -35,18 +35,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import ImageCropperDialog from "@/components/ImageCropperDialog";
 
 const profileSchema = z.object({
   name: z.string().min(2, "İsim en az 2 karakter olmalıdır."),
   description: z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").optional(),
   selected_title: z.string().optional(), // Ünvan alanı eklendi
-  avatarFile: z
-    .instanceof(FileList)
-    .optional()
-    .refine(
-      (files) => !files || files.length === 0 || files[0].size <= 2 * 1024 * 1024, // 2MB
-      `Resim boyutu 2MB'den küçük olmalıdır.`
-    ),
 });
 
 export default function ProfilePage() {
@@ -58,6 +52,12 @@ export default function ProfilePage() {
   const [postToDelete, setPostToDelete] = useState<{id: string, imageUrl?: string | null} | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Cropping States
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [croppedAvatarFile, setCroppedAvatarFile] = useState<File | null>(null);
+
+
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -67,18 +67,13 @@ export default function ProfilePage() {
     },
   });
 
-  const avatarFile = form.watch("avatarFile");
-
+  // Cleanup preview URL when component unmounts
   useEffect(() => {
-    if (avatarFile && avatarFile.length > 0) {
-      const file = avatarFile[0];
-      const newUrl = URL.createObjectURL(file);
-      setAvatarPreview(newUrl);
-      return () => URL.revokeObjectURL(newUrl);
-    } else {
-      setAvatarPreview(null);
-    }
-  }, [avatarFile]);
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+      if (imageToCrop) URL.revokeObjectURL(imageToCrop);
+    };
+  }, [avatarPreview, imageToCrop]);
 
   useEffect(() => {
     if (user) {
@@ -97,19 +92,60 @@ export default function ProfilePage() {
     }
   }, [user, form]);
 
+  // Handle file selection and open cropper
+  const handleFileChange = (files: FileList | null) => {
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("Resim boyutu 2MB'den küçük olmalıdır.");
+        return;
+      }
+      
+      // Create a temporary URL for the cropper
+      const newUrl = URL.createObjectURL(file);
+      setImageToCrop(newUrl);
+      setIsCropperOpen(true);
+      
+      // Clear the native input value to allow re-selection of the same file later
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Handle crop completion
+  const handleCropComplete = (croppedBlob: Blob) => {
+    // Create a File object from the Blob
+    const croppedFile = new File([croppedBlob], "avatar.jpeg", { type: "image/jpeg" });
+    setCroppedAvatarFile(croppedFile);
+    
+    // Create a preview URL for the cropped image
+    const newPreviewUrl = URL.createObjectURL(croppedFile);
+    setAvatarPreview(newPreviewUrl);
+    
+    // Close cropper and clear original image URL
+    setIsCropperOpen(false);
+    if (imageToCrop) {
+      URL.revokeObjectURL(imageToCrop);
+    }
+    setImageToCrop(null);
+  };
+
   async function onSubmit(values: z.infer<typeof profileSchema>) {
     if (!user) return;
 
     try {
       let newAvatarUrl = user.avatar_url;
 
-      if (values.avatarFile && values.avatarFile.length > 0) {
+      // Check if a new cropped file exists
+      if (croppedAvatarFile) {
         toast.info("Profil fotoğrafı yükleniyor...");
-        const file = values.avatarFile[0];
-        const uploadedUrl = await uploadAvatar(file, user.id);
+        const uploadedUrl = await uploadAvatar(croppedAvatarFile, user.id);
         if (uploadedUrl) {
           newAvatarUrl = uploadedUrl;
         }
+        setCroppedAvatarFile(null); // Clear the temporary file
+        setAvatarPreview(null); // Clear the preview URL
       }
 
       const profileUpdateData = {
@@ -121,8 +157,7 @@ export default function ProfilePage() {
 
       await updateUser(profileUpdateData);
       
-      form.reset({ ...values, avatarFile: undefined });
-      setAvatarPreview(null);
+      form.reset({ ...values });
 
       toast.success("Profiliniz başarıyla güncellendi!");
     } catch (error) {
@@ -167,203 +202,210 @@ export default function ProfilePage() {
     .map(([, title]) => title);
 
   return (
-    <div className="container mx-auto px-5 py-12">
-      <h1 className="text-foreground text-4xl md:text-5xl font-outfit font-bold mb-8">
-        Profilim
-      </h1>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1">
-          <div className="bg-card border border-border rounded-lg p-8">
-            <div className="flex flex-col items-center mb-6 text-center">
-              <button type="button" onClick={() => fileInputRef.current?.click()} className="relative group cursor-pointer">
-                <Avatar className="h-24 w-24 mb-4">
-                  <AvatarImage src={avatarPreview || user.avatar_url || undefined} alt={user.name || ''} />
-                  <AvatarFallback>
-                    <UserIcon className="h-12 w-12 text-muted-foreground" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <p className="text-white text-xs font-bold">Değiştir</p>
+    <>
+      <div className="container mx-auto px-5 py-12">
+        <h1 className="text-foreground text-4xl md:text-5xl font-outfit font-bold mb-8">
+          Profilim
+        </h1>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-1">
+            <div className="bg-card border border-border rounded-lg p-8">
+              <div className="flex flex-col items-center mb-6 text-center">
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="relative group cursor-pointer">
+                  <Avatar className="h-24 w-24 mb-4">
+                    <AvatarImage src={avatarPreview || user.avatar_url || undefined} alt={user.name || ''} />
+                    <AvatarFallback>
+                      <UserIcon className="h-12 w-12 text-muted-foreground" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <p className="text-white text-xs font-bold">Değiştir</p>
+                  </div>
+                </button>
+                <h2 className="text-card-foreground text-2xl font-outfit font-bold">{user.name}</h2>
+                {user.selected_title && (
+                  <p className="text-yellow-400 font-semibold text-sm mt-1 flex items-center gap-1">
+                    <CheckCircle className="h-4 w-4" /> {user.selected_title}
+                  </p>
+                )}
+                <p className="text-muted-foreground mt-1">{user.email}</p>
+                {user.description && (
+                  <p className="text-card-foreground mt-4 text-sm">{user.description}</p>
+                )}
+              </div>
+
+              <div className="mb-6 border-t border-border pt-6">
+                <h3 className="text-card-foreground text-xl font-outfit font-bold mb-4 text-center">Seviye {level}</h3>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger className="w-full">
+                      <Progress value={expProgress} className="w-full" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Toplam Deneyim: {user.exp || 0} EXP</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <div className="text-center text-sm text-muted-foreground mt-2">
+                  {`${expInCurrentLevel} / ${expForNextLevel} EXP`}
                 </div>
-              </button>
-              <h2 className="text-card-foreground text-2xl font-outfit font-bold">{user.name}</h2>
-              {user.selected_title && (
-                <p className="text-yellow-400 font-semibold text-sm mt-1 flex items-center gap-1">
-                  <CheckCircle className="h-4 w-4" /> {user.selected_title}
+              </div>
+
+              <div className="mb-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-card-foreground text-xl font-outfit font-bold">Rozetler</h3>
+                  <span className="text-sm text-muted-foreground">
+                    {user.badges?.length || 0} / {ALL_BADGES.length}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-4 p-4 bg-background rounded-lg border border-border">
+                  {ALL_BADGES.map((badge) => {
+                    const hasBadge = user.badges?.includes(badge.name);
+                    const Icon = badge.icon;
+                    return (
+                      <div key={badge.name} className="flex items-start gap-4">
+                        <div
+                          className={cn(
+                            "flex items-center justify-center bg-card p-3 rounded-full border border-border shrink-0",
+                            !hasBadge && "opacity-30 grayscale"
+                          )}
+                        >
+                          <Icon className="h-6 w-6 text-yellow-400" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-foreground">{badge.name}</p>
+                          <p className="text-sm text-muted-foreground">{badge.description}</p>
+                          {!hasBadge && <p className="text-xs text-red-400 mt-1">(Henüz kazanılmadı)</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  Bir blog oluşturmak 25 EXP, bir rozet kazanmak 50 EXP verir.
                 </p>
-              )}
-              <p className="text-muted-foreground mt-1">{user.email}</p>
-              {user.description && (
-                <p className="text-card-foreground mt-4 text-sm">{user.description}</p>
-              )}
-            </div>
-
-            <div className="mb-6 border-t border-border pt-6">
-              <h3 className="text-card-foreground text-xl font-outfit font-bold mb-4 text-center">Seviye {level}</h3>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger className="w-full">
-                    <Progress value={expProgress} className="w-full" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Toplam Deneyim: {user.exp || 0} EXP</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <div className="text-center text-sm text-muted-foreground mt-2">
-                {`${expInCurrentLevel} / ${expForNextLevel} EXP`}
               </div>
-            </div>
 
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-card-foreground text-xl font-outfit font-bold">Rozetler</h3>
-                <span className="text-sm text-muted-foreground">
-                  {user.badges?.length || 0} / {ALL_BADGES.length}
-                </span>
-              </div>
-              <div className="grid grid-cols-1 gap-4 p-4 bg-background rounded-lg border border-border">
-                {ALL_BADGES.map((badge) => {
-                  const hasBadge = user.badges?.includes(badge.name);
-                  const Icon = badge.icon;
-                  return (
-                    <div key={badge.name} className="flex items-start gap-4">
-                      <div
-                        className={cn(
-                          "flex items-center justify-center bg-card p-3 rounded-full border border-border shrink-0",
-                          !hasBadge && "opacity-30 grayscale"
-                        )}
-                      >
-                        <Icon className="h-6 w-6 text-yellow-400" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-foreground">{badge.name}</p>
-                        <p className="text-sm text-muted-foreground">{badge.description}</p>
-                        {!hasBadge && <p className="text-xs text-red-400 mt-1">(Henüz kazanılmadı)</p>}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <p className="text-xs text-muted-foreground mt-2 text-center">
-                Bir blog oluşturmak 25 EXP, bir rozet kazanmak 50 EXP verir.
-              </p>
-            </div>
-
-            <h3 className="text-card-foreground text-xl font-outfit font-bold mb-4 border-t border-border pt-6">Bilgileri Güncelle</h3>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="avatarFile"
-                  render={({ field }) => (
-                    <FormItem className="hidden">
-                      <FormControl>
-                        <Input 
-                          type="file" 
-                          accept="image/png, image/jpeg, image/gif"
-                          ref={fileInputRef}
-                          onChange={(e) => field.onChange(e.target.files)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Kullanıcı Adı</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Açıklama (Maks 200 karakter)</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Kendinizden bahsedin..." {...field} value={field.value || ''} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="selected_title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Ünvan</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || 'none'}>
+              <h3 className="text-card-foreground text-xl font-outfit font-bold mb-4 border-t border-border pt-6">Bilgileri Güncelle</h3>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  {/* Hidden file input for triggering file selection */}
+                  <Input 
+                    type="file" 
+                    accept="image/png, image/jpeg, image/gif"
+                    ref={fileInputRef}
+                    onChange={(e) => handleFileChange(e.target.files)}
+                    className="hidden"
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Kullanıcı Adı</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Bir ünvan seç..." />
-                          </SelectTrigger>
+                          <Input {...field} />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="none">Ünvan Yok</SelectItem>
-                          {unlockedTitles.map(title => (
-                            <SelectItem key={title} value={title}>{title}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
-                  {form.formState.isSubmitting ? "Kaydediliyor..." : "Kaydet"}
-                </Button>
-              </form>
-            </Form>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Açıklama (Maks 200 karakter)</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Kendinizden bahsedin..." {...field} value={field.value || ''} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="selected_title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ünvan</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || 'none'}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Bir ünvan seç..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">Ünvan Yok</SelectItem>
+                            {unlockedTitles.map(title => (
+                              <SelectItem key={title} value={title}>{title}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
+                    {form.formState.isSubmitting ? "Kaydediliyor..." : "Kaydet"}
+                  </Button>
+                </form>
+              </Form>
+            </div>
+          </div>
+
+          <div className="lg:col-span-2">
+            <h2 className="text-foreground text-2xl font-outfit font-bold mb-4">Bloglarım ({userPosts.length})</h2>
+            {postsLoading ? (
+              <p className="text-muted-foreground">Bloglar yükleniyor...</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {userPosts.map(post => (
+                  <BlogCard 
+                    key={post.id} 
+                    post={post} 
+                    showDelete={true}
+                    onDelete={handleDeleteRequest}
+                  />
+                ))}
+                <CreateBlogCard />
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="lg:col-span-2">
-          <h2 className="text-foreground text-2xl font-outfit font-bold mb-4">Bloglarım ({userPosts.length})</h2>
-          {postsLoading ? (
-             <p className="text-muted-foreground">Bloglar yükleniyor...</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {userPosts.map(post => (
-                <BlogCard 
-                  key={post.id} 
-                  post={post} 
-                  showDelete={true}
-                  onDelete={handleDeleteRequest}
-                />
-              ))}
-              <CreateBlogCard />
-            </div>
-          )}
-        </div>
+        <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Blog Yazısını Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Bu işlem geri alınamaz. Blog yazınız, tüm yorumları ve oylarıyla birlikte kalıcı olarak silinecektir.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>İptal</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteConfirm} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 text-white">
+                {isDeleting ? "Siliniyor..." : "Sil"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-
-      <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Blog Yazısını Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bu işlem geri alınamaz. Blog yazınız, tüm yorumları ve oylarıyla birlikte kalıcı olarak silinecektir.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 text-white">
-              {isDeleting ? "Siliniyor..." : "Sil"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+      
+      {imageToCrop && (
+        <ImageCropperDialog
+          imageSrc={imageToCrop}
+          open={isCropperOpen}
+          onClose={() => {
+            setIsCropperOpen(false);
+            if (imageToCrop) URL.revokeObjectURL(imageToCrop);
+            setImageToCrop(null);
+          }}
+          onCropComplete={handleCropComplete}
+        />
+      )}
+    </>
   );
 }
