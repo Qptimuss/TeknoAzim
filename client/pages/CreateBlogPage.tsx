@@ -67,12 +67,9 @@ export default function CreateBlogPage() {
       return;
     }
 
-    // Moderation check kaldırıldı.
-
     let imageUrl: string | undefined = undefined;
 
     try {
-      form.formState.isSubmitting = true;
       // Upload image if selected
       if (values.imageFile && values.imageFile.length > 0) {
         toast.info("Resim yükleniyor...");
@@ -113,8 +110,6 @@ export default function CreateBlogPage() {
     } catch (error) {
       toast.error("Blog yazısı oluşturulurken bir hata oluştu.");
       console.error(error);
-    } finally {
-      form.formState.isSubmitting = false;
     }
   }
 
