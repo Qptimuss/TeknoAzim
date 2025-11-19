@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface NavLink {
   to: string;
@@ -36,7 +37,7 @@ export function MobileNav({ mainLinks, authLinks, logo, onMouseEnter, onMouseLea
           <span className="sr-only">Toggle navigation menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[250px] sm:w-[300px] bg-background p-4 h-auto bottom-auto rounded-br-lg">
+      <SheetContent side="left" className="w-[250px] sm:w-[300px] bg-background p-4 h-auto bottom-auto rounded-br-lg flex flex-col">
         <div className="flex flex-col gap-4">
           <Link to="/" className="flex items-center gap-2">
             {logo}
@@ -46,7 +47,7 @@ export function MobileNav({ mainLinks, authLinks, logo, onMouseEnter, onMouseLea
               <Link
                 key={link.to}
                 to={link.to}
-                className="font-bakbak text-xl text-foreground hover:text-muted-foreground"
+                className="font-bakbak text-xl text-foreground hover:text-muted-foreground whitespace-nowrap"
               >
                 {link.label}
               </Link>
@@ -59,7 +60,7 @@ export function MobileNav({ mainLinks, authLinks, logo, onMouseEnter, onMouseLea
                 key={link.to}
                 to={link.to}
                 className={cn(
-                  "font-bakbak text-xl text-foreground",
+                  "font-bakbak text-xl text-foreground whitespace-nowrap",
                   "hover:text-muted-foreground"
                 )}
               >
@@ -67,6 +68,9 @@ export function MobileNav({ mainLinks, authLinks, logo, onMouseEnter, onMouseLea
               </Link>
             ))}
           </div>
+        </div>
+        <div className="mt-auto flex justify-end">
+          <ThemeToggle />
         </div>
       </SheetContent>
     </Sheet>
