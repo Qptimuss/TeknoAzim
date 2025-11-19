@@ -7,6 +7,7 @@ import { User as UserIcon } from "lucide-react";
 import AppLogo from "./AppLogo";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { ThemeToggle } from "./ThemeToggle";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -85,6 +86,7 @@ export default function Navbar() {
                   </Link>
                 ))
               )}
+              <ThemeToggle />
             </div>
           </div>
         </nav>
