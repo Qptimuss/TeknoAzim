@@ -32,7 +32,7 @@ export default function Index() {
             <div className="flex justify-center mt-8 md:mt-10">
               <Link
                 to="/kaydol"
-                className="rounded-full bg-transparent border border-[#42484c] px-16 md:px-20 lg:px-24 py-5 md:py-6 font-roboto text-2xl md:text-3xl text-white hover:bg-[#151313]/50 transition-colors text-center"
+                className="rounded-full bg-black/20 backdrop-blur-sm border border-[#42484c] px-16 md:px-20 lg:px-24 py-5 md:py-6 font-roboto text-2xl md:text-3xl text-white hover:bg-[#151313]/50 transition-colors text-center"
               >
                 Başla
               </Link>
