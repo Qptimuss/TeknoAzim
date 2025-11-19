@@ -15,8 +15,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, Star } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { LEVEL_THRESHOLDS, getExpForNextLevel } from "@/lib/gamification";
+import { LEVEL_THRESHOLDS, getExpForNextLevel, ALL_BADGES } from "@/lib/gamification";
 import CreateBlogCard from "@/components/CreateBlogCard";
+import { cn } from "@/lib/utils";
 
 const profileSchema = z.object({
   name: z.string().min(2, "İsim en az 2 karakter olmalıdır."),
@@ -106,7 +107,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Gamification Section */}
-            <div className="mb-6 border-t border-b border-[#2a2d31] py-6">
+            <div className="mb-6 border-t border-[#2a2d31] pt-6">
               <h3 className="text-white text-xl font-outfit font-bold mb-4 text-center">Seviye {level}</h3>
               <TooltipProvider>
                 <Tooltip>
@@ -123,31 +124,45 @@ export default function ProfilePage() {
                   ? 'Maksimum Seviye' 
                   : `${expInCurrentLevel} / ${expNeededForLevelUp} EXP`}
               </div>
-
-              {user.badges && user.badges.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-white font-semibold text-center mb-2">Rozetler</h4>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {user.badges.map(badge => (
-                      <TooltipProvider key={badge}>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <div className="bg-[#151313] p-2 rounded-full border border-[#42484c]">
-                              <Star className="h-5 w-5 text-yellow-400" />
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{badge}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
-            <h3 className="text-white text-xl font-outfit font-bold mb-4">Bilgileri Güncelle</h3>
+            {/* New Badges Section */}
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-white text-xl font-outfit font-bold">Rozetler</h3>
+                <span className="text-sm text-muted-foreground">
+                  {user.badges?.length || 0} / {ALL_BADGES.length}
+                </span>
+              </div>
+              <div className="grid grid-cols-4 gap-4 p-4 bg-[#151313] rounded-lg border border-[#2a2d31]">
+                {ALL_BADGES.map((badge) => {
+                  const hasBadge = user.badges?.includes(badge.name);
+                  return (
+                    <TooltipProvider key={badge.name}>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <div
+                            className={cn(
+                              "flex items-center justify-center bg-[#090a0c] p-2 rounded-full border border-[#42484c] transition-all aspect-square",
+                              !hasBadge && "opacity-30 grayscale"
+                            )}
+                          >
+                            <Star className="h-5 w-5 text-yellow-400" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="font-bold">{badge.name}</p>
+                          <p className="text-sm">{badge.description}</p>
+                          {!hasBadge && <p className="text-xs text-muted-foreground">(Henüz kazanılmadı)</p>}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                })}
+              </div>
+            </div>
+
+            <h3 className="text-white text-xl font-outfit font-bold mb-4 border-t border-[#2a2d31] pt-6">Bilgileri Güncelle</h3>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField

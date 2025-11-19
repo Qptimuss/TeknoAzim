@@ -6,6 +6,18 @@ import { toast } from "sonner";
 // Seviye 1: 0-24 EXP, Seviye 2: 25-74 EXP, Seviye 3: 75-149 EXP vb.
 export const LEVEL_THRESHOLDS = [0, 25, 75, 150, 300, 500, 1000];
 
+export type BadgeDefinition = {
+  name: string;
+  description: string;
+};
+
+export const ALL_BADGES: BadgeDefinition[] = [
+  { name: "İlk Blog", description: "İlk blog yazını başarıyla yayınladın!" },
+  { name: "Yorum Ustası", description: "Bir gönderiye ilk yorumu sen yaptın." },
+  { name: "Topluluk Katılımcısı", description: "Platforma katıldığın için teşekkürler!" },
+  { name: "Beğenilen Yazar", description: "Bir blog yazın 10'dan fazla beğeni aldı." },
+];
+
 export const calculateLevel = (exp: number) => {
   let level = 1;
   for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
