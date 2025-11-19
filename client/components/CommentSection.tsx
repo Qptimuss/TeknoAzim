@@ -22,6 +22,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { moderateContent } from "@/lib/moderate";
+import { Link } from "react-router-dom";
 
 const commentSchema = z.object({
   content: z.string().min(3, "Yorum en az 3 karakter olmalıdır."),
@@ -46,6 +48,16 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
       toast.error("Yorum yapmak için giriş yapmalısınız.");
       return;
     }
+
+    // Moderation check
+    const isAppropriate = await moderateContent(values.content);
+    if (!isAppropriate) {
+      toast.error("Uygunsuz içerik tespit edildi.", {
+        description: "Lütfen topluluk kurallarına uygun bir dil kullanın.",
+      });
+      return;
+    }
+
     try {
       await addComment({ postId, userId: user.id, content: values.content });
       toast.success("Yorumunuz eklendi!");
@@ -78,13 +90,26 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
         {comments.length > 0 ? (
           comments.map((comment) => (
             <div key={comment.id} className="flex items-start gap-4 group">
-              <Avatar>
-                <AvatarImage src={comment.profiles?.avatar_url || undefined} />
-                <AvatarFallback>{comment.profiles?.name?.charAt(0) || 'A'}</AvatarFallback>
-              </Avatar>
               <div className="flex-1 bg-[#151313]/50 p-4 rounded-lg border border-[#2a2d31]">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="font-semibold text-white">{comment.profiles?.name || "Anonim"}</p>
+                  <div className="flex items-center gap-3">
+                    {comment.profiles ? (
+                      <Link to={`/kullanici/${comment.profiles.id}`} className="inline-flex items-center gap-2 rounded-full bg-[#151313] px-3 py-1 border border-[#42484c] transition-all duration-200 hover:border-[#6b7280] hover:-translate-y-0.5 hover:shadow-md hover:shadow-white/5">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={comment.profiles?.avatar_url || undefined} />
+                          <AvatarFallback>{comment.profiles?.name?.charAt(0) || 'A'}</AvatarFallback>
+                        </Avatar>
+                        <span className="font-semibold text-white">{comment.profiles?.name || "Anonim"}</span>
+                      </Link>
+                    ) : (
+                      <div className="inline-flex items-center gap-2 rounded-full bg-[#151313] px-3 py-1 border border-[#42484c]">
+                        <Avatar className="h-6 w-6">
+                          <AvatarFallback>{'A'}</AvatarFallback>
+                        </Avatar>
+                        <p className="font-semibold text-white">Anonim</p>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex items-center gap-4">
                     <p className="text-xs text-muted-foreground">
                       {new Date(comment.created_at).toLocaleString("tr-TR")}
@@ -101,7 +126,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                     )}
                   </div>
                 </div>
-                <p className="text-[#eeeeee] whitespace-pre-wrap">{comment.content}</p>
+                <p className="text-[#eeeeee] whitespace-pre-wrap pt-2">{comment.content}</p>
               </div>
             </div>
           ))
@@ -126,7 +151,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                 </FormItem>
               )}
             />
-            <Button type="submit" className="bg-[#151313]/95 border border-[#42484c] hover:bg-[#151313] text-white">
+            <Button type="submit" className="bg-[#151313]/95 border border-[#42484c] text-white transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:shadow-white/10">
               Yorum Gönder
             </Button>
           </form>

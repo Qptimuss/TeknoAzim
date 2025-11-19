@@ -8,6 +8,7 @@ import { BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -28,6 +29,7 @@ import {
 const profileSchema = z.object({
   name: z.string().min(2, "İsim en az 2 karakter olmalıdır."),
   avatar_url: z.string().url("Lütfen geçerli bir URL girin.").optional().or(z.literal('')),
+  description: z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").optional(),
 });
 
 export default function ProfilePage() {
@@ -41,6 +43,7 @@ export default function ProfilePage() {
     defaultValues: {
       name: "",
       avatar_url: "",
+      description: "",
     },
   });
 
@@ -53,14 +56,22 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
-      form.reset({ name: user.name || "", avatar_url: user.avatar_url || "" });
-      fetchUserPosts(user.id);
+
+      form.reset({ name: user.name || "", avatar_url: user.avatar_url || "", description: user.description || "" });
+      const fetchUserPosts = async () => {
+        setPostsLoading(true);
+        const posts = await getPostsByUserId(user.id);
+        setUserPosts(posts);
+        setPostsLoading(false);
+      };
+      fetchUserPosts();
+
     }
   }, [user, form]);
 
   async function onSubmit(values: z.infer<typeof profileSchema>) {
     try {
-      await updateUser({ name: values.name, avatar_url: values.avatar_url || '' });
+      await updateUser({ name: values.name, avatar_url: values.avatar_url || '', description: values.description || '' });
       toast.success("Profiliniz başarıyla güncellendi!");
     } catch (error) {
       toast.error("Profil güncellenirken bir hata oluştu.");
@@ -99,7 +110,7 @@ export default function ProfilePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1">
           <div className="bg-[#090a0c] border border-[#2a2d31] rounded-lg p-8">
-            <div className="flex flex-col items-center mb-6">
+            <div className="flex flex-col items-center mb-6 text-center">
               <Avatar className="h-24 w-24 mb-4">
                 <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
                 <AvatarFallback>
@@ -108,6 +119,9 @@ export default function ProfilePage() {
               </Avatar>
               <h2 className="text-white text-2xl font-outfit font-bold">{user.name}</h2>
               <p className="text-muted-foreground">{user.email}</p>
+              {user.description && (
+                <p className="text-white mt-4 text-sm">{user.description}</p>
+              )}
             </div>
             <h3 className="text-white text-xl font-outfit font-bold mb-4 border-t border-[#2a2d31] pt-6">Bilgileri Güncelle</h3>
             <Form {...form}>
@@ -138,7 +152,20 @@ export default function ProfilePage() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full bg-[#151313]/95 border border-[#42484c] hover:bg-[#151313] text-white">
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-white">Açıklama (Maks 200 karakter)</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Kendinizden bahsedin..." {...field} value={field.value || ''} className="bg-[#151313] border-[#42484c] text-white" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full bg-[#151313]/95 border border-[#42484c] text-white transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:shadow-white/10">
                   Kaydet
                 </Button>
               </form>

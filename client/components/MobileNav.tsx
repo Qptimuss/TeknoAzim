@@ -3,6 +3,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 interface NavLink {
   to: string;
@@ -13,18 +14,29 @@ interface MobileNavProps {
   mainLinks: NavLink[];
   authLinks: NavLink[];
   logo: React.ReactNode;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
 }
 
-export function MobileNav({ mainLinks, authLinks, logo }: MobileNavProps) {
+export function MobileNav({ mainLinks, authLinks, logo, onMouseEnter, onMouseLeave }: MobileNavProps) {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="md:hidden">
-          <Menu className="h-6 w-6 text-black" />
+        <Button 
+          variant="ghost" 
+          // Arka planı her zaman şeffaf yapıyoruz.
+          className="md:hidden h-auto p-2 flex items-center gap-2 text-[#090a0c] bg-transparent hover:bg-transparent transition-all duration-200 hover:-translate-y-0.5"
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
+        >
+          <Menu className="h-6 w-6" />
+          <span className={cn("font-bakbak text-xl")}>
+            Menü
+          </span>
           <span className="sr-only">Toggle navigation menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[250px] sm:w-[300px] bg-[#e6e6e6] p-4">
+      <SheetContent side="left" className="w-[250px] sm:w-[300px] bg-[#e6e6e6] p-4 h-auto bottom-auto rounded-br-lg">
         <div className="flex flex-col gap-4">
           <Link to="/" className="flex items-center gap-2">
             {logo}
@@ -40,7 +52,8 @@ export function MobileNav({ mainLinks, authLinks, logo }: MobileNavProps) {
               </Link>
             ))}
           </div>
-          <div className="flex flex-col gap-2 border-t pt-4 mt-4">
+          <Separator className="my-2 bg-[#090a0c] h-0.5 rounded-full w-11/12 mx-auto" />
+          <div className="flex flex-col gap-2">
             {authLinks.map((link) => (
               <Link
                 key={link.to}

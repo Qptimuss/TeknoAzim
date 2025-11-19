@@ -17,6 +17,9 @@ import CreateBlogPage from "./pages/CreateBlogPage";
 import BlogPostPage from "./pages/BlogPostPage";
 import ProfilePage from "./pages/ProfilePage";
 import EditBlogPage from "./pages/EditBlogPage"; // Yeni import
+import UserProfilePage from "./pages/UserProfilePage";
+import SifremiUnuttum from "./pages/SifremiUnuttum";
+import SifreSifirla from "./pages/SifreSifirla";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -34,6 +37,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/bloglar" element={<Bloglar />} />
               <Route path="/bloglar/:id" element={<BlogPostPage />} />
+              <Route path="/kullanici/:userId" element={<UserProfilePage />} />
               <Route path="/duyurular" element={<Placeholder title="Duyurular" />} />
               <Route path="/hakkimizda" element={<Placeholder title="Hakkımızda" />} />
               <Route path="/gizlilik-politikasi" element={<Placeholder title="Gizlilik Politikası" />} />
@@ -50,6 +54,8 @@ const App = () => (
             {/* Auth and other pages without the main layout */}
             <Route path="/kaydol" element={<Kaydol />} />
             <Route path="/giris" element={<Giris />} />
+            <Route path="/sifremi-unuttum" element={<SifremiUnuttum />} />
+            <Route path="/sifre-sifirla" element={<SifreSifirla />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

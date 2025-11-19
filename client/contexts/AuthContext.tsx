@@ -7,13 +7,14 @@ export interface User {
   email?: string;
   name: string | null;
   avatar_url: string | null;
+  description: string | null;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   logout: () => Promise<void>;
-  updateUser: (newUserData: { name: string; avatar_url: string }) => Promise<void>;
+  updateUser: (newUserData: { name: string; avatar_url: string; description: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('name, avatar_url')
+      .select('name, avatar_url, description')
       .eq('id', supabaseUser.id)
       .single();
 
@@ -73,11 +74,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
-  const updateUser = async (newUserData: { name: string; avatar_url: string }) => {
+  const updateUser = async (newUserData: { name: string; avatar_url: string; description: string }) => {
     if (!user) return;
     const { data, error } = await supabase
       .from('profiles')
-      .update({ name: newUserData.name, avatar_url: newUserData.avatar_url })
+      .update({ name: newUserData.name, avatar_url: newUserData.avatar_url, description: newUserData.description })
       .eq('id', user.id)
       .select()
       .single();
@@ -88,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (data) {
-      setUser(prevUser => prevUser ? ({ ...prevUser, name: data.name, avatar_url: data.avatar_url }) : null);
+      setUser(prevUser => prevUser ? ({ ...prevUser, name: data.name, avatar_url: data.avatar_url, description: data.description }) : null);
     }
   };
 

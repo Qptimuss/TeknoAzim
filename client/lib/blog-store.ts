@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { BlogPostWithAuthor, CommentWithAuthor } from "@shared/api";
+import { BlogPostWithAuthor, CommentWithAuthor, Profile } from "@shared/api";
 
 // Type for creating a new blog post
 type NewBlogPost = {
@@ -56,7 +56,7 @@ export const getBlogPosts = async (): Promise<BlogPostWithAuthor[]> => {
       content,
       image_url,
       created_at,
-      profiles ( id, name, avatar_url )
+      profiles ( id, name, avatar_url, description )
     `)
     .order("created_at", { ascending: false });
 
@@ -78,7 +78,7 @@ export const getBlogPostById = async (id: string): Promise<BlogPostWithAuthor | 
       image_url,
       created_at,
       user_id,
-      profiles ( id, name, avatar_url )
+      profiles(id, name, avatar_url, description)
     `)
     .eq("id", id)
     .single();
@@ -99,7 +99,7 @@ export const getCommentsForPost = async (postId: string): Promise<CommentWithAut
             content,
             created_at,
             user_id,
-            profiles ( id, name, avatar_url )
+            profiles ( id, name, avatar_url, description )
         `)
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
@@ -260,7 +260,7 @@ export const getPostsByUserId = async (userId: string): Promise<BlogPostWithAuth
       content,
       image_url,
       created_at,
-      profiles ( id, name, avatar_url )
+      profiles ( id, name, avatar_url, description )
     `)
     .eq('user_id', userId)
     .order("created_at", { ascending: false });
@@ -270,4 +270,19 @@ export const getPostsByUserId = async (userId: string): Promise<BlogPostWithAuth
     return [];
   }
   return data as any;
+};
+
+// Fetch a single profile by ID
+export const getProfileById = async (userId: string): Promise<Profile | null> => {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select('id, name, avatar_url, description')
+    .eq('id', userId)
+    .single();
+
+  if (error) {
+    console.error("Error fetching profile:", error);
+    return null;
+  }
+  return data;
 };

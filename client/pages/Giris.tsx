@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export default function Giris() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [showResendLink, setShowResendLink] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -23,6 +25,7 @@ export default function Giris() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setShowResendLink(false);
     
     const { error } = await supabase.auth.signInWithPassword({
       email: formData.email,
@@ -36,6 +39,7 @@ export default function Giris() {
         toast.error("Giriş Hatası", { description: "Geçersiz e-posta veya şifre." });
       } else if (error.message === 'Email not confirmed') {
         toast.error("Giriş Hatası", { description: "Giriş yapmadan önce lütfen e-postanızı doğrulayın." });
+        setShowResendLink(true);
       } else {
         toast.error("Giriş Hatası", { description: error.message });
       }
@@ -45,11 +49,38 @@ export default function Giris() {
     }
   };
 
+  const handleResendVerification = async () => {
+    if (isResending || !formData.email) return;
+    setIsResending(true);
+
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: formData.email,
+    });
+
+    setIsResending(false);
+
+    if (error) {
+      toast.error("Gönderim Hatası", { description: error.message });
+    } else {
+      toast.success("Doğrulama e-postası gönderildi!", { description: "Lütfen gelen kutunuzu kontrol edin." });
+      setShowResendLink(false);
+    }
+  };
+
+  const handleNavigateToRegister = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (formData.email) params.set('email', formData.email);
+    if (formData.password) params.set('password', formData.password);
+    navigate(`/kaydol?${params.toString()}`);
+  };
+
   return (
     <div className="relative min-h-screen bg-[#020303] flex items-center justify-center px-4 py-12 overflow-hidden">
-      <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full filter blur-xl opacity-70 animate-blob"></div>
-      <div className="absolute top-0 -right-4 w-72 h-72 bg-yellow-300 rounded-full filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-      <div className="absolute bottom-0 left-20 w-72 h-72 bg-pink-300 rounded-full filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+      <div className="absolute top-0 -left-4 w-40 h-40 md:w-72 md:h-72 bg-purple-300 rounded-full filter blur-xl opacity-70 animate-blob"></div>
+      <div className="absolute top-0 -right-4 w-40 h-40 md:w-72 md:h-72 bg-yellow-300 rounded-full filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+      <div className="absolute bottom-0 left-20 w-40 h-40 md:w-72 md:h-72 bg-pink-300 rounded-full filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
 
       <Card className="relative z-10 w-full max-w-md bg-[#090a0c]/80 backdrop-blur-sm border-[#2a2d31]">
         <CardHeader className="space-y-1">
@@ -74,7 +105,12 @@ export default function Giris() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-white">Şifre</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-white">Şifre</Label>
+                <Link to="/sifremi-unuttum" className="text-sm text-white hover:underline">
+                  Şifreni mi unuttun?
+                </Link>
+              </div>
               <Input
                 id="password"
                 name="password"
@@ -91,13 +127,27 @@ export default function Giris() {
             <Button 
               type="submit" 
               disabled={isSubmitting}
-              className="w-full bg-[#151313]/95 border border-[#42484c] hover:bg-[#151313] text-white"
+              className="w-full bg-[#151313]/95 border border-[#42484c] text-white transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:shadow-white/10"
             >
               {isSubmitting ? "Giriş yapılıyor..." : "Giriş Yap"}
             </Button>
+            {showResendLink && (
+              <div className="text-center text-sm text-[#eeeeee] w-full">
+                E-postanızı doğrulamadınız.{" "}
+                <Button
+                  type="button"
+                  variant="link"
+                  className="p-0 h-auto text-white hover:underline"
+                  onClick={handleResendVerification}
+                  disabled={isResending}
+                >
+                  {isResending ? "Gönderiliyor..." : "Tekrar gönder"}
+                </Button>
+              </div>
+            )}
             <div className="text-center text-sm text-[#eeeeee]">
               Hesabınız yok mu?{" "}
-              <Link to="/kaydol" className="text-white hover:underline">
+              <Link to="/kaydol" onClick={handleNavigateToRegister} className="text-white hover:underline">
                 Kayıt ol
               </Link>
             </div>

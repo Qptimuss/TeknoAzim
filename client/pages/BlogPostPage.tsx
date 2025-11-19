@@ -146,15 +146,17 @@ export default function BlogPostPage() {
           />
         )}
         <div className="p-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={post.profiles?.avatar_url || undefined} alt={post.profiles?.name || ''} />
-              <AvatarFallback>
-                <UserIcon className="h-4 w-4" />
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-sm text-muted-foreground">{post.profiles?.name || "Anonim"}</span>
-          </div>
+          {post.profiles && (
+            <Link to={`/kullanici/${post.profiles.id}`} className="inline-flex items-center gap-2 mb-4 w-fit rounded-full bg-[#151313] px-3 py-1 border border-[#42484c] transition-all duration-200 hover:border-[#6b7280] hover:-translate-y-0.5 hover:shadow-md hover:shadow-white/5">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={post.profiles?.avatar_url || undefined} alt={post.profiles?.name || ''} />
+                <AvatarFallback>
+                  <UserIcon className="h-4 w-4" />
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm text-muted-foreground">{post.profiles?.name || "Anonim"}</span>
+            </Link>
+          )}
           <h1 className="text-white text-3xl md:text-5xl font-outfit font-bold mb-4">
             {post.title}
           </h1>
