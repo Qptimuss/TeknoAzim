@@ -18,7 +18,7 @@ export const ALL_BADGES: BadgeDefinition[] = [
   { name: "İlk Blog", description: "İlk blog yazını başarıyla yayınladın!", icon: BookOpen },
   { name: "Yorum Ustası", description: "Bir gönderiye ilk yorumu sen yaptın.", icon: MessageSquare },
   { name: "Topluluk Katılımcısı", description: "Platforma katıldığın için teşekkürler!", icon: Users },
-  { name: "Beğenilen Yazar", description: "Bir blog yazın 5'ten fazla beğeni aldı.", icon: Heart },
+  { name: "Beğenilen Yazar", description: "Bir blog yazısı 5'ten fazla beğeni aldı.", icon: Heart },
 ];
 
 export const calculateLevel = (exp: number) => {
