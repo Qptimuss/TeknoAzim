@@ -1,154 +1,162 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
-import { getProfileById, getPostsByUserId } from "@/lib/blog-store";
-import { BlogPostWithAuthor, Profile } from "@shared/api";
+import { useParams } from "react-router-dom";
+import { getProfileById } from "@/lib/auth-store";
+import { getPostsByUserId } from "@/lib/blog-store";
+import { Profile, BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, ArrowLeft, Star } from "lucide-react";
+import { User as UserIcon, Star } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { LEVEL_THRESHOLDS, getExpForNextLevel } from "@/lib/gamification";
+import { LEVEL_THRESHOLDS, getExpForNextLevel, ALL_BADGES } from "@/lib/gamification";
+import { cn } from "@/lib/utils";
 
 export default function UserProfilePage() {
   const { userId } = useParams<{ userId: string }>();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [posts, setPosts] = useState<BlogPostWithAuthor[]>([]);
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [userPosts, setUserPosts] = useState<BlogPostWithAuthor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [postsLoading, setPostsLoading] = useState(true);
 
   useEffect(() => {
+    if (!userId) return;
+
     const fetchData = async () => {
-      if (!userId) return;
       setLoading(true);
-      const [profileData, postsData] = await Promise.all([
-        getProfileById(userId),
-        getPostsByUserId(userId),
-      ]);
-      setProfile(profileData);
-      setPosts(postsData);
+      const profile = await getProfileById(userId);
+      setUserProfile(profile);
       setLoading(false);
     };
+
+    const fetchUserPosts = async () => {
+      setPostsLoading(true);
+      const posts = await getPostsByUserId(userId);
+      setUserPosts(posts);
+      setPostsLoading(false);
+    };
+
     fetchData();
+    fetchUserPosts();
   }, [userId]);
 
   if (loading) {
-    return (
-      <div className="container mx-auto px-5 py-12">
-        <div className="flex flex-col items-center mb-8">
-          <Skeleton className="h-24 w-24 rounded-full mb-4" />
-          <Skeleton className="h-8 w-48" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex flex-col space-y-3">
-              <Skeleton className="h-[225px] w-full rounded-xl" />
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-[250px]" />
-                <Skeleton className="h-4 w-[200px]" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    return <div className="text-white text-center p-12">Profil yükleniyor...</div>;
   }
 
-  if (!profile) {
-    return (
-      <div className="container mx-auto px-5 py-12 text-center">
-        <h1 className="text-white text-4xl font-bold mb-4">Kullanıcı Bulunamadı</h1>
-        <p className="text-[#eeeeee] mb-8">Aradığınız kullanıcı mevcut değil.</p>
-        <Link to="/bloglar" className="text-white hover:underline flex items-center justify-center gap-2">
-          <ArrowLeft size={20} />
-          Bloglara Geri Dön
-        </Link>
-      </div>
-    );
+  if (!userProfile) {
+    return <div className="text-white text-center p-12">Kullanıcı bulunamadı.</div>;
   }
 
-  const hasGamificationData = typeof profile.level === 'number' && typeof profile.exp === 'number';
-  const level = hasGamificationData ? profile.level : 1;
-  const exp = hasGamificationData ? profile.exp : 0;
+  const hasGamificationData = typeof userProfile.level === 'number' && typeof userProfile.exp === 'number';
+  const level = hasGamificationData ? userProfile.level : 1;
+  const exp = hasGamificationData ? userProfile.exp : 0;
 
   const currentLevelThreshold = LEVEL_THRESHOLDS[level - 1] || 0;
   const nextLevelThreshold = getExpForNextLevel(level);
-
+  
   const expInCurrentLevel = exp - currentLevelThreshold;
   const expNeededForLevelUp = nextLevelThreshold - currentLevelThreshold;
-
-  const expProgress = expNeededForLevelUp === Infinity || expNeededForLevelUp === 0
-    ? 100
+  
+  const expProgress = expNeededForLevelUp === Infinity || expNeededForLevelUp === 0 
+    ? 100 
     : (expInCurrentLevel / expNeededForLevelUp) * 100;
 
   return (
     <div className="container mx-auto px-5 py-12">
-      <div className="flex flex-col items-center text-center mb-12">
-        <Avatar className="h-24 w-24 mb-4">
-          <AvatarImage src={profile.avatar_url || undefined} alt={profile.name || ''} />
-          <AvatarFallback>
-            <UserIcon className="h-12 w-12 text-muted-foreground" />
-          </AvatarFallback>
-        </Avatar>
-        <h1 className="text-white text-4xl md:text-5xl font-outfit font-bold">
-          {profile.name}
-        </h1>
-        {profile.description && (
-          <p className="text-muted-foreground mt-4 max-w-lg">{profile.description}</p>
-        )}
-        
-        {/* Gamification Info */}
-        <div className="mt-6 w-full max-w-sm bg-[#090a0c] border border-[#2a2d31] rounded-lg p-4">
-          <h3 className="text-white text-lg font-outfit font-bold mb-3">Seviye {level}</h3>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger className="w-full">
-                <Progress value={expProgress} className="w-full" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Toplam Deneyim: {exp} EXP</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <div className="text-center text-sm text-muted-foreground mt-2">
-            {expNeededForLevelUp === Infinity 
-              ? 'Maksimum Seviye' 
-              : `${expInCurrentLevel} / ${expNeededForLevelUp} EXP`}
+      <h1 className="text-white text-4xl md:text-5xl font-outfit font-bold mb-8">
+        {userProfile.name} Profili
+      </h1>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1">
+          <div className="bg-[#090a0c] border border-[#2a2d31] rounded-lg p-8">
+            <div className="flex flex-col items-center mb-6 text-center">
+              <Avatar className="h-24 w-24 mb-4">
+                <AvatarImage src={userProfile.avatar_url || undefined} alt={userProfile.name || ''} />
+                <AvatarFallback>
+                  <UserIcon className="h-12 w-12 text-muted-foreground" />
+                </AvatarFallback>
+              </Avatar>
+              <h2 className="text-white text-2xl font-outfit font-bold">{userProfile.name}</h2>
+              <p className="text-muted-foreground">{userProfile.email}</p>
+              {userProfile.description && (
+                <p className="text-white mt-4 text-sm">{userProfile.description}</p>
+              )}
+            </div>
+
+            {/* Gamification Section */}
+            <div className="mb-6 border-t border-[#2a2d31] pt-6">
+              <h3 className="text-white text-xl font-outfit font-bold mb-4 text-center">Seviye {level}</h3>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger className="w-full">
+                    <Progress value={expProgress} className="w-full" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Toplam Deneyim: {exp} EXP</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <div className="text-center text-sm text-muted-foreground mt-2">
+                {expNeededForLevelUp === Infinity 
+                  ? 'Maksimum Seviye' 
+                  : `${expInCurrentLevel} / ${expNeededForLevelUp} EXP`}
+              </div>
+            </div>
+
+            {/* New Badges Section (Copied from ProfilePage.tsx) */}
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-white text-xl font-outfit font-bold">Rozetler</h3>
+                <span className="text-sm text-muted-foreground">
+                  {userProfile.badges?.length || 0} / {ALL_BADGES.length}
+                </span>
+              </div>
+              <div className="grid grid-cols-4 gap-4 p-4 bg-[#151313] rounded-lg border border-[#2a2d31]">
+                {ALL_BADGES.map((badge) => {
+                  const hasBadge = userProfile.badges?.includes(badge.name);
+                  return (
+                    <TooltipProvider key={badge.name}>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <div
+                            className={cn(
+                              "flex items-center justify-center bg-[#090a0c] p-2 rounded-full border border-[#42484c] transition-all aspect-square",
+                              !hasBadge && "opacity-30 grayscale"
+                            )}
+                          >
+                            <Star className="h-5 w-5 text-yellow-400" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="font-bold">{badge.name}</p>
+                          <p className="text-sm">{badge.description}</p>
+                          {!hasBadge && <p className="text-xs text-muted-foreground">(Henüz kazanılmadı)</p>}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                })}
+              </div>
+            </div>
+            {/* End of New Badges Section */}
+
           </div>
-          {profile.badges && profile.badges.length > 0 && (
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
-              {profile.badges.map(badge => (
-                <TooltipProvider key={badge}>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <div className="bg-[#151313] p-2 rounded-full border border-[#42484c]">
-                        <Star className="h-5 w-5 text-yellow-400" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{badge}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+        </div>
+
+        <div className="lg:col-span-2">
+          <h2 className="text-white text-2xl font-outfit font-bold mb-4">{userProfile.name} Blogları ({userPosts.length})</h2>
+          {postsLoading ? (
+             <p className="text-muted-foreground">Bloglar yükleniyor...</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {userPosts.map(post => (
+                <BlogCard key={post.id} post={post} />
               ))}
             </div>
           )}
         </div>
       </div>
-
-      <h2 className="text-white text-2xl font-outfit font-bold mb-8">
-        {profile.name}'in Blogları ({posts.length})
-      </h2>
-      {posts.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {posts.map((post) => (
-            <BlogCard key={post.id} post={post} />
-          ))}
-        </div>
-      ) : (
-        <div className="bg-[#090a0c] border border-[#2a2d31] rounded-lg p-8 text-center">
-          <p className="text-muted-foreground">Bu kullanıcının henüz hiç blog yazısı yok.</p>
-        </div>
-      )}
     </div>
   );
 }
