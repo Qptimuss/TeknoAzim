@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TeknoAzim Hesap Doğrulama</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@700&family=Roboto:wght@400&display=swap');
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #020303;
+      font-family: 'Roboto', sans-serif;
+      color: #eeeeee;
+    }
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background-color: #090a0c;
+      border: 1px solid #2a2d31;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+    }
+    .header h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 28px;
+      color: #ffffff;
+      margin: 0;
+    }
+    .content p {
+      font-size: 18px;
+      line-height: 1.6;
+      margin: 20px 0;
+      color: #ffffff; /* Explicitly set to white for visibility */
+    }
+    .button {
+      display: inline-block;
+      padding: 16px 32px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #ffffff;
+      background-color: #151313;
+      border: 1px solid #42484c;
+      border-radius: 9999px;
+      text-decoration: none;
+      transition: background-color 0.2s;
+    }
+    .button:hover {
+      background-color: #2a2d31;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 12px;
+      color: #999999;
+    }
+    .footer a {
+      color: #eeeeee;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>TeknoAzim'e Hoş Geldin!</h1>
+    </div>
+    <div class="content">
+      <p>Aramıza katılmana çok az kaldı. Aşağıdaki düğmeye tıklayarak hesabını doğrulayabilir ve düşüncelerini paylaşmaya başlayabilirsin.</p>
+      <a href="{{ .ConfirmationURL }}" class="button">Hesabımı Doğrula</a>
+      <p style="font-size: 14px; color: #999999; margin-top: 20px;">
+        Düğme çalışmazsa, aşağıdaki bağlantıyı kopyalayıp tarayıcına yapıştırabilirsin:<br>
+        <a href="{{ .ConfirmationURL }}" style="color: #eeeeee; text-decoration: underline; word-break: break-all;">{{ .ConfirmationURL }}</a>
+      </p>
+    </div>
+    <div class="footer">
+      <p>Bu e-postayı sen istemediysen, lütfen dikkate alma.</p>
+    </div>
+  </div>
+</body>
+</html>
