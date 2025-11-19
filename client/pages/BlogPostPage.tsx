@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
-import { getBlogPostById, getCommentsForPost } from "@/lib/blog-store";
-import { ArrowLeft, User as UserIcon, Edit } from "lucide-react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { getBlogPostById, getCommentsForPost, deleteBlogPost } from "@/lib/blog-store";
+import { ArrowLeft, User as UserIcon, Edit, Trash2 } from "lucide-react";
 import { BlogPostWithAuthor, CommentWithAuthor } from "@shared/api";
 import LikeDislikeButtons from "@/components/LikeDislikeButtons";
 import CommentSection from "@/components/CommentSection";
@@ -9,9 +9,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function BlogPostPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [post, setPost] = useState<BlogPostWithAuthor & { user_id?: string } | null>(null);
   const [comments, setComments] = useState<CommentWithAuthor[]>([]);
@@ -32,6 +45,18 @@ export default function BlogPostPage() {
   useEffect(() => {
     fetchPostAndComments();
   }, [fetchPostAndComments]);
+
+  const handleDeletePost = async () => {
+    if (!id) return;
+    try {
+      await deleteBlogPost(id);
+      toast.success("Blog yazısı başarıyla silindi.");
+      navigate("/bloglar");
+    } catch (error) {
+      toast.error("Blog yazısı silinirken bir hata oluştu.");
+      console.error(error);
+    }
+  };
 
   if (loading) {
     return (
@@ -78,12 +103,37 @@ export default function BlogPostPage() {
           Tüm Bloglara Geri Dön
         </Link>
         {isAuthor && (
-          <Button asChild variant="outline" className="bg-[#151313]/95 border border-[#42484c] hover:bg-[#151313] text-white">
-            <Link to={`/bloglar/${post.id}/duzenle`} className="flex items-center gap-2">
-              <Edit className="h-4 w-4" />
-              Düzenle
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="outline" className="bg-[#151313]/95 border border-[#42484c] hover:bg-[#151313] text-white">
+              <Link to={`/bloglar/${post.id}/duzenle`} className="flex items-center gap-2">
+                <Edit className="h-4 w-4" />
+                Düzenle
+              </Link>
+            </Button>
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="flex items-center gap-2">
+                  <Trash2 className="h-4 w-4" />
+                  Sil
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="bg-[#090a0c] border-[#2a2d31] text-white">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Blog Yazısını Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-[#eeeeee]">
+                    Bu işlem geri alınamaz. "{post.title}" başlıklı blog yazısı kalıcı olarak silinecektir.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="bg-transparent border-[#42484c] hover:bg-[#151313]">İptal</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeletePost} className="bg-red-600 hover:bg-red-700 text-white">
+                    Sil
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         )}
       </div>
       

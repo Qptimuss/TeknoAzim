@@ -151,6 +151,19 @@ export const updateBlogPost = async (postId: string, postData: UpdateBlogPost) =
   return data;
 };
 
+// Delete a blog post
+export const deleteBlogPost = async (postId: string) => {
+  const { error } = await supabase
+    .from('blog_posts')
+    .delete()
+    .eq('id', postId);
+
+  if (error) {
+    console.error('Error deleting blog post:', error);
+    throw error;
+  }
+};
+
 // Add a new comment
 export const addComment = async (commentData: NewComment) => {
     const { data, error } = await supabase
