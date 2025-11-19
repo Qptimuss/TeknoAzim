@@ -1,14 +1,15 @@
-import { supabase } from "./supabase";
-import { getProfileById } from "./auth-store";
+import { supabase } from "@/integrations/supabase/client";
+import { getProfileById } from "./blog-store";
 import { toast } from "sonner";
+import { Award, BookUser } from "lucide-react";
 
 export const LEVEL_THRESHOLDS = [
   0, 100, 250, 500, 1000, 2000, 4000, 8000, 15000, 30000
 ];
 
 export const ALL_BADGES = [
-  { name: "İlk Blog", description: "İlk blog yazını yayınladın." },
-  { name: "Topluluk Üyesi", description: "Platforma kayıt oldun." },
+  { name: "İlk Blog", description: "İlk blog yazını yayınladın.", icon: BookUser },
+  { name: "Topluluk Üyesi", description: "Platforma kayıt oldun.", icon: Award },
   // Gelecekteki rozetler buraya eklenebilir
 ];
 
