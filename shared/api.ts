@@ -11,6 +11,7 @@ export interface Profile {
   level: number;
   exp: number;
   badges: string[];
+  selected_title?: string | null;
 }
 
 // This will represent a row in the `comments` table, joined with the author's profile

@@ -1,7 +1,9 @@
-import { Award, BookOpen, MessageSquare, ThumbsUp, UserPlus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Award, BookOpen, MessageSquare, ThumbsUp } from "lucide-react";
 import { Profile } from "@shared/api";
+import { toast } from "sonner";
 
-// --- YENİ: ÜNVAN SİSTEMİ ---
+// --- ÜNVAN SİSTEMİ ---
 export const TITLES: { [key: number]: string } = {
   1: "Yeni Blogger",
   2: "Gelişen Yazar",
@@ -11,12 +13,7 @@ export const TITLES: { [key: number]: string } = {
   10: "TeknoAzim Elçisi",
 };
 
-// --- GÜNCELLENDİ: SEVİYE ATLAMA EŞİKLERİ ---
-// Artık dinamik olarak hesaplanıyor.
-// Seviye 1 -> 2: 25 EXP
-// Seviye 2 -> 3: 50 EXP
-// Seviye 3 -> 4: 75 EXP
-// ...
+// --- SEVİYE ATLAMA EŞİKLERİ ---
 export const getExpForNextLevel = (level: number): number => {
   if (level <= 0) return 25;
   return level * 25;
@@ -25,7 +22,6 @@ export const getExpForNextLevel = (level: number): number => {
 // Toplam EXP'ye göre hangi seviyede olunması gerektiğini hesaplar.
 export const calculateLevel = (exp: number): { level: number, expForNextLevel: number, currentLevelExp: number } => {
   let level = 1;
-  let requiredExp = 0;
   let cumulativeExp = 0;
 
   while (exp >= cumulativeExp + getExpForNextLevel(level)) {
@@ -33,60 +29,105 @@ export const calculateLevel = (exp: number): { level: number, expForNextLevel: n
     level++;
   }
   
-  requiredExp = getExpForNextLevel(level);
+  const expForNextLevel = getExpForNextLevel(level);
   const currentLevelExp = cumulativeExp;
 
-  return { level, expForNextLevel: requiredExp, currentLevelExp };
+  return { level, expForNextLevel, currentLevelExp };
 };
 
 
 // --- ROZETLER ---
 export const ALL_BADGES = [
-  { name: "İlk Adım", description: "İlk blog yazını yayınla.", icon: BookOpen },
-  { name: "Sohbet Başlatıcı", description: "İlk yorumunu yap.", icon: MessageSquare },
-  { name: "Hoş Geldin", description: "Hesabını oluştur.", icon: UserPlus },
-  { name: "Takdir Edici", description: "Bir gönderiyi beğen.", icon: ThumbsUp },
+  { name: "İlk Blog", description: "İlk blog yazını yayınla.", icon: BookOpen },
+  { name: "İlk Yorumcu", description: "Bir gönderiye ilk yorumu yap.", icon: MessageSquare },
+  { name: "Beğeni Mıknatısı", description: "Bir gönderin 5 beğeni alsın.", icon: ThumbsUp },
   { name: "Topluluk İnşacısı", description: "5 blog yazısı yayınla.", icon: Award },
 ];
 
 // --- EXP KAZANIM MİKTARLARI ---
 export const EXP_ACTIONS = {
-  CREATE_POST: 20,
+  CREATE_POST: 25,
   CREATE_COMMENT: 10,
   RECEIVE_LIKE: 5,
-  // --- YENİ: ROZET KAZANMA ÖDÜLÜ ---
   EARN_BADGE: 50,
 };
 
-// --- ROZET KONTROL MANTIĞI ---
-// Bu fonksiyon, bir aksiyon sonrası yeni rozet kazanılıp kazanılmadığını kontrol eder.
-// Şimdilik bu mantık sunucu tarafında veya daha karmaşık bir yapıda olmalı,
-// bu yüzden burası konsepti göstermek amaçlıdır.
-export const checkNewBadges = (profile: Profile, action: 'create_post' | 'create_comment' | 'receive_like', userStats: { postCount: number, commentCount: number }): string[] => {
-    const newBadges: string[] = [];
-    const currentBadges = profile.badges || [];
+// Function to add experience points to a user
+export const addExp = async (userId: string, amount: number): Promise<Profile | null> => {
+  const { data: profile, error: fetchError } = await supabase
+    .from('profiles')
+    .select('exp, level')
+    .eq('id', userId)
+    .single();
 
-    // "Hoş Geldin" rozeti (genellikle kayıt sırasında verilir)
-    if (!currentBadges.includes("Hoş Geldin")) {
-        newBadges.push("Hoş Geldin");
-    }
+  if (fetchError || !profile) {
+    console.error("Error fetching profile for EXP update:", fetchError);
+    return null;
+  }
 
-    // "İlk Adım" rozeti
-    if (action === 'create_post' && !currentBadges.includes("İlk Adım")) {
-        newBadges.push("İlk Adım");
-    }
+  const newExp = (profile.exp || 0) + amount;
+  const { level: newLevel } = calculateLevel(newExp);
 
-    // "Sohbet Başlatıcı" rozeti
-    if (action === 'create_comment' && !currentBadges.includes("Sohbet Başlatıcı")) {
-        newBadges.push("Sohbet Başlatıcı");
-    }
-    
-    // "Topluluk İnşacısı" rozeti
-    if (action === 'create_post' && userStats.postCount >= 5 && !currentBadges.includes("Topluluk İnşacısı")) {
-        newBadges.push("Topluluk İnşacısı");
-    }
+  const { data: updatedProfile, error: updateError } = await supabase
+    .from('profiles')
+    .update({ exp: newExp, level: newLevel })
+    .eq('id', userId)
+    .select()
+    .single();
 
-    // Diğer rozetler için de benzer kontroller eklenebilir...
+  if (updateError) {
+    console.error("Error updating profile EXP:", updateError);
+    return null;
+  }
 
-    return newBadges;
+  if (newLevel > (profile.level || 1)) {
+    toast.success(`Tebrikler! Seviye ${newLevel} oldun!`);
+  }
+
+  return updatedProfile as Profile;
+};
+
+// Function to award a badge to a user
+export const awardBadge = async (userId: string, badgeName: string): Promise<Profile | null> => {
+  const { data: profile, error: fetchError } = await supabase
+    .from('profiles')
+    .select('badges, exp, level')
+    .eq('id', userId)
+    .single();
+
+  if (fetchError || !profile) {
+    console.error("Error fetching profile for badge award:", fetchError);
+    return null;
+  }
+
+  const currentBadges = profile.badges || [];
+  if (currentBadges.includes(badgeName)) {
+    return null; // User already has the badge
+  }
+
+  const newBadges = [...currentBadges, badgeName];
+  const newExp = (profile.exp || 0) + EXP_ACTIONS.EARN_BADGE;
+  const { level: newLevel } = calculateLevel(newExp);
+
+  const { data: updatedProfile, error: updateError } = await supabase
+    .from('profiles')
+    .update({ badges: newBadges, exp: newExp, level: newLevel })
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (updateError) {
+    console.error("Error awarding badge:", updateError);
+    return null;
+  }
+
+  toast.success("Yeni Rozet Kazandın!", {
+    description: `"${badgeName}" rozetini kazandın ve ${EXP_ACTIONS.EARN_BADGE} EXP elde ettin!`,
+  });
+
+  if (newLevel > (profile.level || 1)) {
+    toast.success(`Tebrikler! Seviye ${newLevel} oldun!`);
+  }
+
+  return updatedProfile as Profile;
 };

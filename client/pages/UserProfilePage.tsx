@@ -4,10 +4,10 @@ import { getProfileById, getPostsByUserId } from "@/lib/blog-store";
 import { Profile, BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon } from "lucide-react";
+import { User as UserIcon, CheckCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { LEVEL_THRESHOLDS, getExpForNextLevel, ALL_BADGES } from "@/lib/gamification";
+import { calculateLevel, ALL_BADGES } from "@/lib/gamification";
 import { cn } from "@/lib/utils";
 
 export default function UserProfilePage() {
@@ -46,19 +46,9 @@ export default function UserProfilePage() {
     return <div className="text-white text-center p-12">Kullanıcı bulunamadı.</div>;
   }
 
-  const hasGamificationData = typeof userProfile.level === 'number' && typeof userProfile.exp === 'number';
-  const level = hasGamificationData ? userProfile.level : 1;
-  const exp = hasGamificationData ? userProfile.exp : 0;
-
-  const currentLevelThreshold = LEVEL_THRESHOLDS[level - 1] || 0;
-  const nextLevelThreshold = getExpForNextLevel(level);
-  
-  const expInCurrentLevel = exp - currentLevelThreshold;
-  const expNeededForLevelUp = nextLevelThreshold - currentLevelThreshold;
-  
-  const expProgress = expNeededForLevelUp === Infinity || expNeededForLevelUp === 0 
-    ? 100 
-    : (expInCurrentLevel / expNeededForLevelUp) * 100;
+  const { level, expForNextLevel, currentLevelExp } = calculateLevel(userProfile.exp || 0);
+  const expInCurrentLevel = (userProfile.exp || 0) - currentLevelExp;
+  const expProgress = expForNextLevel === 0 ? 100 : (expInCurrentLevel / expForNextLevel) * 100;
 
   return (
     <div className="container mx-auto px-5 py-12">
@@ -77,7 +67,12 @@ export default function UserProfilePage() {
                 </AvatarFallback>
               </Avatar>
               <h2 className="text-white text-2xl font-outfit font-bold">{userProfile.name}</h2>
-              <p className="text-muted-foreground">{userProfile.description}</p>
+              {userProfile.selected_title && (
+                <p className="text-yellow-400 font-semibold text-sm mt-1 flex items-center gap-1">
+                  <CheckCircle className="h-4 w-4" /> {userProfile.selected_title}
+                </p>
+              )}
+              <p className="text-muted-foreground mt-2">{userProfile.description}</p>
             </div>
 
             {/* Gamification Section */}
@@ -89,14 +84,12 @@ export default function UserProfilePage() {
                     <Progress value={expProgress} className="w-full" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Toplam Deneyim: {exp} EXP</p>
+                    <p>Toplam Deneyim: {userProfile.exp || 0} EXP</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
               <div className="text-center text-sm text-muted-foreground mt-2">
-                {expNeededForLevelUp === Infinity 
-                  ? 'Maksimum Seviye' 
-                  : `${expInCurrentLevel} / ${expNeededForLevelUp} EXP`}
+                {`${expInCurrentLevel} / ${expForNextLevel} EXP`}
               </div>
             </div>
 
