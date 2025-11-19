@@ -22,7 +22,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { moderateContent } from "@/lib/moderate";
 import { Link } from "react-router-dom";
 
 const commentSchema = z.object({
@@ -49,15 +48,8 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
       return;
     }
 
-    // Moderation check
-    const isAppropriate = await moderateContent(values.content);
-    if (!isAppropriate) {
-      toast.error("Uygunsuz içerik tespit edildi.", {
-        description: "Lütfen topluluk kurallarına uygun bir dil kullanın.",
-      });
-      return;
-    }
-
+    // Moderation check kaldırıldı.
+    
     try {
       await addComment({ postId, userId: user.id, content: values.content });
       toast.success("Yorumunuz eklendi!");
@@ -151,7 +143,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                 </FormItem>
               )}
             />
-            <Button type="submit" className="bg-[#151313]/95 border border-[#42484c] text-white transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:shadow-white/10">
+            <Button type="submit" className="w-full bg-[#151313]/95 border border-[#42484c] text-white transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:shadow-white/10">
               Yorum Gönder
             </Button>
           </form>

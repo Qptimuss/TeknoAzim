@@ -17,7 +17,6 @@ import {
 import { toast } from "sonner";
 import { addBlogPost, uploadBlogImage, getPostsByUserId } from "@/lib/blog-store";
 import { useAuth } from "@/contexts/AuthContext";
-import { moderateContent } from "@/lib/moderate";
 import { addExp, awardBadge } from "@/lib/gamification";
 
 const blogSchema = z.object({
@@ -68,16 +67,7 @@ export default function CreateBlogPage() {
       return;
     }
 
-    // Moderation check
-    const isTitleAppropriate = await moderateContent(values.title);
-    const isContentAppropriate = await moderateContent(values.content);
-
-    if (!isTitleAppropriate || !isContentAppropriate) {
-      toast.error("Uygunsuz içerik tespit edildi.", {
-        description: "Lütfen topluluk kurallarına uygun bir dil kullanın.",
-      });
-      return;
-    }
+    // Moderation check kaldırıldı.
 
     let imageUrl: string | undefined = undefined;
 
