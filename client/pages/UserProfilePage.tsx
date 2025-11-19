@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { getProfileById } from "@/lib/auth-store";
-import { getPostsByUserId } from "@/lib/blog-store";
+import { getProfileById, getPostsByUserId } from "@/lib/blog-store";
 import { Profile, BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
