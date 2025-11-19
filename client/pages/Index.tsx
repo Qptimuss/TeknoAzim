@@ -96,7 +96,7 @@ export default function Index() {
               <div className="relative min-h-[300px] md:min-h-[400px] lg:min-h-[500px] flex items-center justify-center">
                 <img
                   loading="lazy"
-                  src="/security-ai.png"
+                  src="/cyberbrain.png"
                   alt="Güvenlik"
                   className="w-full h-auto object-contain max-w-md"
                 />
