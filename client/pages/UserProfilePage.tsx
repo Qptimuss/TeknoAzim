@@ -66,10 +66,14 @@ export default function UserProfilePage() {
     );
   }
 
-  const currentLevelThreshold = LEVEL_THRESHOLDS[profile.level - 1] || 0;
-  const nextLevelThreshold = getExpForNextLevel(profile.level);
+  const hasGamificationData = typeof profile.level === 'number' && typeof profile.exp === 'number';
+  const level = hasGamificationData ? profile.level : 1;
+  const exp = hasGamificationData ? profile.exp : 0;
 
-  const expInCurrentLevel = profile.exp - currentLevelThreshold;
+  const currentLevelThreshold = LEVEL_THRESHOLDS[level - 1] || 0;
+  const nextLevelThreshold = getExpForNextLevel(level);
+
+  const expInCurrentLevel = exp - currentLevelThreshold;
   const expNeededForLevelUp = nextLevelThreshold - currentLevelThreshold;
 
   const expProgress = expNeededForLevelUp === Infinity || expNeededForLevelUp === 0
@@ -94,14 +98,14 @@ export default function UserProfilePage() {
         
         {/* Gamification Info */}
         <div className="mt-6 w-full max-w-sm bg-[#090a0c] border border-[#2a2d31] rounded-lg p-4">
-          <h3 className="text-white text-lg font-outfit font-bold mb-3">Seviye {profile.level}</h3>
+          <h3 className="text-white text-lg font-outfit font-bold mb-3">Seviye {level}</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger className="w-full">
                 <Progress value={expProgress} className="w-full" />
               </TooltipTrigger>
               <TooltipContent>
-                <p>Toplam Deneyim: {profile.exp} EXP</p>
+                <p>Toplam Deneyim: {exp} EXP</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

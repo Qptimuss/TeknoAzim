@@ -67,10 +67,14 @@ export default function ProfilePage() {
     return null; // ProtectedRoute handles redirection
   }
 
-  const currentLevelThreshold = LEVEL_THRESHOLDS[user.level - 1] || 0;
-  const nextLevelThreshold = getExpForNextLevel(user.level);
+  const hasGamificationData = typeof user.level === 'number' && typeof user.exp === 'number';
+  const level = hasGamificationData ? user.level : 1;
+  const exp = hasGamificationData ? user.exp : 0;
+
+  const currentLevelThreshold = LEVEL_THRESHOLDS[level - 1] || 0;
+  const nextLevelThreshold = getExpForNextLevel(level);
   
-  const expInCurrentLevel = user.exp - currentLevelThreshold;
+  const expInCurrentLevel = exp - currentLevelThreshold;
   const expNeededForLevelUp = nextLevelThreshold - currentLevelThreshold;
   
   const expProgress = expNeededForLevelUp === Infinity || expNeededForLevelUp === 0 
@@ -102,14 +106,14 @@ export default function ProfilePage() {
 
             {/* Gamification Section */}
             <div className="mb-6 border-t border-b border-[#2a2d31] py-6">
-              <h3 className="text-white text-xl font-outfit font-bold mb-4 text-center">Seviye {user.level}</h3>
+              <h3 className="text-white text-xl font-outfit font-bold mb-4 text-center">Seviye {level}</h3>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger className="w-full">
                     <Progress value={expProgress} className="w-full" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Toplam Deneyim: {user.exp} EXP</p>
+                    <p>Toplam Deneyim: {exp} EXP</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
