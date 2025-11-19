@@ -6,7 +6,7 @@ type NewBlogPost = {
   title: string;
   content: string;
   imageUrl?: string;
-  userId: string;
+  userId: string; // This is now only used for image upload path, not DB insertion
 };
 
 // Type for updating an existing blog post
@@ -20,8 +20,23 @@ type UpdateBlogPost = {
 type NewComment = {
   content: string;
   postId: string;
-  userId: string;
+  userId: string; // This is now only used for image upload path, not DB insertion
 };
+
+/**
+ * Helper function to get the current user's JWT for server authentication.
+ */
+const getAuthHeaders = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    throw new Error("User not authenticated.");
+  }
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${session.access_token}`,
+  };
+};
+
 
 // Upload a blog image to Supabase Storage
 export const uploadBlogImage = async (file: File, userId: string): Promise<string | null> => {
@@ -56,6 +71,7 @@ export const getBlogPosts = async (): Promise<BlogPostWithAuthor[]> => {
       content,
       image_url,
       created_at,
+      user_id,
       profiles ( id, name, avatar_url, description )
     `)
     .order("created_at", { ascending: false });
@@ -111,90 +127,95 @@ export const getCommentsForPost = async (postId: string): Promise<CommentWithAut
     return data as any;
 };
 
-// Add a new blog post
+// Add a new blog post (NOW SECURE VIA SERVER)
 export const addBlogPost = async (postData: NewBlogPost) => {
-  const { data, error } = await supabase
-    .from("blog_posts")
-    .insert({
+  const headers = await getAuthHeaders();
+  
+  const response = await fetch('/api/blog/post', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
       title: postData.title,
       content: postData.content,
-      image_url: postData.imageUrl,
-      user_id: postData.userId,
-    })
-    .select()
-    .single();
+      imageUrl: postData.imageUrl,
+    }),
+  });
 
-  if (error) {
-    console.error("Error adding blog post:", error);
-    throw error;
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to add blog post via server.");
   }
-  return data;
+  return await response.json();
 };
 
-// Update an existing blog post
+// Update an existing blog post (NOW SECURE VIA SERVER)
 export const updateBlogPost = async (postId: string, postData: UpdateBlogPost) => {
-  const { data, error } = await supabase
-    .from("blog_posts")
-    .update({
-      title: postData.title,
-      content: postData.content,
-      image_url: postData.imageUrl,
-    })
-    .eq('id', postId)
-    .select()
-    .single();
+  const headers = await getAuthHeaders();
 
-  if (error) {
-    console.error("Error updating blog post:", error);
-    throw error;
+  const response = await fetch(`/api/blog/post/${postId}`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(postData),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to update blog post via server.");
   }
-  return data;
+  return await response.json();
 };
 
-// Delete a blog post
+// Delete a blog post (NOW SECURE VIA SERVER)
 export const deleteBlogPost = async (postId: string) => {
-  const { error } = await supabase
-    .from('blog_posts')
-    .delete()
-    .eq('id', postId);
+  const headers = await getAuthHeaders();
 
-  if (error) {
-    console.error('Error deleting blog post:', error);
-    throw error;
+  const response = await fetch(`/api/blog/post/${postId}`, {
+    method: 'DELETE',
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to delete blog post via server.");
   }
 };
 
-// Add a new comment
+// Add a new comment (NOW SECURE VIA SERVER)
 export const addComment = async (commentData: NewComment) => {
-    const { data, error } = await supabase
-        .from('comments')
-        .insert({
-            content: commentData.content,
-            post_id: commentData.postId,
-            user_id: commentData.userId,
-        });
+    const headers = await getAuthHeaders();
 
-    if (error) {
-        console.error('Error adding comment:', error);
-        throw error;
+    const response = await fetch('/api/blog/comment', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            content: commentData.content,
+            postId: commentData.postId,
+        }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to add comment via server.");
     }
-    return data;
+    return await response.json();
 };
 
-// Delete a comment
+// Delete a comment (NOW SECURE VIA SERVER)
 export const deleteComment = async (commentId: string) => {
-  const { error } = await supabase
-    .from('comments')
-    .delete()
-    .eq('id', commentId);
+  const headers = await getAuthHeaders();
 
-  if (error) {
-    console.error('Error deleting comment:', error);
-    throw error;
+  const response = await fetch(`/api/blog/comment/${commentId}`, {
+    method: 'DELETE',
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to delete comment via server.");
   }
 };
 
-// Fetch vote counts for a post
+// Fetch vote counts for a post (READ operation, remains client-side)
 export const getVoteCounts = async (postId: string) => {
     const { data, error } = await supabase
         .from('post_votes')
@@ -212,7 +233,7 @@ export const getVoteCounts = async (postId: string) => {
     return { likes, dislikes };
 };
 
-// Get the current user's vote for a post
+// Get the current user's vote for a post (READ operation, remains client-side)
 export const getUserVote = async (postId: string, userId: string) => {
     if (!userId) return null;
     const { data, error } = await supabase
@@ -228,26 +249,23 @@ export const getUserVote = async (postId: string, userId: string) => {
     return data.vote_type === 1 ? 'liked' : 'disliked';
 };
 
-// Upsert a vote (like/dislike)
+// Upsert a vote (like/dislike) (NOW SECURE VIA SERVER)
 export const castVote = async (postId: string, userId: string, voteType: 'like' | 'dislike' | null) => {
-    if (voteType === null) {
-        // Remove vote
-        const { error } = await supabase
-            .from('post_votes')
-            .delete()
-            .eq('post_id', postId)
-            .eq('user_id', userId);
-        if (error) throw error;
-    } else {
-        // Add or update vote
-        const { error } = await supabase
-            .from('post_votes')
-            .upsert({
-                post_id: postId,
-                user_id: userId,
-                vote_type: voteType === 'like' ? 1 : -1,
-            }, { onConflict: 'user_id, post_id' });
-        if (error) throw error;
+    // userId is no longer needed for the API call, but kept in signature for consistency
+    const headers = await getAuthHeaders();
+    
+    const response = await fetch('/api/blog/vote', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            postId,
+            voteType: voteType === null ? 'null' : voteType,
+        }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to cast vote via server.");
     }
 };
 
@@ -260,6 +278,7 @@ export const getPostsByUserId = async (userId: string): Promise<BlogPostWithAuth
       content,
       image_url,
       created_at,
+      user_id,
       profiles ( id, name, avatar_url, description )
     `)
     .eq('user_id', userId)
@@ -272,7 +291,7 @@ export const getPostsByUserId = async (userId: string): Promise<BlogPostWithAuth
   return data as any;
 };
 
-// Fetch a single profile by ID
+// Fetch a single profile by ID (READ operation, remains client-side)
 export const getProfileById = async (userId: string): Promise<Profile | null> => {
   const { data, error } = await supabase
     .from("profiles")
