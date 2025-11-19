@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { supabaseAdmin } from "../lib/supabase-admin";
+import { supabaseAdmin } from "../lib/supabase-admin.ts";
 import { z } from "zod";
 
 // --- Schemas for validation ---

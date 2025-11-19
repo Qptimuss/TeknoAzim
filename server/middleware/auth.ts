@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { supabaseAdmin } from "../lib/supabase-admin";
+import { supabaseAdmin } from "../lib/supabase-admin.ts";
 
 // Extend the Express Request type to include the user property
 declare global {
