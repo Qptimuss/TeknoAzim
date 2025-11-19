@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { getAllBlogPosts } from "@/lib/blog-store";
+import { getBlogPosts } from "@/lib/blog-store";
 import { BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ export default function Bloglar() {
   useEffect(() => {
     const fetchPosts = async () => {
       setLoading(true);
-      const allPosts = await getAllBlogPosts();
+      const allPosts = await getBlogPosts();
       setPosts(allPosts);
       setLoading(false);
     };
