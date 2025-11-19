@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/contexts/AuthContext";
-import { getPostsByUserId } from "@/lib/blog-store";
+import { getPostsByUserId, uploadAvatar } from "@/lib/blog-store";
 import { BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
 import { Button } from "@/components/ui/button";
@@ -21,27 +21,47 @@ import { cn } from "@/lib/utils";
 
 const profileSchema = z.object({
   name: z.string().min(2, "İsim en az 2 karakter olmalıdır."),
-  avatar_url: z.string().url("Lütfen geçerli bir URL girin.").optional().or(z.literal('')),
   description: z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").optional(),
+  avatarFile: z
+    .instanceof(FileList)
+    .optional()
+    .refine(
+      (files) => !files || files.length === 0 || files[0].size <= 2 * 1024 * 1024, // 2MB
+      `Resim boyutu 2MB'den küçük olmalıdır.`
+    ),
 });
 
 export default function ProfilePage() {
   const { user, updateUser, loading } = useAuth();
   const [userPosts, setUserPosts] = useState<BlogPostWithAuthor[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: "",
-      avatar_url: "",
       description: "",
     },
   });
 
+  const avatarFile = form.watch("avatarFile");
+
+  useEffect(() => {
+    if (avatarFile && avatarFile.length > 0) {
+      const file = avatarFile[0];
+      const newUrl = URL.createObjectURL(file);
+      setAvatarPreview(newUrl);
+      return () => URL.revokeObjectURL(newUrl);
+    } else {
+      setAvatarPreview(null);
+    }
+  }, [avatarFile]);
+
   useEffect(() => {
     if (user) {
-      form.reset({ name: user.name || "", avatar_url: user.avatar_url || "", description: user.description || "" });
+      form.reset({ name: user.name || "", description: user.description || "" });
       const fetchUserPosts = async () => {
         setPostsLoading(true);
         const posts = await getPostsByUserId(user.id);
@@ -53,11 +73,35 @@ export default function ProfilePage() {
   }, [user, form]);
 
   async function onSubmit(values: z.infer<typeof profileSchema>) {
+    if (!user) return;
+
     try {
-      await updateUser({ name: values.name, avatar_url: values.avatar_url || '', description: values.description || '' });
+      let newAvatarUrl = user.avatar_url;
+
+      if (values.avatarFile && values.avatarFile.length > 0) {
+        toast.info("Profil fotoğrafı yükleniyor...");
+        const file = values.avatarFile[0];
+        const uploadedUrl = await uploadAvatar(file, user.id);
+        if (uploadedUrl) {
+          newAvatarUrl = uploadedUrl;
+        }
+      }
+
+      const profileUpdateData = {
+        name: values.name,
+        description: values.description || '',
+        avatar_url: newAvatarUrl,
+      };
+
+      await updateUser(profileUpdateData);
+      
+      form.reset({ ...values, avatarFile: undefined });
+      setAvatarPreview(null);
+
       toast.success("Profiliniz başarıyla güncellendi!");
     } catch (error) {
       toast.error("Profil güncellenirken bir hata oluştu.");
+      console.error(error);
     }
   }
 
@@ -93,12 +137,17 @@ export default function ProfilePage() {
         <div className="lg:col-span-1">
           <div className="bg-[#090a0c] border border-[#2a2d31] rounded-lg p-8">
             <div className="flex flex-col items-center mb-6 text-center">
-              <Avatar className="h-24 w-24 mb-4">
-                <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-                <AvatarFallback>
-                  <UserIcon className="h-12 w-12 text-muted-foreground" />
-                </AvatarFallback>
-              </Avatar>
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="relative group cursor-pointer">
+                <Avatar className="h-24 w-24 mb-4">
+                  <AvatarImage src={avatarPreview || user.avatar_url || undefined} alt={user.name || ''} />
+                  <AvatarFallback>
+                    <UserIcon className="h-12 w-12 text-muted-foreground" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <p className="text-white text-xs font-bold">Değiştir</p>
+                </div>
+              </button>
               <h2 className="text-white text-2xl font-outfit font-bold">{user.name}</h2>
               <p className="text-muted-foreground">{user.email}</p>
               {user.description && (
@@ -126,7 +175,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Badges Section - Updated to show details directly */}
+            {/* Badges Section */}
             <div className="mb-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-white text-xl font-outfit font-bold">Rozetler</h3>
@@ -158,11 +207,27 @@ export default function ProfilePage() {
                 })}
               </div>
             </div>
-            {/* End of Badges Section */}
 
             <h3 className="text-white text-xl font-outfit font-bold mb-4 border-t border-[#2a2d31] pt-6">Bilgileri Güncelle</h3>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="avatarFile"
+                  render={({ field }) => (
+                    <FormItem className="hidden">
+                      <FormControl>
+                        <Input 
+                          type="file" 
+                          accept="image/png, image/jpeg, image/gif"
+                          ref={fileInputRef}
+                          onChange={(e) => field.onChange(e.target.files)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="name"
@@ -171,19 +236,6 @@ export default function ProfilePage() {
                       <FormLabel className="text-white">Kullanıcı Adı</FormLabel>
                       <FormControl>
                         <Input {...field} className="bg-[#151313] border-[#42484c] text-white" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="avatar_url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-white">Profil Fotoğrafı URL'si</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://ornek.com/resim.jpg" {...field} value={field.value || ''} className="bg-[#151313] border-[#42484c] text-white" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -202,8 +254,8 @@ export default function ProfilePage() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full bg-[#151313]/95 border border-[#42484c] text-white transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:shadow-white/10">
-                  Kaydet
+                <Button type="submit" disabled={form.formState.isSubmitting} className="w-full bg-[#151313]/95 border border-[#42484c] text-white transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:shadow-white/10">
+                  {form.formState.isSubmitting ? "Kaydediliyor..." : "Kaydet"}
                 </Button>
               </form>
             </Form>

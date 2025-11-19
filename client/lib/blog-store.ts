@@ -38,6 +38,32 @@ export const uploadBlogImage = async (file: File, userId: string): Promise<strin
   return publicUrl;
 };
 
+// Upload an avatar image to Supabase Storage
+export const uploadAvatar = async (file: File, userId: string): Promise<string | null> => {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `avatar.${fileExt}`;
+  // Using a subfolder in the existing blog_images bucket
+  const filePath = `avatars/${userId}/${fileName}`;
+
+  // Upload the file, overwriting any existing file with the same name
+  const { error: uploadError } = await supabase.storage
+    .from('blog_images')
+    .upload(filePath, file, { upsert: true });
+
+  if (uploadError) {
+    console.error('Error uploading avatar:', uploadError);
+    throw uploadError;
+  }
+
+  // Get the public URL for the uploaded file
+  const { data: { publicUrl } } = supabase.storage
+    .from('blog_images')
+    .getPublicUrl(filePath);
+    
+  // Append a timestamp as a query parameter to bust browser cache
+  return `${publicUrl}?t=${new Date().getTime()}`;
+};
+
 
 // Fetch all blog posts with their authors
 export const getBlogPosts = async (): Promise<BlogPostWithAuthor[]> => {
