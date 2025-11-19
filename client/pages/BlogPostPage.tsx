@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { Separator } from "@/components/ui/separator";
 
 export default function BlogPostPage() {
   const { id } = useParams<{ id: string }>();
@@ -129,12 +130,12 @@ export default function BlogPostPage() {
                 <span className="text-sm text-muted-foreground">{post.profiles?.name || "Anonim"}</span>
               </Link>
             )}
+            <p className="text-sm text-muted-foreground mb-4">{formattedDate}</p>
             <h1 className="text-card-foreground text-3xl md:text-5xl font-outfit font-bold mb-4">
               {post.title}
             </h1>
             <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground mb-6">
               <div className="flex items-center gap-4">
-                <span>{formattedDate}</span>
                 {isAuthor && (
                   <Button
                     variant="ghost"
@@ -152,6 +153,31 @@ export default function BlogPostPage() {
             <div className="text-card-foreground text-lg leading-relaxed whitespace-pre-wrap">
               {post.content}
             </div>
+
+            {post.profiles && (
+              <>
+                <Separator className="my-8" />
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 bg-muted p-6 rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={post.profiles.avatar_url || undefined} alt={post.profiles.name || ''} />
+                      <AvatarFallback>
+                        <UserIcon className="h-8 w-8" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-bold text-lg text-foreground">{post.profiles.name}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{post.profiles.description}</p>
+                    </div>
+                  </div>
+                  <Button asChild variant="outline">
+                    <Link to={`/kullanici/${post.profiles.id}`}>
+                      Kullanıcının profiline erişmek için tıkla
+                    </Link>
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </article>
 
