@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, CheckCircle, Pencil } from "lucide-react";
+import { User as UserIcon, CheckCircle, Pencil, Check, X } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { calculateLevel, ALL_BADGES, TITLES } from "@/lib/gamification";
@@ -118,9 +118,11 @@ export default function ProfilePage() {
     return () => clearTimeout(handler);
   }, [watchedTitle, isDirty, user, updateUser, form]);
 
+  // --- Name Handlers ---
   const handleNameSave = async () => {
+    if (!user) return;
     setIsEditingName(false);
-    if (user && nameValue !== user.name) {
+    if (nameValue !== user.name) {
       const result = z.string().min(2, "İsim en az 2 karakter olmalıdır.").safeParse(nameValue);
       if (!result.success) {
         toast.error(result.error.issues[0].message);
@@ -135,9 +137,16 @@ export default function ProfilePage() {
     }
   };
 
+  const handleNameCancel = () => {
+    setIsEditingName(false);
+    setNameValue(user?.name || "");
+  };
+
+  // --- Description Handlers ---
   const handleDescriptionSave = async () => {
+    if (!user) return;
     setIsEditingDescription(false);
-    if (user && descriptionValue !== user.description) {
+    if (descriptionValue !== user.description) {
       const result = z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").optional().safeParse(descriptionValue);
       if (!result.success) {
         toast.error(result.error.issues[0].message);
@@ -152,9 +161,16 @@ export default function ProfilePage() {
     }
   };
 
+  const handleDescriptionCancel = () => {
+    setIsEditingDescription(false);
+    setDescriptionValue(user?.description || "");
+  };
+
+  // --- Email Handlers ---
   const handleEmailSave = async () => {
+    if (!user) return;
     setIsEditingEmail(false);
-    if (user && emailValue !== user.email) {
+    if (emailValue !== user.email) {
       const result = z.string().email("Geçerli bir e-posta adresi giriniz.").safeParse(emailValue);
       if (!result.success) {
         toast.error(result.error.issues[0].message);
@@ -172,6 +188,11 @@ export default function ProfilePage() {
         setIsConfirmationDialogOpen(true);
       }
     }
+  };
+
+  const handleEmailCancel = () => {
+    setIsEditingEmail(false);
+    setEmailValue(user?.email || "");
   };
 
   const handleResendConfirmation = async () => {
@@ -285,16 +306,24 @@ export default function ProfilePage() {
                 </button>
                 <Input type="file" accept="image/png, image/jpeg, image/gif" ref={fileInputRef} onChange={(e) => handleFileChange(e.target.files)} className="hidden" />
 
+                {/* Name Editing */}
                 <div className="flex items-center gap-2 relative w-full">
                   {isEditingName ? (
-                    <Input
-                      value={nameValue}
-                      onChange={(e) => setNameValue(e.target.value)}
-                      onBlur={handleNameSave}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleNameSave(); }}
-                      autoFocus
-                      className="text-2xl font-outfit font-bold text-center h-auto"
-                    />
+                    <div className="flex w-full items-center gap-2">
+                      <Input
+                        value={nameValue}
+                        onChange={(e) => setNameValue(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleNameSave(); }}
+                        autoFocus
+                        className="text-2xl font-outfit font-bold text-center h-auto flex-1"
+                      />
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={handleNameSave}>
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleNameCancel}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   ) : (
                     <>
                       <h2 className="text-card-foreground text-2xl font-outfit font-bold text-center flex-1">{user.name}</h2>
@@ -311,17 +340,25 @@ export default function ProfilePage() {
                   </p>
                 )}
                 
+                {/* Email Editing */}
                 <div className="flex items-center gap-2 relative mt-1 w-full">
                   {isEditingEmail ? (
-                    <Input
-                      type="email"
-                      value={emailValue}
-                      onChange={(e) => setEmailValue(e.target.value)}
-                      onBlur={handleEmailSave}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleEmailSave(); }}
-                      autoFocus
-                      className="text-sm text-center h-auto flex-1"
-                    />
+                    <div className="flex w-full items-center gap-2">
+                      <Input
+                        type="email"
+                        value={emailValue}
+                        onChange={(e) => setEmailValue(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleEmailSave(); }}
+                        autoFocus
+                        className="text-sm text-center h-auto flex-1"
+                      />
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={handleEmailSave}>
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleEmailCancel}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   ) : (
                     <>
                       <p className="text-muted-foreground text-center flex-1">{user.email}</p>
@@ -332,16 +369,26 @@ export default function ProfilePage() {
                   )}
                 </div>
                 
+                {/* Description Editing */}
                 <div className="flex items-start gap-2 relative mt-2 w-full">
                   {isEditingDescription ? (
-                    <Textarea
-                      value={descriptionValue}
-                      onChange={(e) => setDescriptionValue(e.target.value)}
-                      onBlur={handleDescriptionSave}
-                      autoFocus
-                      placeholder="Kendinizden bahsedin..."
-                      className="text-sm text-center min-h-[80px]"
-                    />
+                    <div className="flex w-full items-start gap-2">
+                      <Textarea
+                        value={descriptionValue}
+                        onChange={(e) => setDescriptionValue(e.target.value)}
+                        autoFocus
+                        placeholder="Kendinizden bahsedin..."
+                        className="text-sm text-center min-h-[80px] flex-1"
+                      />
+                      <div className="flex flex-col gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={handleDescriptionSave}>
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleDescriptionCancel}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
                   ) : (
                     <>
                       <p className="text-card-foreground text-sm text-center flex-1 min-h-[24px]">
