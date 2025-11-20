@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, CheckCircle, Pencil } from "lucide-react";
+import { User as UserIcon, CheckCircle, Pencil, Check, X, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { calculateLevel, ALL_BADGES, TITLES } from "@/lib/gamification";
@@ -58,6 +58,7 @@ export default function ProfilePage() {
   const [nameValue, setNameValue] = useState("");
   const [descriptionValue, setDescriptionValue] = useState("");
   const [emailValue, setEmailValue] = useState("");
+  const [isSavingEmail, setIsSavingEmail] = useState(false);
 
   // Cropping States
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
@@ -153,24 +154,27 @@ export default function ProfilePage() {
   };
 
   const handleEmailSave = async () => {
-    setIsEditingEmail(false);
-    if (user && emailValue !== user.email) {
-      const result = z.string().email("Geçerli bir e-posta adresi giriniz.").safeParse(emailValue);
-      if (!result.success) {
-        toast.error(result.error.issues[0].message);
-        setEmailValue(user.email || "");
-        return;
-      }
-      
-      const { error } = await supabase.auth.updateUser({ email: emailValue });
+    if (!user || emailValue === user.email) {
+      setIsEditingEmail(false);
+      return;
+    }
 
-      if (error) {
-        toast.error("E-posta güncellenirken hata oluştu.", { description: error.message });
-        setEmailValue(user.email || "");
-      } else {
-        setPendingEmail(emailValue);
-        setIsConfirmationDialogOpen(true);
-      }
+    const result = z.string().email("Geçerli bir e-posta adresi giriniz.").safeParse(emailValue);
+    if (!result.success) {
+      toast.error(result.error.issues[0].message);
+      return;
+    }
+    
+    setIsSavingEmail(true);
+    const { error } = await supabase.auth.updateUser({ email: emailValue });
+    setIsSavingEmail(false);
+
+    if (error) {
+      toast.error("E-posta güncellenirken hata oluştu.", { description: error.message });
+    } else {
+      setPendingEmail(emailValue);
+      setIsConfirmationDialogOpen(true);
+      setIsEditingEmail(false);
     }
   };
 
@@ -189,8 +193,7 @@ export default function ProfilePage() {
       toast.success("Doğrulama e-postası tekrar gönderildi.");
     }
     
-    // Prevent spamming the resend button
-    setTimeout(() => setIsResending(false), 10000); // Disable for 10 seconds
+    setTimeout(() => setIsResending(false), 10000);
   };
 
   const handleFileChange = (files: FileList | null) => {
@@ -313,15 +316,24 @@ export default function ProfilePage() {
                 
                 <div className="flex items-center gap-2 relative mt-1 w-full">
                   {isEditingEmail ? (
-                    <Input
-                      type="email"
-                      value={emailValue}
-                      onChange={(e) => setEmailValue(e.target.value)}
-                      onBlur={handleEmailSave}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleEmailSave(); }}
-                      autoFocus
-                      className="text-sm text-center h-auto flex-1"
-                    />
+                    <div className="flex items-center gap-2 w-full">
+                      <Input
+                        type="email"
+                        value={emailValue}
+                        onChange={(e) => setEmailValue(e.target.value)}
+                        disabled={isSavingEmail}
+                        className="text-sm text-center h-auto flex-1"
+                      />
+                      <Button size="icon" className="h-7 w-7" onClick={handleEmailSave} disabled={isSavingEmail}>
+                        {isSavingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                          setIsEditingEmail(false);
+                          setEmailValue(user.email || "");
+                      }} disabled={isSavingEmail}>
+                          <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   ) : (
                     <>
                       <p className="text-muted-foreground text-center flex-1">{user.email}</p>
