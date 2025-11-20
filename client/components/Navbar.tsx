@@ -8,6 +8,7 @@ import AppLogo from "./AppLogo";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { ThemeToggle } from "./ThemeToggle";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -76,11 +77,7 @@ export default function Navbar() {
                   <Button onClick={handleLogout} variant="ghost" className="font-bakbak text-base md:text-base font-normal text-foreground whitespace-nowrap shrink-0 p-0 hover:bg-transparent">
                     Çıkış Yap
                   </Button>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 bg-muted/50 rounded-full px-2 py-1 text-sm">
-                      <span className="font-bold">{user.gems ?? 0}</span>
-                      <Gem className="h-4 w-4 text-green-500" />
-                    </div>
+                  <div className="flex flex-col items-center">
                     <Link to="/profil">
                       <Avatar className="h-9 w-9">
                         <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
@@ -89,6 +86,21 @@ export default function Navbar() {
                         </AvatarFallback>
                       </Avatar>
                     </Link>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link to="/magaza" className="flex items-center gap-1 bg-muted/50 rounded-full px-2 py-0.5 text-xs mt-1">
+                          <span className="font-bold">{user.gems ?? 0}</span>
+                          <Gem className="h-3 w-3 text-green-500" />
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="text-center">
+                          <p className="font-bold">Gem Kazancı</p>
+                          <p>Her 24 saatte bir giriş: +5 Gem</p>
+                          <p>Her yeni rozet: +10 Gem</p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 </>
               ) : (
