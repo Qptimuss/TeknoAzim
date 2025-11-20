@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, CheckCircle, Pencil, Check, X, Lock } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { calculateLevel, ALL_BADGES, TITLES } from "@/lib/gamification";
+import { calculateLevel, ALL_BADGES, TITLES, removeExp, EXP_ACTIONS } from "@/lib/gamification";
 import CreateBlogCard from "@/components/CreateBlogCard";
 import { cn } from "@/lib/utils";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -174,11 +174,17 @@ export default function ProfilePage() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!postToDelete) return;
+    if (!postToDelete || !user) return;
     setIsDeleting(true);
     try {
       await deleteBlogPost(postToDelete.id, postToDelete.imageUrl);
       setUserPosts(prev => prev.filter(p => p.id !== postToDelete.id));
+      
+      const updatedProfile = await removeExp(user.id, EXP_ACTIONS.CREATE_POST);
+      if (updatedProfile) {
+        updateUser(updatedProfile);
+      }
+
       toast.success("Blog yazısı başarıyla silindi.");
     } catch (error) {
       toast.error("Blog yazısı silinirken bir hata oluştu.");
@@ -415,6 +421,7 @@ export default function ProfilePage() {
               <AlertDialogTitle>Blog Yazısını Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
               <AlertDialogDescription>
                 Bu işlem geri alınamaz. Blog yazınız, tüm yorumları ve oylarıyla birlikte kalıcı olarak silinecektir.
+                <span className="font-bold text-destructive"> Ayrıca, bu gönderiden kazandığınız 25 EXP'yi kaybedeceksiniz.</span>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

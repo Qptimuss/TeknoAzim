@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
+import { removeExp, EXP_ACTIONS } from "@/lib/gamification";
 
 export default function BlogPostPage() {
   const { id } = useParams<{ id: string }>();
@@ -29,7 +30,7 @@ export default function BlogPostPage() {
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const navigate = useNavigate();
 
   const fetchPostAndComments = useCallback(async () => {
@@ -54,6 +55,12 @@ export default function BlogPostPage() {
     setIsDeleting(true);
     try {
       await deleteBlogPost(post.id, post.image_url);
+      
+      const updatedProfile = await removeExp(user.id, EXP_ACTIONS.CREATE_POST);
+      if (updatedProfile) {
+        updateUser(updatedProfile);
+      }
+
       toast.success("Blog yazısı başarıyla silindi.");
       navigate("/bloglar");
     } catch (error) {
@@ -193,6 +200,7 @@ export default function BlogPostPage() {
             <AlertDialogTitle>Blog Yazısını Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
             <AlertDialogDescription>
               Bu işlem geri alınamaz. Blog yazınız, tüm yorumları ve oylarıyla birlikte kalıcı olarak silinecektir.
+              <span className="font-bold text-destructive"> Ayrıca, bu gönderiden kazandığınız 25 EXP'yi kaybedeceksiniz.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

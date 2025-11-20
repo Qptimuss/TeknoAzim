@@ -99,6 +99,55 @@ export const addExp = async (userId: string, amount: number): Promise<Profile | 
   return updatedProfile as Profile;
 };
 
+// Function to remove experience points from a user
+export const removeExp = async (userId: string, amount: number): Promise<Profile | null> => {
+  const { data: profile, error: fetchError } = await supabase
+    .from('profiles')
+    .select('exp, level, selected_title')
+    .eq('id', userId)
+    .single();
+
+  if (fetchError || !profile) {
+    console.error("Error fetching profile for EXP removal:", fetchError);
+    return null;
+  }
+
+  const newExp = Math.max(0, (profile.exp || 0) - amount);
+  const { level: newLevel } = calculateLevel(newExp);
+  
+  const updatePayload: Partial<Profile> = { exp: newExp, level: newLevel };
+
+  if (newLevel < profile.level) {
+    toast.warning(`Seviye ${profile.level}'den Seviye ${newLevel}'e düştün!`);
+    
+    // Check if the selected title is still unlocked
+    if (profile.selected_title) {
+      const titleEntry = Object.entries(TITLES).find(([, t]) => t.name === profile.selected_title);
+      if (titleEntry) {
+        const requiredLevel = parseInt(titleEntry[0]);
+        if (newLevel < requiredLevel) {
+          updatePayload.selected_title = null;
+          toast.info("Seviyen düştüğü için ünvanın kaldırıldı.");
+        }
+      }
+    }
+  }
+
+  const { data: updatedProfile, error: updateError } = await supabase
+    .from('profiles')
+    .update(updatePayload)
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (updateError) {
+    console.error("Error updating profile after EXP removal:", updateError);
+    return null;
+  }
+
+  return updatedProfile as Profile;
+};
+
 // Function to award a badge to a user
 export const awardBadge = async (userId: string, badgeName: string): Promise<Profile | null> => {
   const { data: profile, error: fetchError } = await supabase
