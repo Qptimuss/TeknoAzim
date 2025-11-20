@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import ImageCropperDialog from "@/components/ImageCropperDialog";
 import { supabase } from "@/integrations/supabase/client";
+import EmailConfirmationDialog from "@/components/EmailConfirmationDialog";
 
 const titleSchema = z.object({
   selected_title: z.string().optional(),
@@ -61,6 +62,11 @@ export default function ProfilePage() {
   // Cropping States
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [isCropperOpen, setIsCropperOpen] = useState(false);
+
+  // Email confirmation dialog states
+  const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [isResending, setIsResending] = useState(false);
 
   const form = useForm<z.infer<typeof titleSchema>>({
     resolver: zodResolver(titleSchema),
@@ -162,12 +168,29 @@ export default function ProfilePage() {
         toast.error("E-posta güncellenirken hata oluştu.", { description: error.message });
         setEmailValue(user.email || "");
       } else {
-        toast.success("Doğrulama e-postası gönderildi", {
-          description: `Lütfen yeni e-posta adresinizi (${emailValue}) kontrol ederek değişikliği onaylayın.`,
-          duration: 8000,
-        });
+        setPendingEmail(emailValue);
+        setIsConfirmationDialogOpen(true);
       }
     }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!pendingEmail) return;
+    setIsResending(true);
+    
+    const { error } = await supabase.auth.resend({
+      type: 'email_change',
+      email: pendingEmail,
+    });
+
+    if (error) {
+      toast.error("Doğrulama e-postası gönderilemedi.", { description: error.message });
+    } else {
+      toast.success("Doğrulama e-postası tekrar gönderildi.");
+    }
+    
+    // Prevent spamming the resend button
+    setTimeout(() => setIsResending(false), 10000); // Disable for 10 seconds
   };
 
   const handleFileChange = (files: FileList | null) => {
@@ -391,7 +414,7 @@ export default function ProfilePage() {
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Bir ünvan seç..." />
-                            </SelectTrigger>
+                            </Trigger>
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="none">Ünvan Yok</SelectItem>
@@ -459,6 +482,17 @@ export default function ProfilePage() {
           onCropComplete={handleCropComplete}
         />
       )}
+
+      <EmailConfirmationDialog
+        open={isConfirmationDialogOpen}
+        onClose={() => {
+          setIsConfirmationDialogOpen(false);
+          setPendingEmail(null);
+        }}
+        newEmail={pendingEmail || ""}
+        onResend={handleResendConfirmation}
+        isResending={isResending}
+      />
     </>
   );
 }
