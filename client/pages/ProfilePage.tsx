@@ -31,9 +31,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import ImageCropperDialog from "@/components/ImageCropperDialog";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function ProfilePage() {
-  const { user, updateUser, loading } = useAuth();
+  const { user, updateUser, loading, logout } = useAuth();
+  const navigate = useNavigate();
   const [userPosts, setUserPosts] = useState<BlogPostWithAuthor[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -49,6 +52,10 @@ export default function ProfilePage() {
   // Cropping States
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [isCropperOpen, setIsCropperOpen] = useState(false);
+
+  // Account Deletion States
+  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -191,6 +198,41 @@ export default function ProfilePage() {
     } finally {
       setIsDeleting(false);
       setPostToDelete(null);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    setIsDeletingAccount(true);
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error("Kimlik doğrulama oturumu bulunamadı.");
+      }
+
+      const response = await fetch('/api/user', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Hesap silinemedi.' }));
+        throw new Error(errorData.error);
+      }
+
+      toast.success("Hesabınız başarıyla silindi.");
+      await logout(); 
+      navigate('/');
+
+    } catch (error) {
+      toast.error("Hesap silinirken bir hata oluştu.", {
+        description: error instanceof Error ? error.message : "Lütfen tekrar deneyin.",
+      });
+    } finally {
+      setIsDeletingAccount(false);
+      setShowDeleteAccountDialog(false);
     }
   };
 
@@ -392,6 +434,16 @@ export default function ProfilePage() {
                   Bir blog oluşturmak 25 EXP, bir rozet kazanmak 50 EXP verir.
                 </p>
               </div>
+
+              <div className="border-t border-border pt-6 mt-6">
+                <h3 className="text-destructive text-xl font-outfit font-bold mb-4">Tehlikeli Bölge</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Hesabınızı silmek kalıcı bir eylemdir ve geri alınamaz. Tüm blog yazılarınız ve verileriniz silinecektir.
+                </p>
+                <Button variant="destructive" className="w-full" onClick={() => setShowDeleteAccountDialog(true)}>
+                  Hesabımı Sil
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -446,6 +498,27 @@ export default function ProfilePage() {
           onCropComplete={handleCropComplete}
         />
       )}
+
+      <AlertDialog open={showDeleteAccountDialog} onOpenChange={setShowDeleteAccountDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hesabınızı Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu işlem geri alınamaz. Tüm blog yazılarınız, yorumlarınız ve profil verileriniz kalıcı olarak silinecektir. Bu işlemi onaylıyor musunuz?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={isDeletingAccount}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isDeletingAccount ? "Siliniyor..." : "Evet, Hesabımı Sil"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
