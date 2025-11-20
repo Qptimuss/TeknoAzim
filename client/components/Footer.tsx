@@ -23,11 +23,11 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-[#090a0c] text-white py-8 md:py-12 border-t border-[#2a2d31]">
+    <footer className="bg-card text-card-foreground py-8 md:py-12 border-t border-border">
       <div className="container mx-auto px-5 md:px-10 lg:px-20">
         {!isHomePage && (
           <div className="mb-8 text-left">
-            <p className="text-xs text-[#eeeeee]/70 max-w-sm">
+            <p className="text-xs text-muted-foreground max-w-sm">
               "Okumayan ve yazmayan insan düşünemez."
               <br />
               <span className="italic">- Ali Fuat Başgil, Gençlerle Başbaşa</span>
@@ -41,7 +41,7 @@ const Footer = () => {
             <Link to="/" className="flex items-center mb-4">
               <AppLogo disableLink />
             </Link>
-            <p className="text-sm text-[#eeeeee] max-w-xs">
+            <p className="text-sm text-card-foreground max-w-xs">
               Düşüncelerle derinleşen, yazılarla genişleyen bir dünya.
             </p>
           </div>
@@ -53,7 +53,7 @@ const Footer = () => {
               <Link
                 key={link.to}
                 to={link.to}
-                className="font-roboto text-sm text-[#eeeeee] hover:text-gray-400 transition-colors"
+                className="font-roboto text-sm text-card-foreground hover:text-muted-foreground transition-colors"
               >
                 {link.label}
               </Link>
@@ -70,7 +70,7 @@ const Footer = () => {
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#eeeeee] hover:text-gray-400 transition-colors"
+                  className="text-card-foreground hover:text-muted-foreground transition-colors"
                   aria-label={link.name}
                 >
                   <link.icon className="h-5 w-5" />
@@ -80,7 +80,7 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-[#2a2d31] mt-8 pt-6 text-center text-sm text-[#eeeeee]">
+        <div className="border-t border-border mt-8 pt-6 text-center text-sm text-card-foreground">
           <p>Bu proje açık kaynaklıdır.</p>
         </div>
       </div>
