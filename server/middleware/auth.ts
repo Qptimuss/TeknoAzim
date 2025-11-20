@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { supabaseAdmin } from "../lib/supabase-admin.ts";
+import { getSupabaseAdmin } from "../lib/supabase-admin";
 
 // Extend the Express Request type to include the user property
 declare global {
@@ -24,6 +24,7 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     // Use supabaseAdmin to verify the JWT
     const { data, error } = await supabaseAdmin.auth.getUser(token);
 
@@ -37,6 +38,6 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
     next();
   } catch (e) {
     console.error("Error during token verification:", e);
-    return res.status(500).json({ error: "Internal server error during authentication." });
+    res.status(500).json({ error: "Internal server error during authentication." });
   }
 };

@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { supabaseAdmin } from "../lib/supabase-admin";
+import { getSupabaseAdmin } from "../lib/supabase-admin";
 
 export const handleDeleteUser: RequestHandler = async (req, res) => {
   const userId = req.userId;
@@ -8,6 +8,7 @@ export const handleDeleteUser: RequestHandler = async (req, res) => {
   }
 
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (error) {
