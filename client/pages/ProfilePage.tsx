@@ -243,10 +243,10 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
             <div className="bg-card border border-border rounded-lg p-8">
-              <div className="flex flex-col items-center mb-6 text-center">
+              <div className="flex flex-col items-center mb-6 space-y-2 text-center">
                 
                 {/* Avatar ve Düzenleme Butonu */}
-                <div className="flex items-center justify-center gap-2 mb-4">
+                <div className="flex items-center justify-center gap-2">
                   <Avatar className="h-24 w-24">
                     <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
                     <AvatarFallback>
@@ -265,15 +265,15 @@ export default function ProfilePage() {
                 <Input type="file" accept="image/png, image/jpeg, image/gif" ref={fileInputRef} onChange={(e) => handleFileChange(e.target.files)} className="hidden" />
 
                 {/* Name Editing */}
-                <div className="flex items-center gap-2 relative w-full">
+                <div className="flex min-h-[40px] items-center justify-center gap-2">
                   {isEditingName ? (
-                    <div className="flex w-full items-center gap-2">
+                    <>
                       <Input
                         value={nameValue}
                         onChange={(e) => setNameValue(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleNameSave(); }}
                         autoFocus
-                        className="text-2xl font-outfit font-bold text-center h-auto flex-1"
+                        className="w-48 text-center text-2xl font-bold font-outfit h-auto"
                       />
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={handleNameSave}>
                         <Check className="h-4 w-4" />
@@ -281,10 +281,10 @@ export default function ProfilePage() {
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleNameCancel}>
                         <X className="h-4 w-4" />
                       </Button>
-                    </div>
+                    </>
                   ) : (
                     <>
-                      <h2 className="text-card-foreground text-2xl font-outfit font-bold text-center flex-1">{user.name}</h2>
+                      <h2 className="text-card-foreground text-2xl font-outfit font-bold">{user.name}</h2>
                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingName(true)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -293,27 +293,24 @@ export default function ProfilePage() {
                 </div>
 
                 {user.selected_title && (
-                  <p className="text-yellow-400 font-semibold text-sm mt-1 flex items-center gap-1">
+                  <p className="text-yellow-400 font-semibold text-sm flex items-center justify-center gap-1">
                     <CheckCircle className="h-4 w-4" /> {user.selected_title}
                   </p>
                 )}
                 
                 {/* Email Display (Read-only) */}
-                <div className="flex items-center gap-2 relative mt-1 w-full">
-                  <p className="text-muted-foreground text-center flex-1">{user.email}</p>
-                  {/* E-posta düzenleme butonu kaldırıldı */}
-                </div>
+                <p className="text-muted-foreground">{user.email}</p>
                 
                 {/* Description Editing */}
-                <div className="flex items-start gap-2 relative mt-2 w-full">
+                <div className="flex w-full items-start justify-center gap-2">
                   {isEditingDescription ? (
-                    <div className="flex w-full items-start gap-2">
+                    <>
                       <Textarea
                         value={descriptionValue}
                         onChange={(e) => setDescriptionValue(e.target.value)}
                         autoFocus
                         placeholder="Kendinizden bahsedin..."
-                        className="text-sm text-center min-h-[80px] flex-1"
+                        className="w-full max-w-xs text-sm text-center min-h-[80px]"
                       />
                       <div className="flex flex-col gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={handleDescriptionSave}>
@@ -323,10 +320,10 @@ export default function ProfilePage() {
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
-                    </div>
+                    </>
                   ) : (
                     <>
-                      <p className="text-card-foreground text-sm text-center flex-1 min-h-[24px]">
+                      <p className="text-card-foreground text-sm text-center min-h-[24px] max-w-xs">
                         {user.description || <span className="text-muted-foreground italic">Açıklama ekle...</span>}
                       </p>
                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingDescription(true)}>
