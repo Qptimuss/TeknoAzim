@@ -256,7 +256,7 @@ export default function ProfilePage() {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-6 w-6 self-center mt-12" 
+                    className="h-6 w-6" 
                     onClick={handleAvatarEditClick}
                   >
                     <Pencil className="h-4 w-4" />
