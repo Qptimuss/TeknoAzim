@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { Profile } from "@shared/api";
 
-export type User = Profile;
+export type User = Profile & { email?: string };
 
 interface AuthContextType {
   user: User | null;

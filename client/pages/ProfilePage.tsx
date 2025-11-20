@@ -36,6 +36,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import ImageCropperDialog from "@/components/ImageCropperDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 const titleSchema = z.object({
   selected_title: z.string().optional(),
@@ -52,8 +53,10 @@ export default function ProfilePage() {
   // Inline editing states
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [nameValue, setNameValue] = useState("");
   const [descriptionValue, setDescriptionValue] = useState("");
+  const [emailValue, setEmailValue] = useState("");
 
   // Cropping States
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
@@ -77,6 +80,7 @@ export default function ProfilePage() {
     if (user) {
       setNameValue(user.name || "");
       setDescriptionValue(user.description || "");
+      setEmailValue(user.email || "");
       form.reset({ selected_title: user.selected_title || "" });
       
       const fetchUserPosts = async () => {
@@ -139,6 +143,30 @@ export default function ProfilePage() {
         success: 'Açıklama güncellendi!',
         error: 'Hata oluştu.',
       });
+    }
+  };
+
+  const handleEmailSave = async () => {
+    setIsEditingEmail(false);
+    if (user && emailValue !== user.email) {
+      const result = z.string().email("Geçerli bir e-posta adresi giriniz.").safeParse(emailValue);
+      if (!result.success) {
+        toast.error(result.error.issues[0].message);
+        setEmailValue(user.email || "");
+        return;
+      }
+      
+      const { error } = await supabase.auth.updateUser({ email: emailValue });
+
+      if (error) {
+        toast.error("E-posta güncellenirken hata oluştu.", { description: error.message });
+        setEmailValue(user.email || "");
+      } else {
+        toast.success("Doğrulama e-postası gönderildi", {
+          description: `Lütfen yeni e-posta adresinizi (${emailValue}) kontrol ederek değişikliği onaylayın.`,
+          duration: 8000,
+        });
+      }
     }
   };
 
@@ -234,7 +262,7 @@ export default function ProfilePage() {
                 </button>
                 <Input type="file" accept="image/png, image/jpeg, image/gif" ref={fileInputRef} onChange={(e) => handleFileChange(e.target.files)} className="hidden" />
 
-                <div className="flex items-center gap-2 group relative">
+                <div className="flex items-center gap-2 relative">
                   {isEditingName ? (
                     <Input
                       value={nameValue}
@@ -247,7 +275,7 @@ export default function ProfilePage() {
                   ) : (
                     <>
                       <h2 className="text-card-foreground text-2xl font-outfit font-bold">{user.name}</h2>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => setIsEditingName(true)}>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingName(true)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
                     </>
@@ -259,9 +287,29 @@ export default function ProfilePage() {
                     <CheckCircle className="h-4 w-4" /> {user.selected_title}
                   </p>
                 )}
-                <p className="text-muted-foreground mt-1">{user.email}</p>
                 
-                <div className="flex items-start gap-2 group relative mt-2 w-full">
+                <div className="flex items-center gap-2 relative mt-1">
+                  {isEditingEmail ? (
+                    <Input
+                      type="email"
+                      value={emailValue}
+                      onChange={(e) => setEmailValue(e.target.value)}
+                      onBlur={handleEmailSave}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleEmailSave(); }}
+                      autoFocus
+                      className="text-sm h-auto"
+                    />
+                  ) : (
+                    <>
+                      <p className="text-muted-foreground">{user.email}</p>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingEmail(true)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+                
+                <div className="flex items-start gap-2 relative mt-2 w-full">
                   {isEditingDescription ? (
                     <Textarea
                       value={descriptionValue}
@@ -276,7 +324,7 @@ export default function ProfilePage() {
                       <p className="text-card-foreground text-sm text-center flex-1 min-h-[24px]">
                         {user.description || <span className="text-muted-foreground italic">Açıklama ekle...</span>}
                       </p>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => setIsEditingDescription(true)}>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingDescription(true)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
                     </>
