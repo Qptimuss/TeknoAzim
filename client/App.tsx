@@ -44,12 +44,12 @@ const App = () => (
                 <Route path="/hakkimizda" element={<Placeholder title="Hakkımızda" />} />
                 <Route path="/gizlilik-politikasi" element={<Placeholder title="Gizlilik Politikası" />} />
                 <Route path="/kullanim-kosullari" element={<Placeholder title="Kullanım Koşulları" />} />
+                <Route path="/magaza" element={<Magaza />} />
 
                 {/* Protected Routes */}
                 <Route element={<ProtectedRoute />}>
                   <Route path="/blog-olustur" element={<CreateBlogPage />} />
                   <Route path="/profil" element={<ProfilePage />} />
-                  <Route path="/magaza" element={<Magaza />} />
                 </Route>
               </Route>
               
