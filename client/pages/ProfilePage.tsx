@@ -121,12 +121,12 @@ export default function ProfilePage() {
   // --- Name Handlers ---
   const handleNameSave = async () => {
     if (!user) return;
+    setIsEditingName(false);
     if (nameValue !== user.name) {
       const result = z.string().min(2, "İsim en az 2 karakter olmalıdır.").safeParse(nameValue);
       if (!result.success) {
         toast.error(result.error.issues[0].message);
         setNameValue(user.name || "");
-        setIsEditingName(false);
         return;
       }
       await toast.promise(updateUser({ name: nameValue }), {
@@ -135,23 +135,22 @@ export default function ProfilePage() {
         error: 'Hata oluştu.',
       });
     }
-    setIsEditingName(false);
   };
 
   const handleNameCancel = () => {
-    setNameValue(user?.name || "");
     setIsEditingName(false);
+    setNameValue(user?.name || "");
   };
 
   // --- Description Handlers ---
   const handleDescriptionSave = async () => {
     if (!user) return;
+    setIsEditingDescription(false);
     if (descriptionValue !== user.description) {
       const result = z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").optional().safeParse(descriptionValue);
       if (!result.success) {
         toast.error(result.error.issues[0].message);
         setDescriptionValue(user.description || "");
-        setIsEditingDescription(false);
         return;
       }
       await toast.promise(updateUser({ description: descriptionValue }), {
@@ -160,49 +159,40 @@ export default function ProfilePage() {
         error: 'Hata oluştu.',
       });
     }
-    setIsEditingDescription(false);
   };
 
   const handleDescriptionCancel = () => {
-    setDescriptionValue(user?.description || "");
     setIsEditingDescription(false);
+    setDescriptionValue(user?.description || "");
   };
 
   // --- Email Handlers ---
   const handleEmailSave = async () => {
     if (!user) return;
-    
-    // 1. Önce değerleri kontrol et
+    setIsEditingEmail(false);
     if (emailValue !== user.email) {
       const result = z.string().email("Geçerli bir e-posta adresi giriniz.").safeParse(emailValue);
       if (!result.success) {
         toast.error(result.error.issues[0].message);
         setEmailValue(user.email || "");
-        setIsEditingEmail(false);
         return;
       }
       
-      // 2. Supabase'e güncelleme isteği gönder
       const { error } = await supabase.auth.updateUser({ email: emailValue });
 
       if (error) {
         toast.error("E-posta güncellenirken hata oluştu.", { description: error.message });
         setEmailValue(user.email || "");
       } else {
-        // 3. Başarılı olursa, pending state'i güncelle ve dialog'u aç
         setPendingEmail(emailValue);
         setIsConfirmationDialogOpen(true);
-        // Not: setEmailValue burada değiştirmiyoruz, çünkü kullanıcı doğrulamayı tamamlayana kadar eski e-posta gösterilmeli
       }
     }
-    // 4. Son olarak düzenleme modunu kapat
-    setIsEditingEmail(false);
   };
 
   const handleEmailCancel = () => {
-    // İptal edildiğinde, e-posta alanını eski değerine döndür
-    setEmailValue(user?.email || "");
     setIsEditingEmail(false);
+    setEmailValue(user?.email || "");
   };
 
   const handleResendConfirmation = async () => {
