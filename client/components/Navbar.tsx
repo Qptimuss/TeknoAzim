@@ -23,9 +23,9 @@ export default function Navbar() {
   const mainNavLinks = [
     { to: "/", label: "Ana Sayfa" },
     { to: "/bloglar", label: "Bloglar" },
-    { to: "/magaza", label: "Mağaza" },
     { to: "/duyurular", label: "Duyurular" },
     { to: "/hakkimizda", label: "Hakkımızda" },
+    { to: "/magaza", label: "Mağaza" },
   ];
 
   const guestLinks = [
@@ -35,7 +35,6 @@ export default function Navbar() {
 
   const authLinks = [
     { to: "/profil", label: "Profil" },
-    { to: "/magaza", label: "Mağaza" }, // Mobile nav için burada kalabilir
   ];
 
   return (
