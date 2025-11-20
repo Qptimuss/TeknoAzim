@@ -30,12 +30,12 @@ export default function Magaza() {
   return (
     <>
       <div className="container mx-auto px-5 py-12">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="mb-8">
           <h1 className="text-foreground text-4xl md:text-5xl font-outfit font-bold">
             Mağaza
           </h1>
           {!user && (
-            <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg border border-border">
+            <p className="text-sm text-muted-foreground mt-2 bg-muted p-3 rounded-lg border border-border inline-block">
               Mağazayı kullanabilmek için giriş yapmanız gerekmektedir.
             </p>
           )}
