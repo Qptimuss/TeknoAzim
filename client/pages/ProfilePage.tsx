@@ -12,19 +12,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, CheckCircle, Pencil, Check, X } from "lucide-react";
+import { User as UserIcon, CheckCircle, Pencil, Check, X, Lock } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { calculateLevel, ALL_BADGES, TITLES } from "@/lib/gamification";
 import CreateBlogCard from "@/components/CreateBlogCard";
 import { cn } from "@/lib/utils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,12 +31,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import ImageCropperDialog from "@/components/ImageCropperDialog";
-import { supabase } from "@/integrations/supabase/client";
-// EmailConfirmationDialog artık kullanılmıyor, kaldırıldı.
-
-const titleSchema = z.object({
-  selected_title: z.string().optional(),
-});
 
 export default function ProfilePage() {
   const { user, updateUser, loading } = useAuth();
@@ -54,21 +43,12 @@ export default function ProfilePage() {
   // Inline editing states
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
-  // E-posta düzenleme state'leri kaldırıldı.
   const [nameValue, setNameValue] = useState("");
   const [descriptionValue, setDescriptionValue] = useState("");
   
   // Cropping States
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [isCropperOpen, setIsCropperOpen] = useState(false);
-
-  const form = useForm<z.infer<typeof titleSchema>>({
-    resolver: zodResolver(titleSchema),
-    defaultValues: { selected_title: "" },
-  });
-
-  const { isDirty } = form.formState;
-  const watchedTitle = form.watch("selected_title");
 
   useEffect(() => {
     return () => {
@@ -80,8 +60,6 @@ export default function ProfilePage() {
     if (user) {
       setNameValue(user.name || "");
       setDescriptionValue(user.description || "");
-      // E-posta state'i kaldırıldı.
-      form.reset({ selected_title: user.selected_title || "" });
       
       const fetchUserPosts = async () => {
         setPostsLoading(true);
@@ -91,26 +69,18 @@ export default function ProfilePage() {
       };
       fetchUserPosts();
     }
-  }, [user, form]);
+  }, [user]);
 
-  // Autosave for title dropdown
-  useEffect(() => {
-    if (!isDirty || !user) return;
-
-    const handler = setTimeout(async () => {
-      const newTitle = form.getValues().selected_title;
-      const updateData = { selected_title: newTitle === 'none' ? null : newTitle };
-      
-      await toast.promise(updateUser(updateData), {
-        loading: 'Ünvan kaydediliyor...',
-        success: 'Ünvan güncellendi.',
-        error: 'Hata oluştu.',
-      });
-      form.reset({ selected_title: newTitle });
-    }, 1000);
-
-    return () => clearTimeout(handler);
-  }, [watchedTitle, isDirty, user, updateUser, form]);
+  const handleTitleChange = async (newTitle: string) => {
+    if (!user) return;
+    const updateData = { selected_title: newTitle === 'none' ? null : newTitle };
+    
+    await toast.promise(updateUser(updateData), {
+      loading: 'Ünvan kaydediliyor...',
+      success: 'Ünvan güncellendi.',
+      error: 'Hata oluştu.',
+    });
+  };
 
   // --- Name Handlers ---
   const handleNameSave = async () => {
@@ -229,9 +199,6 @@ export default function ProfilePage() {
   const { level, expForNextLevel, currentLevelExp } = calculateLevel(user.exp || 0);
   const expInCurrentLevel = (user.exp || 0) - currentLevelExp;
   const expProgress = expForNextLevel === 0 ? 100 : (expInCurrentLevel / expForNextLevel) * 100;
-  const unlockedTitles = Object.entries(TITLES)
-    .filter(([levelKey]) => level >= parseInt(levelKey))
-    .map(([, title]) => title);
 
   return (
     <>
@@ -245,7 +212,6 @@ export default function ProfilePage() {
             <div className="bg-card border border-border rounded-lg p-8">
               <div className="flex flex-col items-center mb-6 space-y-2 text-center">
                 
-                {/* Avatar ve Düzenleme Butonu */}
                 <div className="flex items-center justify-center gap-2">
                   <Avatar className="h-24 w-24">
                     <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
@@ -264,7 +230,6 @@ export default function ProfilePage() {
                 </div>
                 <Input type="file" accept="image/png, image/jpeg, image/gif" ref={fileInputRef} onChange={(e) => handleFileChange(e.target.files)} className="hidden" />
 
-                {/* Name Editing */}
                 <div className="flex min-h-[40px] items-center justify-center gap-2">
                   {isEditingName ? (
                     <>
@@ -298,10 +263,8 @@ export default function ProfilePage() {
                   </p>
                 )}
                 
-                {/* Email Display (Read-only) */}
                 <p className="text-muted-foreground">{user.email}</p>
                 
-                {/* Description Editing */}
                 <div className="flex w-full items-start justify-center gap-2">
                   {isEditingDescription ? (
                     <>
@@ -351,7 +314,45 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="mb-6">
+              <div className="mb-6 border-t border-border pt-6">
+                <h3 className="text-card-foreground text-xl font-outfit font-bold mb-4">Ünvanlar</h3>
+                <RadioGroup
+                  value={user.selected_title || 'none'}
+                  onValueChange={handleTitleChange}
+                  className="space-y-2"
+                >
+                  <div className="flex items-center space-x-3">
+                    <RadioGroupItem value="none" id="title-none" />
+                    <Label htmlFor="title-none" className="italic text-muted-foreground">Ünvan Yok</Label>
+                  </div>
+                  {Object.entries(TITLES).map(([levelKey, title]) => {
+                    const levelRequired = parseInt(levelKey);
+                    const isUnlocked = level >= levelRequired;
+                    return (
+                      <div key={title} className="flex items-center space-x-3">
+                        <RadioGroupItem value={title} id={`title-${levelKey}`} disabled={!isUnlocked} />
+                        <Label
+                          htmlFor={`title-${levelKey}`}
+                          className={cn(
+                            "flex items-center gap-2 w-full",
+                            !isUnlocked && "text-muted-foreground opacity-60 cursor-not-allowed"
+                          )}
+                        >
+                          <span>{title}</span>
+                          {!isUnlocked && (
+                            <span className="ml-auto flex items-center gap-1 text-xs">
+                              <Lock className="h-3 w-3" />
+                              Seviye {levelRequired}
+                            </span>
+                          )}
+                        </Label>
+                      </div>
+                    );
+                  })}
+                </RadioGroup>
+              </div>
+
+              <div className="mb-6 border-t border-border pt-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-card-foreground text-xl font-outfit font-bold">Rozetler</h3>
                   <span className="text-sm text-muted-foreground">
@@ -380,34 +381,6 @@ export default function ProfilePage() {
                   Bir blog oluşturmak 25 EXP, bir rozet kazanmak 50 EXP verir.
                 </p>
               </div>
-
-              <Form {...form}>
-                <form className="space-y-6 border-t border-border pt-6">
-                  <FormField
-                    control={form.control}
-                    name="selected_title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ünvan</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || 'none'}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Bir ünvan seç..." />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="none">Ünvan Yok</SelectItem>
-                            {unlockedTitles.map(title => (
-                              <SelectItem key={title} value={title}>{title}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </form>
-              </Form>
             </div>
           </div>
 
