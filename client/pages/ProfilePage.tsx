@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, CheckCircle, Pencil, Check, X, Lock } from "lucide-react";
+import { User as UserIcon, CheckCircle, Pencil, Check, X, Lock, ImageIcon } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { calculateLevel, ALL_BADGES, TITLES, removeExp, EXP_ACTIONS } from "@/lib/gamification";
@@ -33,6 +33,7 @@ import {
 import ImageCropperDialog from "@/components/ImageCropperDialog";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { FRAMES } from "@/lib/store-items";
 
 export default function ProfilePage() {
   const { user, updateUser, loading, logout } = useAuth();
@@ -85,6 +86,16 @@ export default function ProfilePage() {
     await toast.promise(updateUser(updateData), {
       loading: 'Ünvan kaydediliyor...',
       success: 'Ünvan güncellendi.',
+      error: 'Hata oluştu.',
+    });
+  };
+
+  const handleFrameSelect = async (frameName: string) => {
+    if (!user) return;
+    const newFrame = user.selected_frame === frameName ? null : frameName;
+    await toast.promise(updateUser({ selected_frame: newFrame }), {
+      loading: 'Çerçeve ayarlanıyor...',
+      success: 'Çerçeve güncellendi!',
       error: 'Hata oluştu.',
     });
   };
@@ -250,6 +261,7 @@ export default function ProfilePage() {
 
   const selectedTitleObject = Object.values(TITLES).find(t => t.name === user.selected_title);
   const SelectedTitleIcon = selectedTitleObject ? selectedTitleObject.icon : CheckCircle;
+  const selectedFrame = FRAMES.find(f => f.name === user.selected_frame);
 
   return (
     <>
@@ -264,12 +276,14 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center mb-6 space-y-2 text-center">
                 
                 <div className="flex items-center justify-center gap-2">
-                  <Avatar className="h-24 w-24">
-                    <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-                    <AvatarFallback>
-                      <UserIcon className="h-12 w-12 text-muted-foreground" />
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className={cn("p-1", selectedFrame?.className)}>
+                    <Avatar className="h-24 w-24">
+                      <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
+                      <AvatarFallback>
+                        <UserIcon className="h-12 w-12 text-muted-foreground" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
                   <Button 
                     variant="ghost" 
                     size="icon" 
@@ -464,6 +478,37 @@ export default function ProfilePage() {
                 <CreateBlogCard />
               </div>
             )}
+            
+            <div className="mt-8">
+              <h2 className="text-foreground text-2xl font-outfit font-bold mb-4">Çerçevelerim</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {FRAMES.map((frame) => {
+                  const isOwned = user.owned_frames?.includes(frame.name) ?? false;
+                  const isSelected = user.selected_frame === frame.name;
+                  return (
+                    <div key={frame.name} className="flex flex-col items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          "w-28 h-28 p-0 rounded-lg border-2 flex items-center justify-center relative transition-all",
+                          isSelected ? "border-primary ring-2 ring-primary" : "border-border",
+                          !isOwned && "opacity-50 grayscale cursor-not-allowed"
+                        )}
+                        onClick={() => isOwned && handleFrameSelect(frame.name)}
+                        disabled={!isOwned}
+                      >
+                        <div className={cn("w-24 h-24 flex items-center justify-center", frame.className)}>
+                          <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                        </div>
+                        {!isOwned && <Lock className="absolute bottom-1 right-1 h-4 w-4 text-foreground bg-background rounded-full p-0.5" />}
+                        {isSelected && <CheckCircle className="absolute top-1 right-1 h-5 w-5 text-primary bg-background rounded-full" />}
+                      </Button>
+                      <p className="text-xs text-center font-medium">{frame.name}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
 

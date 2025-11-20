@@ -12,6 +12,8 @@ export interface Profile {
   exp: number;
   badges: string[];
   selected_title?: string | null;
+  owned_frames?: string[];
+  selected_frame?: string | null;
 }
 
 // This will represent a row in the `comments` table, joined with the author's profile
