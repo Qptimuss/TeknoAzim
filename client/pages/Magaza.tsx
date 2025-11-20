@@ -1,18 +1,21 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Gift, Info } from "lucide-react";
+import { Gift, Info, Gem } from "lucide-react";
 import CrateInfoDialog from "@/components/CrateInfoDialog";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
+const CRATE_COST = 10;
+
 export default function Magaza() {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const navigate = useNavigate();
+  const [isOpening, setIsOpening] = useState(false);
 
-  const handleOpenCrate = () => {
+  const handleOpenCrate = async () => {
     if (!user) {
       toast.error("Önce giriş yapmanız gerekiyor.", {
         description: "Sandığı açmak ve diğer mağaza özelliklerini kullanmak için lütfen giriş yapın.",
@@ -23,8 +26,41 @@ export default function Magaza() {
       });
       return;
     }
-    // TODO: Implement crate opening logic for logged-in users
-    toast.info("Sandık açma özelliği yakında geliyor!");
+
+    if (user.gems < CRATE_COST) {
+      toast.error("Yetersiz Bakiye", {
+        description: `Sandığı açmak için ${CRATE_COST} geme ihtiyacın var. Sende ${user.gems} gem var.`,
+      });
+      return;
+    }
+
+    setIsOpening(true);
+
+    await toast.promise(
+      async () => {
+        // Simulate server delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Deduct gems
+        await updateUser({ gems: user.gems - CRATE_COST });
+
+        // TODO: Implement actual crate opening logic here
+        // For now, just show a success message
+        return { success: true };
+      },
+      {
+        loading: "Sandık açılıyor...",
+        success: () => {
+          setIsOpening(false);
+          // TODO: Replace with actual item won
+          return "Tebrikler! Sandık açıldı (Ödül sistemi yakında eklenecek).";
+        },
+        error: () => {
+          setIsOpening(false);
+          return "Sandık açılırken bir hata oluştu.";
+        },
+      }
+    );
   };
 
   return (
@@ -61,8 +97,14 @@ export default function Magaza() {
               </CardDescription>
             </CardContent>
             <CardFooter>
-              <Button className="w-full" onClick={handleOpenCrate}>
-                Sandığı Aç {user ? "(Yakında)" : ""}
+              <Button className="w-full" onClick={handleOpenCrate} disabled={isOpening}>
+                <div className="flex items-center justify-center gap-2">
+                  <span>Sandığı Aç</span>
+                  <div className="flex items-center gap-1 bg-background/20 rounded-full px-2 py-0.5">
+                    <span>{CRATE_COST}</span>
+                    <Gem className="h-4 w-4 text-green-300" />
+                  </div>
+                </div>
               </Button>
             </CardFooter>
           </Card>

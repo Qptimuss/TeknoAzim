@@ -3,7 +3,7 @@ import { MobileNav } from "@/components/MobileNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon } from "lucide-react";
+import { User as UserIcon, Gem } from "lucide-react";
 import AppLogo from "./AppLogo";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -76,14 +76,20 @@ export default function Navbar() {
                   <Button onClick={handleLogout} variant="ghost" className="font-bakbak text-base md:text-base font-normal text-foreground whitespace-nowrap shrink-0 p-0 hover:bg-transparent">
                     Çıkış Yap
                   </Button>
-                  <Link to="/profil">
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-                      <AvatarFallback>
-                        <UserIcon className="h-5 w-5" />
-                      </AvatarFallback>
-                    </Avatar>
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1 bg-muted/50 rounded-full px-2 py-1 text-sm">
+                      <span className="font-bold">{user.gems ?? 0}</span>
+                      <Gem className="h-4 w-4 text-green-500" />
+                    </div>
+                    <Link to="/profil">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
+                        <AvatarFallback>
+                          <UserIcon className="h-5 w-5" />
+                        </AvatarFallback>
+                      </Avatar>
+                    </Link>
+                  </div>
                 </>
               ) : (
                 guestLinks.map((link) => (

@@ -10,15 +10,15 @@ export const RARITIES = {
 export const FRAMES = [
   // Sıradan
   { name: 'Klasik Bronz', rarity: RARITIES.SIRADAN.name, className: 'border-4 border-[#CD7F32] rounded-full' },
-  { name: 'Basit Gümüş', rarity: RARITIES.SIRADAN.name, className: 'border-4 border-gray-400 rounded-2xl' },
-  { name: 'Sade Çelik', rarity: RARITIES.SIRADAN.name, className: 'border-4 border-gray-500 rounded-lg' },
-  { name: 'Ahşap Çerçeve', rarity: RARITIES.SIRADAN.name, className: 'border-8 border-yellow-800 rounded-md' },
+  { name: 'Basit Gümüş', rarity: RARITIES.SIRADAN.name, className: 'border-4 border-gray-400 rounded-full' },
+  { name: 'Sade Çelik', rarity: RARITIES.SIRADAN.name, className: 'border-4 border-gray-500 rounded-full' },
+  { name: 'Ahşap Çerçeve', rarity: RARITIES.SIRADAN.name, className: 'border-8 border-yellow-800 rounded-full' },
   { name: 'Minimalist', rarity: RARITIES.SIRADAN.name, className: 'border-2 border-white rounded-full' },
 
   // Sıradışı
   { name: 'Çift Halkalı Altın', rarity: RARITIES.SIRADISI.name, className: 'border-4 border-yellow-500 rounded-full p-1 bg-background border-double' },
   { name: 'Neon Mavi', rarity: RARITIES.SIRADISI.name, className: 'border-2 border-blue-500 rounded-full shadow-[0_0_10px_theme(colors.blue.500)]' },
-  { name: 'Tekno Çizgiler', rarity: RARITIES.SIRADISI.name, className: 'border-4 border-dashed border-cyan-400 rounded-xl' },
+  { name: 'Tekno Çizgiler', rarity: RARITIES.SIRADISI.name, className: 'border-4 border-dashed border-cyan-400 rounded-full' },
 
   // Ender
   { name: 'Kraliyet Moru', rarity: RARITIES.ENDER.name, className: 'border-4 border-purple-600 rounded-full p-1 bg-gradient-to-br from-purple-400 to-purple-800' },

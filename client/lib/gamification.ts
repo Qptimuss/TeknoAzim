@@ -152,7 +152,7 @@ export const removeExp = async (userId: string, amount: number): Promise<Profile
 export const awardBadge = async (userId: string, badgeName: string): Promise<Profile | null> => {
   const { data: profile, error: fetchError } = await supabase
     .from('profiles')
-    .select('badges, exp, level')
+    .select('badges, exp, level, gems')
     .eq('id', userId)
     .single();
 
@@ -168,11 +168,12 @@ export const awardBadge = async (userId: string, badgeName: string): Promise<Pro
 
   const newBadges = [...currentBadges, badgeName];
   const newExp = (profile.exp || 0) + EXP_ACTIONS.EARN_BADGE;
+  const newGems = (profile.gems || 0) + 5;
   const { level: newLevel } = calculateLevel(newExp);
 
   const { data: updatedProfile, error: updateError } = await supabase
     .from('profiles')
-    .update({ badges: newBadges, exp: newExp, level: newLevel })
+    .update({ badges: newBadges, exp: newExp, level: newLevel, gems: newGems })
     .eq('id', userId)
     .select()
     .single();
@@ -183,7 +184,7 @@ export const awardBadge = async (userId: string, badgeName: string): Promise<Pro
   }
 
   toast.success("Yeni Rozet Kazandın!", {
-    description: `"${badgeName}" rozetini kazandın ve ${EXP_ACTIONS.EARN_BADGE} EXP elde ettin!`,
+    description: `"${badgeName}" rozetini kazandın, ${EXP_ACTIONS.EARN_BADGE} EXP ve 5 Gem elde ettin!`,
   });
 
   if (newLevel > (profile.level || 1)) {
