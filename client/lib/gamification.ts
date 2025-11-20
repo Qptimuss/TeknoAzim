@@ -10,6 +10,10 @@ export const TITLES: { [key: number]: string } = {
   3: "Topluluk Üyesi",
   4: "Fikir Lideri",
   5: "İçerik Ustası",
+  6: "Bilge Paylaşımcı",
+  7: "Tartışma Başlatan",
+  8: "Topluluk Mentoru",
+  9: "Usta Kalem",
   10: "TeknoAzim Elçisi",
 };
 
