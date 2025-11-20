@@ -479,8 +479,8 @@ export default function ProfilePage() {
               </div>
             )}
             
-            <div className="mt-8">
-              <h2 className="text-foreground text-2xl font-outfit font-bold mb-4">Çerçevelerim</h2>
+            <div className="mt-8 bg-card border border-border rounded-lg p-8">
+              <h2 className="text-2xl font-outfit font-bold mb-4">Çerçevelerim</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {FRAMES.map((frame) => {
                   const isOwned = user.owned_frames?.includes(frame.name) ?? false;
