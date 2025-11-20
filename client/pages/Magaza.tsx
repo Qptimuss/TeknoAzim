@@ -4,21 +4,42 @@ import { Button } from "@/components/ui/button";
 import { Gift, Info } from "lucide-react";
 import CrateInfoDialog from "@/components/CrateInfoDialog";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function Magaza() {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleOpenCrate = () => {
-    // TODO: Implement crate opening logic
+    if (!user) {
+      toast.error("Önce giriş yapmanız gerekiyor.", {
+        description: "Sandığı açmak ve diğer mağaza özelliklerini kullanmak için lütfen giriş yapın.",
+        action: {
+          label: "Giriş Yap",
+          onClick: () => navigate('/giris'),
+        },
+      });
+      return;
+    }
+    // TODO: Implement crate opening logic for logged-in users
     toast.info("Sandık açma özelliği yakında geliyor!");
   };
 
   return (
     <>
       <div className="container mx-auto px-5 py-12">
-        <h1 className="text-foreground text-4xl md:text-5xl font-outfit font-bold mb-8">
-          Mağaza
-        </h1>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <h1 className="text-foreground text-4xl md:text-5xl font-outfit font-bold">
+            Mağaza
+          </h1>
+          {!user && (
+            <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg border border-border">
+              Mağazayı kullanabilmek için giriş yapmanız gerekmektedir.
+            </p>
+          )}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <Card className="w-full flex flex-col transition-all hover:border-primary hover:scale-105 relative">
             <Button
@@ -41,7 +62,7 @@ export default function Magaza() {
             </CardContent>
             <CardFooter>
               <Button className="w-full" onClick={handleOpenCrate}>
-                Sandığı Aç (Yakında)
+                Sandığı Aç {user ? "(Yakında)" : ""}
               </Button>
             </CardFooter>
           </Card>

@@ -22,6 +22,7 @@ export default function Navbar() {
   const mainNavLinks = [
     { to: "/", label: "Ana Sayfa" },
     { to: "/bloglar", label: "Bloglar" },
+    { to: "/magaza", label: "Mağaza" },
     { to: "/duyurular", label: "Duyurular" },
     { to: "/hakkimizda", label: "Hakkımızda" },
   ];
@@ -33,7 +34,7 @@ export default function Navbar() {
 
   const authLinks = [
     { to: "/profil", label: "Profil" },
-    { to: "/magaza", label: "Mağaza" },
+    { to: "/magaza", label: "Mağaza" }, // Mobile nav için burada kalabilir
   ];
 
   return (
@@ -41,7 +42,6 @@ export default function Navbar() {
       <div className="w-full max-w-[1122px] mx-auto">
         <nav className={cn(
           "inline-block md:block rounded-[40px] bg-muted border-2 border-border p-1 transition-all duration-300 origin-top",
-          // Sadece büyüme ve gölge efekti
           isMobileMenuHovered && "transform scale-[1.01] shadow-xl shadow-black/20 dark:shadow-white/5"
         )}>
           {/* Mobile View */}
@@ -65,14 +65,9 @@ export default function Navbar() {
                 </Link>
               ))}
               {user && (
-                <>
-                  <Link to="/magaza" className="font-bakbak text-sm md:text-sm font-normal text-card-foreground whitespace-nowrap shrink-0 px-1 md:px-1 lg:px-2">
-                    Mağaza
-                  </Link>
-                  <Link to="/profil" className="font-bakbak text-sm md:text-sm font-normal text-card-foreground whitespace-nowrap shrink-0 px-1 md:px-1 lg:px-2">
-                    Profil
-                  </Link>
-                </>
+                <Link to="/profil" className="font-bakbak text-sm md:text-sm font-normal text-card-foreground whitespace-nowrap shrink-0 px-1 md:px-1 lg:px-2">
+                  Profil
+                </Link>
               )}
             </div>
             <div className="flex items-center gap-4 md:gap-6 lg:gap-8 px-2">
