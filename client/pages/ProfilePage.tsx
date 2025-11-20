@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import ImageCropperDialog from "@/components/ImageCropperDialog";
 import { supabase } from "@/integrations/supabase/client";
-import EmailConfirmationDialog from "@/components/EmailConfirmationDialog";
+// EmailConfirmationDialog artık kullanılmıyor, kaldırıldı.
 
 const titleSchema = z.object({
   selected_title: z.string().optional(),
@@ -54,19 +54,13 @@ export default function ProfilePage() {
   // Inline editing states
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
-  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  // E-posta düzenleme state'leri kaldırıldı.
   const [nameValue, setNameValue] = useState("");
   const [descriptionValue, setDescriptionValue] = useState("");
-  const [emailValue, setEmailValue] = useState("");
-
+  
   // Cropping States
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [isCropperOpen, setIsCropperOpen] = useState(false);
-
-  // Email confirmation dialog states
-  const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] = useState(false);
-  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
-  const [isResending, setIsResending] = useState(false);
 
   const form = useForm<z.infer<typeof titleSchema>>({
     resolver: zodResolver(titleSchema),
@@ -86,7 +80,7 @@ export default function ProfilePage() {
     if (user) {
       setNameValue(user.name || "");
       setDescriptionValue(user.description || "");
-      setEmailValue(user.email || "");
+      // E-posta state'i kaldırıldı.
       form.reset({ selected_title: user.selected_title || "" });
       
       const fetchUserPosts = async () => {
@@ -166,52 +160,9 @@ export default function ProfilePage() {
     setDescriptionValue(user?.description || "");
   };
 
-  // --- Email Handlers ---
-  const handleEmailSave = async () => {
-    if (!user) return;
-    setIsEditingEmail(false);
-    if (emailValue !== user.email) {
-      const result = z.string().email("Geçerli bir e-posta adresi giriniz.").safeParse(emailValue);
-      if (!result.success) {
-        toast.error(result.error.issues[0].message);
-        setEmailValue(user.email || "");
-        return;
-      }
-      
-      const { error } = await supabase.auth.updateUser({ email: emailValue });
-
-      if (error) {
-        toast.error("E-posta güncellenirken hata oluştu.", { description: error.message });
-        setEmailValue(user.email || "");
-      } else {
-        setPendingEmail(emailValue);
-        setIsConfirmationDialogOpen(true);
-      }
-    }
-  };
-
-  const handleEmailCancel = () => {
-    setIsEditingEmail(false);
-    setEmailValue(user?.email || "");
-  };
-
-  const handleResendConfirmation = async () => {
-    if (!pendingEmail) return;
-    setIsResending(true);
-    
-    const { error } = await supabase.auth.resend({
-      type: 'email_change',
-      email: pendingEmail,
-    });
-
-    if (error) {
-      toast.error("Doğrulama e-postası gönderilemedi.", { description: error.message });
-    } else {
-      toast.success("Doğrulama e-postası tekrar gönderildi.");
-    }
-    
-    // Prevent spamming the resend button
-    setTimeout(() => setIsResending(false), 10000); // Disable for 10 seconds
+  // --- Avatar Handlers ---
+  const handleAvatarEditClick = () => {
+    fileInputRef.current?.click();
   };
 
   const handleFileChange = (files: FileList | null) => {
@@ -293,17 +244,24 @@ export default function ProfilePage() {
           <div className="lg:col-span-1">
             <div className="bg-card border border-border rounded-lg p-8">
               <div className="flex flex-col items-center mb-6 text-center">
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="relative group cursor-pointer">
-                  <Avatar className="h-24 w-24 mb-4">
+                
+                {/* Avatar ve Düzenleme Butonu */}
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <Avatar className="h-24 w-24">
                     <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
                     <AvatarFallback>
                       <UserIcon className="h-12 w-12 text-muted-foreground" />
                     </AvatarFallback>
                   </Avatar>
-                  <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <p className="text-white text-xs font-bold">Değiştir</p>
-                  </div>
-                </button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 self-center mt-12" 
+                    onClick={handleAvatarEditClick}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </div>
                 <Input type="file" accept="image/png, image/jpeg, image/gif" ref={fileInputRef} onChange={(e) => handleFileChange(e.target.files)} className="hidden" />
 
                 {/* Name Editing */}
@@ -340,33 +298,10 @@ export default function ProfilePage() {
                   </p>
                 )}
                 
-                {/* Email Editing */}
+                {/* Email Display (Read-only) */}
                 <div className="flex items-center gap-2 relative mt-1 w-full">
-                  {isEditingEmail ? (
-                    <div className="flex w-full items-center gap-2">
-                      <Input
-                        type="email"
-                        value={emailValue}
-                        onChange={(e) => setEmailValue(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') handleEmailSave(); }}
-                        autoFocus
-                        className="text-sm text-center h-auto flex-1"
-                      />
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={handleEmailSave}>
-                        <Check className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleEmailCancel}>
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <>
-                      <p className="text-muted-foreground text-center flex-1">{user.email}</p>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingEmail(true)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    </>
-                  )}
+                  <p className="text-muted-foreground text-center flex-1">{user.email}</p>
+                  {/* E-posta düzenleme butonu kaldırıldı */}
                 </div>
                 
                 {/* Description Editing */}
@@ -529,17 +464,6 @@ export default function ProfilePage() {
           onCropComplete={handleCropComplete}
         />
       )}
-
-      <EmailConfirmationDialog
-        open={isConfirmationDialogOpen}
-        onClose={() => {
-          setIsConfirmationDialogOpen(false);
-          setPendingEmail(null);
-        }}
-        newEmail={pendingEmail || ""}
-        onResend={handleResendConfirmation}
-        isResending={isResending}
-      />
     </>
   );
 }
