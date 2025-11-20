@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, CheckCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { calculateLevel, ALL_BADGES } from "@/lib/gamification";
+import { calculateLevel, ALL_BADGES, TITLES } from "@/lib/gamification";
 import { cn } from "@/lib/utils";
 
 export default function UserProfilePage() {
@@ -50,6 +50,9 @@ export default function UserProfilePage() {
   const expInCurrentLevel = (userProfile.exp || 0) - currentLevelExp;
   const expProgress = expForNextLevel === 0 ? 100 : (expInCurrentLevel / expForNextLevel) * 100;
 
+  const selectedTitleObject = Object.values(TITLES).find(t => t.name === userProfile.selected_title);
+  const SelectedTitleIcon = selectedTitleObject ? selectedTitleObject.icon : CheckCircle;
+
   return (
     <div className="container mx-auto px-5 py-12">
       <h1 className="text-foreground text-4xl md:text-5xl font-outfit font-bold mb-8">
@@ -69,7 +72,7 @@ export default function UserProfilePage() {
               <h2 className="text-card-foreground text-2xl font-outfit font-bold">{userProfile.name}</h2>
               {userProfile.selected_title && (
                 <p className="text-yellow-400 font-semibold text-sm mt-1 flex items-center gap-1">
-                  <CheckCircle className="h-4 w-4" /> {userProfile.selected_title}
+                  <SelectedTitleIcon className="h-4 w-4" /> {userProfile.selected_title}
                 </p>
               )}
               <p className="text-muted-foreground mt-2">{userProfile.description}</p>

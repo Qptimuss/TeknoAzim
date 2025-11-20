@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import { addBlogPost, uploadBlogImage, getPostsByUserId } from "@/lib/blog-store";
 import { useAuth } from "@/contexts/AuthContext";
-import { addExp, awardBadge } from "@/lib/gamification";
+import { addExp, awardBadge, EXP_ACTIONS } from "@/lib/gamification";
 
 const blogSchema = z.object({
   title: z.string().min(5, "Başlık en az 5 karakter olmalıdır."),
@@ -68,9 +68,9 @@ export default function CreateBlogPage() {
     }
 
     try {
-      // Yeni gönderiyi eklemeden ÖNCE kullanıcının ilk gönderisi olup olmadığını kontrol et
+      // Yeni gönderiyi eklemeden ÖNCE kullanıcının gönderi sayısını kontrol et
       const userPosts = await getPostsByUserId(user.id);
-      const isFirstPost = userPosts.length === 0;
+      const postCountBeforeCreating = userPosts.length;
 
       let imageUrl: string | undefined = undefined;
       // Resim seçildiyse yükle
@@ -93,19 +93,26 @@ export default function CreateBlogPage() {
 
       // --- Oyunlaştırma Mantığı ---
       
-      // 1. Blog yayınladığı için 25 EXP ver.
-      let latestProfileState = await addExp(user.id, 25);
+      // 1. Blog yayınladığı için EXP ver.
+      let latestProfileState = await addExp(user.id, EXP_ACTIONS.CREATE_POST);
       
-      // 2. Eğer ilk gönderisiyse, "İlk Blog" rozetini ver (bu işlem +50 EXP de verecek).
-      if (isFirstPost) {
+      // 2. Rozetleri kontrol et
+      if (postCountBeforeCreating === 0) {
         const badgeUpdate = await awardBadge(user.id, "İlk Blog");
-        // Rozet başarıyla verildiyse, en güncel profil durumu badgeUpdate'ten gelir.
-        if (badgeUpdate) {
-          latestProfileState = badgeUpdate;
-        }
+        if (badgeUpdate) latestProfileState = badgeUpdate;
+      }
+      
+      if (postCountBeforeCreating === 1) {
+        const badgeUpdate = await awardBadge(user.id, "Hevesli Katılımcı");
+        if (badgeUpdate) latestProfileState = badgeUpdate;
+      }
+      
+      if (postCountBeforeCreating === 4) {
+        const badgeUpdate = await awardBadge(user.id, "Topluluk İnşacısı");
+        if (badgeUpdate) latestProfileState = badgeUpdate;
       }
 
-      // 3. Auth Context'i en güncel ve nihai profil durumuyla güncelle.
+      // 4. Auth Context'i en güncel ve nihai profil durumuyla güncelle.
       if (latestProfileState) {
         updateUser(latestProfileState);
       }

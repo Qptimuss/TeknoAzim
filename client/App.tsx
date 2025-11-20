@@ -22,6 +22,7 @@ import SifreSifirla from "./pages/SifreSifirla";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./components/ThemeProvider";
+import Magaza from "./pages/Magaza";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
                 <Route path="/hakkimizda" element={<Placeholder title="Hakkımızda" />} />
                 <Route path="/gizlilik-politikasi" element={<Placeholder title="Gizlilik Politikası" />} />
                 <Route path="/kullanim-kosullari" element={<Placeholder title="Kullanım Koşulları" />} />
+                <Route path="/magaza" element={<Magaza />} />
 
                 {/* Protected Routes */}
                 <Route element={<ProtectedRoute />}>

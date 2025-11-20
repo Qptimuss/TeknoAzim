@@ -3,11 +3,12 @@ import { MobileNav } from "@/components/MobileNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon } from "lucide-react";
+import { User as UserIcon, Gem } from "lucide-react";
 import AppLogo from "./AppLogo";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { ThemeToggle } from "./ThemeToggle";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -24,6 +25,7 @@ export default function Navbar() {
     { to: "/bloglar", label: "Bloglar" },
     { to: "/duyurular", label: "Duyurular" },
     { to: "/hakkimizda", label: "Hakkımızda" },
+    { to: "/magaza", label: "Mağaza" },
   ];
 
   const guestLinks = [
@@ -40,7 +42,6 @@ export default function Navbar() {
       <div className="w-full max-w-[1122px] mx-auto">
         <nav className={cn(
           "inline-block md:block rounded-[40px] bg-muted border-2 border-border p-1 transition-all duration-300 origin-top",
-          // Sadece büyüme ve gölge efekti
           isMobileMenuHovered && "transform scale-[1.01] shadow-xl shadow-black/20 dark:shadow-white/5"
         )}>
           {/* Mobile View */}
@@ -63,6 +64,11 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
+              {user && (
+                <Link to="/profil" className="font-bakbak text-sm md:text-sm font-normal text-card-foreground whitespace-nowrap shrink-0 px-1 md:px-1 lg:px-2">
+                  Profil
+                </Link>
+              )}
             </div>
             <div className="flex items-center gap-4 md:gap-6 lg:gap-8 px-2">
               {user ? (
@@ -70,14 +76,31 @@ export default function Navbar() {
                   <Button onClick={handleLogout} variant="ghost" className="font-bakbak text-base md:text-base font-normal text-foreground whitespace-nowrap shrink-0 p-0 hover:bg-transparent">
                     Çıkış Yap
                   </Button>
-                  <Link to="/profil">
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-                      <AvatarFallback>
-                        <UserIcon className="h-5 w-5" />
-                      </AvatarFallback>
-                    </Avatar>
-                  </Link>
+                  <div className="flex flex-col items-center">
+                    <Link to="/profil">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
+                        <AvatarFallback>
+                          <UserIcon className="h-5 w-5" />
+                        </AvatarFallback>
+                      </Avatar>
+                    </Link>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link to="/magaza" className="flex items-center gap-1 bg-muted/50 rounded-full px-2 py-0.5 text-xs mt-1">
+                          <span className="font-bold">{user.gems ?? 0}</span>
+                          <Gem className="h-3 w-3 text-green-500" />
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="text-center">
+                          <p className="font-bold">Gem Kazancı</p>
+                          <p>Her 24 saatte bir giriş: +5 Gem</p>
+                          <p>Her yeni rozet: +10 Gem</p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                 </>
               ) : (
                 guestLinks.map((link) => (
