@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import ImageCropperDialog from "@/components/ImageCropperDialog";
 import { supabase } from "@/integrations/supabase/client";
-import EmailConfirmationDialog from "@/components/EmailConfirmationDialog";
+import EmailChangeAuthorizationDialog from "@/components/EmailChangeAuthorizationDialog";
 
 const titleSchema = z.object({
   selected_title: z.string().optional(),
@@ -64,10 +64,8 @@ export default function ProfilePage() {
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [isCropperOpen, setIsCropperOpen] = useState(false);
 
-  // Email confirmation dialog states
-  const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] = useState(false);
-  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
-  const [isResending, setIsResending] = useState(false);
+  // Email authorization dialog state
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
 
   const form = useForm<z.infer<typeof titleSchema>>({
     resolver: zodResolver(titleSchema),
@@ -172,28 +170,9 @@ export default function ProfilePage() {
     if (error) {
       toast.error("E-posta güncellenirken hata oluştu.", { description: error.message });
     } else {
-      setPendingEmail(emailValue);
-      setIsConfirmationDialogOpen(true);
       setIsEditingEmail(false);
+      setIsAuthDialogOpen(true);
     }
-  };
-
-  const handleResendConfirmation = async () => {
-    if (!pendingEmail) return;
-    setIsResending(true);
-    
-    const { error } = await supabase.auth.resend({
-      type: 'email_change',
-      email: pendingEmail,
-    });
-
-    if (error) {
-      toast.error("Doğrulama e-postası gönderilemedi.", { description: error.message });
-    } else {
-      toast.success("Doğrulama e-postası tekrar gönderildi.");
-    }
-    
-    setTimeout(() => setIsResending(false), 10000);
   };
 
   const handleFileChange = (files: FileList | null) => {
@@ -495,15 +474,10 @@ export default function ProfilePage() {
         />
       )}
 
-      <EmailConfirmationDialog
-        open={isConfirmationDialogOpen}
-        onClose={() => {
-          setIsConfirmationDialogOpen(false);
-          setPendingEmail(null);
-        }}
-        newEmail={pendingEmail || ""}
-        onResend={handleResendConfirmation}
-        isResending={isResending}
+      <EmailChangeAuthorizationDialog
+        open={isAuthDialogOpen}
+        onClose={() => setIsAuthDialogOpen(false)}
+        currentEmail={user.email || ""}
       />
     </>
   );
