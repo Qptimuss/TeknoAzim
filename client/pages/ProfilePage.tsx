@@ -200,6 +200,9 @@ export default function ProfilePage() {
   const expInCurrentLevel = (user.exp || 0) - currentLevelExp;
   const expProgress = expForNextLevel === 0 ? 100 : (expInCurrentLevel / expForNextLevel) * 100;
 
+  const selectedTitleObject = Object.values(TITLES).find(t => t.name === user.selected_title);
+  const SelectedTitleIcon = selectedTitleObject ? selectedTitleObject.icon : CheckCircle;
+
   return (
     <>
       <div className="container mx-auto px-5 py-12">
@@ -259,7 +262,7 @@ export default function ProfilePage() {
 
                 {user.selected_title && (
                   <p className="text-yellow-400 font-semibold text-sm flex items-center justify-center gap-1">
-                    <CheckCircle className="h-4 w-4" /> {user.selected_title}
+                    <SelectedTitleIcon className="h-4 w-4" /> {user.selected_title}
                   </p>
                 )}
                 
@@ -325,7 +328,8 @@ export default function ProfilePage() {
                     <RadioGroupItem value="none" id="title-none" />
                     <Label htmlFor="title-none" className="italic text-muted-foreground">Ünvan Yok</Label>
                   </div>
-                  {Object.entries(TITLES).map(([levelKey, title]) => {
+                  {Object.entries(TITLES).map(([levelKey, titleObject]) => {
+                    const { name: title, icon: Icon } = titleObject;
                     const levelRequired = parseInt(levelKey);
                     const isUnlocked = level >= levelRequired;
                     return (
@@ -338,6 +342,7 @@ export default function ProfilePage() {
                             !isUnlocked && "text-muted-foreground opacity-60 cursor-not-allowed"
                           )}
                         >
+                          <Icon className="h-4 w-4" />
                           <span>{title}</span>
                           {!isUnlocked && (
                             <span className="ml-auto flex items-center gap-1 text-xs">

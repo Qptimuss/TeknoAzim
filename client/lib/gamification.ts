@@ -1,20 +1,25 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Award, BookOpen, MessageSquare, ThumbsUp, FilePlus2, Zap, Star } from "lucide-react";
+import { 
+  Award, BookOpen, MessageSquare, ThumbsUp, FilePlus2, Zap, Star,
+  PenSquare, TrendingUp, Users, Lightbulb, Sparkles, MessageSquareQuote,
+  GraduationCap, PenTool, Rocket
+} from "lucide-react";
 import { Profile } from "@shared/api";
 import { toast } from "sonner";
+import React from "react";
 
 // --- ÜNVAN SİSTEMİ ---
-export const TITLES: { [key: number]: string } = {
-  1: "Yeni Blogger",
-  2: "Gelişen Yazar",
-  3: "Topluluk Üyesi",
-  4: "Fikir Lideri",
-  5: "İçerik Ustası",
-  6: "Bilge Paylaşımcı",
-  7: "Tartışma Başlatan",
-  8: "Topluluk Mentoru",
-  9: "Usta Kalem",
-  10: "TeknoAzim Elçisi",
+export const TITLES: { [key: number]: { name: string; icon: React.ElementType } } = {
+  1: { name: "Yeni Blogger", icon: PenSquare },
+  2: { name: "Gelişen Yazar", icon: TrendingUp },
+  3: { name: "Topluluk Üyesi", icon: Users },
+  4: { name: "Fikir Lideri", icon: Lightbulb },
+  5: { name: "İçerik Ustası", icon: Sparkles },
+  6: { name: "Bilge Paylaşımcı", icon: BookOpen },
+  7: { name: "Tartışma Başlatan", icon: MessageSquareQuote },
+  8: { name: "Topluluk Mentoru", icon: GraduationCap },
+  9: { name: "Usta Kalem", icon: PenTool },
+  10: { name: "TeknoAzim Elçisi", icon: Rocket },
 };
 
 // --- SEVİYE ATLAMA EŞİKLERİ ---
