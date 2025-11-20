@@ -96,13 +96,17 @@ export default function CreateBlogPage() {
       // 1. Blog yayınladığı için EXP ver.
       let latestProfileState = await addExp(user.id, EXP_ACTIONS.CREATE_POST);
       
-      // 2. Eğer ilk gönderisiyse, "İlk Blog" rozetini ver.
+      // 2. Rozetleri kontrol et
       if (postCountBeforeCreating === 0) {
         const badgeUpdate = await awardBadge(user.id, "İlk Blog");
         if (badgeUpdate) latestProfileState = badgeUpdate;
       }
-
-      // 3. Eğer 5. gönderisiyse, "Topluluk İnşacısı" rozetini ver.
+      
+      if (postCountBeforeCreating === 1) {
+        const badgeUpdate = await awardBadge(user.id, "Hevesli Katılımcı");
+        if (badgeUpdate) latestProfileState = badgeUpdate;
+      }
+      
       if (postCountBeforeCreating === 4) {
         const badgeUpdate = await awardBadge(user.id, "Topluluk İnşacısı");
         if (badgeUpdate) latestProfileState = badgeUpdate;

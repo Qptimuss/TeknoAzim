@@ -64,11 +64,32 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
 
       await addComment({ postId, userId: user.id, content: values.content });
       
+      let finalProfileState = null;
+
       if (isFirstComment) {
         const badgeUpdate = await awardBadge(user.id, "İlk Yorumcu");
         if (badgeUpdate) {
-          updateUser(badgeUpdate);
+          finalProfileState = badgeUpdate;
         }
+      }
+
+      // Check for "Hızlı Parmaklar" badge
+      const { count: firstCommentCount, error: firstCommentError } = await supabase
+        .from('first_commenters')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (firstCommentError) {
+        console.error("Error checking first comment count:", firstCommentError);
+      } else if (firstCommentCount === 3) {
+        const badgeUpdate = await awardBadge(user.id, "Hızlı Parmaklar");
+        if (badgeUpdate) {
+          finalProfileState = badgeUpdate;
+        }
+      }
+
+      if (finalProfileState) {
+        updateUser(finalProfileState);
       }
 
       toast.success("Yorumunuz eklendi!");

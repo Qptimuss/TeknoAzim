@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Award, BookOpen, MessageSquare, ThumbsUp } from "lucide-react";
+import { Award, BookOpen, MessageSquare, ThumbsUp, FilePlus2, Zap, Star } from "lucide-react";
 import { Profile } from "@shared/api";
 import { toast } from "sonner";
 
@@ -39,9 +39,12 @@ export const calculateLevel = (exp: number): { level: number, expForNextLevel: n
 // --- ROZETLER ---
 export const ALL_BADGES = [
   { name: "İlk Blog", description: "İlk blog yazını yayınla.", icon: BookOpen },
-  { name: "İlk Yorumcu", description: "Bir gönderiye ilk yorumu yap.", icon: MessageSquare },
-  { name: "Beğeni Mıknatısı", description: "Bir gönderin 5 beğeni alsın.", icon: ThumbsUp },
+  { name: "Hevesli Katılımcı", description: "İki blog yazısı yayınla.", icon: FilePlus2 },
   { name: "Topluluk İnşacısı", description: "5 blog yazısı yayınla.", icon: Award },
+  { name: "İlk Yorumcu", description: "Bir gönderiye ilk yorumu yap.", icon: MessageSquare },
+  { name: "Hızlı Parmaklar", description: "Üç farklı gönderiye ilk yorumu yap.", icon: Zap },
+  { name: "Beğeni Mıknatısı", description: "Bir gönderin 5 beğeni alsın.", icon: ThumbsUp },
+  { name: "Popüler Yazar", description: "Bir gönderin 10 beğeni alsın.", icon: Star },
 ];
 
 // --- EXP KAZANIM MİKTARLARI ---
