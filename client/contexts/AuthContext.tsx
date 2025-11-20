@@ -70,20 +70,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUser = async (newUserData: Partial<User>) => {
     if (!user) return;
-    // We only update fields that are passed in newUserData
-    const { error } = await supabase
+
+    const { error: updateError } = await supabase
       .from('profiles')
       .update(newUserData)
       .eq('id', user.id);
 
-    if (error) {
-      console.error("Error updating profile:", error);
-      throw error;
+    if (updateError) {
+      console.error("Error updating profile:", updateError);
+      throw updateError;
     }
 
-    // Refetch the full profile to ensure consistency
-    const updatedProfile = await fetchUserProfile({ id: user.id } as SupabaseUser);
-    if (updatedProfile) {
+    // Refetch the full user session and profile to ensure data consistency
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const updatedProfile = await fetchUserProfile(session.user);
       setUser(updatedProfile);
     }
   };

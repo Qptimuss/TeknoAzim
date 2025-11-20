@@ -262,7 +262,7 @@ export default function ProfilePage() {
                 </button>
                 <Input type="file" accept="image/png, image/jpeg, image/gif" ref={fileInputRef} onChange={(e) => handleFileChange(e.target.files)} className="hidden" />
 
-                <div className="flex items-center gap-2 relative">
+                <div className="flex items-center gap-2 relative w-full">
                   {isEditingName ? (
                     <Input
                       value={nameValue}
@@ -274,7 +274,7 @@ export default function ProfilePage() {
                     />
                   ) : (
                     <>
-                      <h2 className="text-card-foreground text-2xl font-outfit font-bold">{user.name}</h2>
+                      <h2 className="text-card-foreground text-2xl font-outfit font-bold text-center flex-1">{user.name}</h2>
                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingName(true)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -288,7 +288,7 @@ export default function ProfilePage() {
                   </p>
                 )}
                 
-                <div className="flex items-center gap-2 relative mt-1">
+                <div className="flex items-center gap-2 relative mt-1 w-full">
                   {isEditingEmail ? (
                     <Input
                       type="email"
@@ -297,11 +297,11 @@ export default function ProfilePage() {
                       onBlur={handleEmailSave}
                       onKeyDown={(e) => { if (e.key === 'Enter') handleEmailSave(); }}
                       autoFocus
-                      className="text-sm h-auto"
+                      className="text-sm text-center h-auto flex-1"
                     />
                   ) : (
                     <>
-                      <p className="text-muted-foreground">{user.email}</p>
+                      <p className="text-muted-foreground text-center flex-1">{user.email}</p>
                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingEmail(true)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
