@@ -64,13 +64,20 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
+              {user && (
+                <>
+                  <Link to="/magaza" className="font-bakbak text-sm md:text-sm font-normal text-card-foreground whitespace-nowrap shrink-0 px-1 md:px-1 lg:px-2">
+                    Mağaza
+                  </Link>
+                  <Link to="/profil" className="font-bakbak text-sm md:text-sm font-normal text-card-foreground whitespace-nowrap shrink-0 px-1 md:px-1 lg:px-2">
+                    Profil
+                  </Link>
+                </>
+              )}
             </div>
             <div className="flex items-center gap-4 md:gap-6 lg:gap-8 px-2">
               {user ? (
                 <>
-                  <Link to="/magaza" className="font-bakbak text-base md:text-base font-normal text-foreground whitespace-nowrap shrink-0">
-                    Mağaza
-                  </Link>
                   <Button onClick={handleLogout} variant="ghost" className="font-bakbak text-base md:text-base font-normal text-foreground whitespace-nowrap shrink-0 p-0 hover:bg-transparent">
                     Çıkış Yap
                   </Button>
