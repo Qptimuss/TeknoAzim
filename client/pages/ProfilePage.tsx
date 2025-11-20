@@ -164,14 +164,26 @@ export default function ProfilePage() {
     }
     
     setIsSavingEmail(true);
-    const { error } = await supabase.auth.updateUser({ email: emailValue });
-    setIsSavingEmail(false);
+    try {
+      const { error } = await supabase.auth.updateUser({ email: emailValue });
 
-    if (error) {
-      toast.error("E-posta güncellenirken hata oluştu.", { description: error.message });
-    } else {
-      setIsEditingEmail(false);
-      setIsAuthDialogOpen(true);
+      if (error) {
+        if (error.message.includes("reauthenticate")) {
+             toast.error("Kimlik Doğrulama Gerekli", { 
+                description: "Bu işlemi yapmak için yakın zamanda giriş yapmış olmanız gerekir. Lütfen çıkış yapıp tekrar giriş yapın." 
+            });
+        } else {
+            toast.error("E-posta güncellenirken hata oluştu.", { description: error.message });
+        }
+      } else {
+        setIsEditingEmail(false);
+        setIsAuthDialogOpen(true);
+      }
+    } catch (e) {
+        console.error("An unexpected error occurred during email update:", e);
+        toast.error("Beklenmedik bir hata oluştu.");
+    } finally {
+        setIsSavingEmail(false);
     }
   };
 
