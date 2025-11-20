@@ -12,19 +12,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, CheckCircle, Pencil, Check, X, Loader2 } from "lucide-react";
+import { User as UserIcon, CheckCircle, Pencil, Check, X, Lock, ImageIcon } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { calculateLevel, ALL_BADGES, TITLES } from "@/lib/gamification";
+import { calculateLevel, ALL_BADGES, TITLES, removeExp, EXP_ACTIONS } from "@/lib/gamification";
 import CreateBlogCard from "@/components/CreateBlogCard";
 import { cn } from "@/lib/utils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,15 +31,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import ImageCropperDialog from "@/components/ImageCropperDialog";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import EmailChangeAuthorizationDialog from "@/components/EmailChangeAuthorizationDialog";
-
-const titleSchema = z.object({
-  selected_title: z.string().optional(),
-});
+import { FRAMES } from "@/lib/store-items";
 
 export default function ProfilePage() {
-  const { user, updateUser, loading } = useAuth();
+  const { user, updateUser, loading, logout } = useAuth();
+  const navigate = useNavigate();
   const [userPosts, setUserPosts] = useState<BlogPostWithAuthor[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -54,26 +47,16 @@ export default function ProfilePage() {
   // Inline editing states
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
-  const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [nameValue, setNameValue] = useState("");
   const [descriptionValue, setDescriptionValue] = useState("");
-  const [emailValue, setEmailValue] = useState("");
-  const [isSavingEmail, setIsSavingEmail] = useState(false);
-
+  
   // Cropping States
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [isCropperOpen, setIsCropperOpen] = useState(false);
 
-  // Email authorization dialog state
-  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
-
-  const form = useForm<z.infer<typeof titleSchema>>({
-    resolver: zodResolver(titleSchema),
-    defaultValues: { selected_title: "" },
-  });
-
-  const { isDirty } = form.formState;
-  const watchedTitle = form.watch("selected_title");
+  // Account Deletion States
+  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -85,8 +68,6 @@ export default function ProfilePage() {
     if (user) {
       setNameValue(user.name || "");
       setDescriptionValue(user.description || "");
-      setEmailValue(user.email || "");
-      form.reset({ selected_title: user.selected_title || "" });
       
       const fetchUserPosts = async () => {
         setPostsLoading(true);
@@ -96,30 +77,34 @@ export default function ProfilePage() {
       };
       fetchUserPosts();
     }
-  }, [user, form]);
+  }, [user]);
 
-  // Autosave for title dropdown
-  useEffect(() => {
-    if (!isDirty || !user) return;
+  const handleTitleChange = async (newTitle: string) => {
+    if (!user) return;
+    const updateData = { selected_title: newTitle === 'none' ? null : newTitle };
+    
+    await toast.promise(updateUser(updateData), {
+      loading: 'Ünvan kaydediliyor...',
+      success: 'Ünvan güncellendi.',
+      error: 'Hata oluştu.',
+    });
+  };
 
-    const handler = setTimeout(async () => {
-      const newTitle = form.getValues().selected_title;
-      const updateData = { selected_title: newTitle === 'none' ? null : newTitle };
-      
-      await toast.promise(updateUser(updateData), {
-        loading: 'Ünvan kaydediliyor...',
-        success: 'Ünvan güncellendi.',
-        error: 'Hata oluştu.',
-      });
-      form.reset({ selected_title: newTitle });
-    }, 1000);
+  const handleFrameSelect = async (frameName: string) => {
+    if (!user) return;
+    const newFrame = user.selected_frame === frameName ? null : frameName;
+    await toast.promise(updateUser({ selected_frame: newFrame }), {
+      loading: 'Çerçeve ayarlanıyor...',
+      success: 'Çerçeve güncellendi!',
+      error: 'Hata oluştu.',
+    });
+  };
 
-    return () => clearTimeout(handler);
-  }, [watchedTitle, isDirty, user, updateUser, form]);
-
+  // --- Name Handlers ---
   const handleNameSave = async () => {
+    if (!user) return;
     setIsEditingName(false);
-    if (user && nameValue !== user.name) {
+    if (nameValue !== user.name) {
       const result = z.string().min(2, "İsim en az 2 karakter olmalıdır.").safeParse(nameValue);
       if (!result.success) {
         toast.error(result.error.issues[0].message);
@@ -134,9 +119,16 @@ export default function ProfilePage() {
     }
   };
 
+  const handleNameCancel = () => {
+    setIsEditingName(false);
+    setNameValue(user?.name || "");
+  };
+
+  // --- Description Handlers ---
   const handleDescriptionSave = async () => {
+    if (!user) return;
     setIsEditingDescription(false);
-    if (user && descriptionValue !== user.description) {
+    if (descriptionValue !== user.description) {
       const result = z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").optional().safeParse(descriptionValue);
       if (!result.success) {
         toast.error(result.error.issues[0].message);
@@ -151,41 +143,14 @@ export default function ProfilePage() {
     }
   };
 
-  const handleEmailSave = async () => {
-    if (!user || emailValue === user.email) {
-      setIsEditingEmail(false);
-      return;
-    }
+  const handleDescriptionCancel = () => {
+    setIsEditingDescription(false);
+    setDescriptionValue(user?.description || "");
+  };
 
-    const result = z.string().email("Geçerli bir e-posta adresi giriniz.").safeParse(emailValue);
-    if (!result.success) {
-      toast.error(result.error.issues[0].message);
-      return;
-    }
-    
-    setIsSavingEmail(true);
-    try {
-      const { error } = await supabase.auth.updateUser({ email: emailValue });
-
-      if (error) {
-        if (error.message.includes("reauthenticate")) {
-             toast.error("Kimlik Doğrulama Gerekli", { 
-                description: "Bu işlemi yapmak için yakın zamanda giriş yapmış olmanız gerekir. Lütfen çıkış yapıp tekrar giriş yapın." 
-            });
-        } else {
-            toast.error("E-posta güncellenirken hata oluştu.", { description: error.message });
-        }
-      } else {
-        // Başarılı: Kullanıcıya mevcut e-postasına onay gönderildiğini bildir.
-        setIsEditingEmail(false);
-        setIsAuthDialogOpen(true);
-      }
-    } catch (e) {
-        console.error("An unexpected error occurred during email update:", e);
-        toast.error("Beklenmedik bir hata oluştu.");
-    } finally {
-        setIsSavingEmail(false);
-    }
+  // --- Avatar Handlers ---
+  const handleAvatarEditClick = () => {
+    fileInputRef.current?.click();
   };
 
   const handleFileChange = (files: FileList | null) => {
@@ -227,17 +192,58 @@ export default function ProfilePage() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!postToDelete) return;
+    if (!postToDelete || !user) return;
     setIsDeleting(true);
     try {
       await deleteBlogPost(postToDelete.id, postToDelete.imageUrl);
       setUserPosts(prev => prev.filter(p => p.id !== postToDelete.id));
+      
+      const updatedProfile = await removeExp(user.id, EXP_ACTIONS.CREATE_POST);
+      if (updatedProfile) {
+        updateUser(updatedProfile);
+      }
+
       toast.success("Blog yazısı başarıyla silindi.");
     } catch (error) {
       toast.error("Blog yazısı silinirken bir hata oluştu.");
     } finally {
       setIsDeleting(false);
       setPostToDelete(null);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    setIsDeletingAccount(true);
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error("Kimlik doğrulama oturumu bulunamadı.");
+      }
+
+      const response = await fetch('/api/user', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Hesap silinemedi.' }));
+        throw new Error(errorData.error);
+      }
+
+      toast.success("Hesabınız başarıyla silindi.");
+      await logout(); 
+      navigate('/');
+
+    } catch (error) {
+      toast.error("Hesap silinirken bir hata oluştu.", {
+        description: error instanceof Error ? error.message : "Lütfen tekrar deneyin.",
+      });
+    } finally {
+      setIsDeletingAccount(false);
+      setShowDeleteAccountDialog(false);
     }
   };
 
@@ -252,9 +258,10 @@ export default function ProfilePage() {
   const { level, expForNextLevel, currentLevelExp } = calculateLevel(user.exp || 0);
   const expInCurrentLevel = (user.exp || 0) - currentLevelExp;
   const expProgress = expForNextLevel === 0 ? 100 : (expInCurrentLevel / expForNextLevel) * 100;
-  const unlockedTitles = Object.entries(TITLES)
-    .filter(([levelKey]) => level >= parseInt(levelKey))
-    .map(([, title]) => title);
+
+  const selectedTitleObject = Object.values(TITLES).find(t => t.name === user.selected_title);
+  const SelectedTitleIcon = selectedTitleObject ? selectedTitleObject.icon : CheckCircle;
+  const selectedFrame = FRAMES.find(f => f.name === user.selected_frame);
 
   return (
     <>
@@ -266,33 +273,48 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
             <div className="bg-card border border-border rounded-lg p-8">
-              <div className="flex flex-col items-center mb-6 text-center">
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="relative group cursor-pointer">
-                  <Avatar className="h-24 w-24 mb-4">
-                    <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-                    <AvatarFallback>
-                      <UserIcon className="h-12 w-12 text-muted-foreground" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <p className="text-white text-xs font-bold">Değiştir</p>
+              <div className="flex flex-col items-center mb-6 space-y-2 text-center">
+                
+                <div className="flex items-center justify-center gap-2">
+                  <div className={cn("p-1", selectedFrame?.className)}>
+                    <Avatar className="h-24 w-24">
+                      <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
+                      <AvatarFallback>
+                        <UserIcon className="h-12 w-12 text-muted-foreground" />
+                      </AvatarFallback>
+                    </Avatar>
                   </div>
-                </button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6" 
+                    onClick={handleAvatarEditClick}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </div>
                 <Input type="file" accept="image/png, image/jpeg, image/gif" ref={fileInputRef} onChange={(e) => handleFileChange(e.target.files)} className="hidden" />
 
-                <div className="flex items-center gap-2 relative w-full">
+                <div className="flex min-h-[40px] items-center justify-center gap-2">
                   {isEditingName ? (
-                    <Input
-                      value={nameValue}
-                      onChange={(e) => setNameValue(e.target.value)}
-                      onBlur={handleNameSave}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleNameSave(); }}
-                      autoFocus
-                      className="text-2xl font-outfit font-bold text-center h-auto"
-                    />
+                    <>
+                      <Input
+                        value={nameValue}
+                        onChange={(e) => setNameValue(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleNameSave(); }}
+                        autoFocus
+                        className="w-48 text-center text-2xl font-bold font-outfit h-auto"
+                      />
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={handleNameSave}>
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleNameCancel}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
                   ) : (
                     <>
-                      <h2 className="text-card-foreground text-2xl font-outfit font-bold text-center flex-1">{user.name}</h2>
+                      <h2 className="text-card-foreground text-2xl font-outfit font-bold">{user.name}</h2>
                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingName(true)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -301,54 +323,35 @@ export default function ProfilePage() {
                 </div>
 
                 {user.selected_title && (
-                  <p className="text-yellow-400 font-semibold text-sm mt-1 flex items-center gap-1">
-                    <CheckCircle className="h-4 w-4" /> {user.selected_title}
+                  <p className="text-yellow-400 font-semibold text-sm flex items-center justify-center gap-1">
+                    <SelectedTitleIcon className="h-4 w-4" /> {user.selected_title}
                   </p>
                 )}
                 
-                <div className="flex items-center gap-2 relative mt-1 w-full">
-                  {isEditingEmail ? (
-                    <div className="flex items-center gap-2 w-full">
-                      <Input
-                        type="email"
-                        value={emailValue}
-                        onChange={(e) => setEmailValue(e.target.value)}
-                        disabled={isSavingEmail}
-                        className="text-sm text-center h-auto flex-1"
-                      />
-                      <Button size="icon" className="h-7 w-7" onClick={handleEmailSave} disabled={isSavingEmail}>
-                        {isSavingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                          setIsEditingEmail(false);
-                          setEmailValue(user.email || "");
-                      }} disabled={isSavingEmail}>
-                          <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <>
-                      <p className="text-muted-foreground text-center flex-1">{user.email}</p>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingEmail(true)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    </>
-                  )}
-                </div>
+                <p className="text-muted-foreground">{user.email}</p>
                 
-                <div className="flex items-start gap-2 relative mt-2 w-full">
+                <div className="flex w-full items-start justify-center gap-2">
                   {isEditingDescription ? (
-                    <Textarea
-                      value={descriptionValue}
-                      onChange={(e) => setDescriptionValue(e.target.value)}
-                      onBlur={handleDescriptionSave}
-                      autoFocus
-                      placeholder="Kendinizden bahsedin..."
-                      className="text-sm text-center min-h-[80px]"
-                    />
+                    <>
+                      <Textarea
+                        value={descriptionValue}
+                        onChange={(e) => setDescriptionValue(e.target.value)}
+                        autoFocus
+                        placeholder="Kendinizden bahsedin..."
+                        className="w-full max-w-xs text-sm text-center min-h-[80px]"
+                      />
+                      <div className="flex flex-col gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={handleDescriptionSave}>
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleDescriptionCancel}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </>
                   ) : (
                     <>
-                      <p className="text-card-foreground text-sm text-center flex-1 min-h-[24px]">
+                      <p className="text-card-foreground text-sm text-center min-h-[24px] max-w-xs">
                         {user.description || <span className="text-muted-foreground italic">Açıklama ekle...</span>}
                       </p>
                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingDescription(true)}>
@@ -376,7 +379,47 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="mb-6">
+              <div className="mb-6 border-t border-border pt-6">
+                <h3 className="text-card-foreground text-xl font-outfit font-bold mb-4">Ünvanlar</h3>
+                <RadioGroup
+                  value={user.selected_title || 'none'}
+                  onValueChange={handleTitleChange}
+                  className="space-y-2"
+                >
+                  <div className="flex items-center space-x-3">
+                    <RadioGroupItem value="none" id="title-none" />
+                    <Label htmlFor="title-none" className="italic text-muted-foreground">Ünvan Yok</Label>
+                  </div>
+                  {Object.entries(TITLES).map(([levelKey, titleObject]) => {
+                    const { name: title, icon: Icon } = titleObject;
+                    const levelRequired = parseInt(levelKey);
+                    const isUnlocked = level >= levelRequired;
+                    return (
+                      <div key={title} className="flex items-center space-x-3">
+                        <RadioGroupItem value={title} id={`title-${levelKey}`} disabled={!isUnlocked} />
+                        <Label
+                          htmlFor={`title-${levelKey}`}
+                          className={cn(
+                            "flex items-center gap-2 w-full",
+                            !isUnlocked && "text-muted-foreground opacity-60 cursor-not-allowed"
+                          )}
+                        >
+                          <Icon className="h-4 w-4" />
+                          <span>{title}</span>
+                          {!isUnlocked && (
+                            <span className="ml-auto flex items-center gap-1 text-xs">
+                              <Lock className="h-3 w-3" />
+                              Seviye {levelRequired}
+                            </span>
+                          )}
+                        </Label>
+                      </div>
+                    );
+                  })}
+                </RadioGroup>
+              </div>
+
+              <div className="mb-6 border-t border-border pt-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-card-foreground text-xl font-outfit font-bold">Rozetler</h3>
                   <span className="text-sm text-muted-foreground">
@@ -406,33 +449,15 @@ export default function ProfilePage() {
                 </p>
               </div>
 
-              <Form {...form}>
-                <form className="space-y-6 border-t border-border pt-6">
-                  <FormField
-                    control={form.control}
-                    name="selected_title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ünvan</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || 'none'}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Bir ünvan seç..." />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="none">Ünvan Yok</SelectItem>
-                            {unlockedTitles.map(title => (
-                              <SelectItem key={title} value={title}>{title}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </form>
-              </Form>
+              <div className="border-t border-border pt-6 mt-6">
+                <h3 className="text-destructive text-xl font-outfit font-bold mb-4">Tehlikeli Bölge</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Hesabınızı silmek kalıcı bir eylemdir ve geri alınamaz. Tüm blog yazılarınız ve verileriniz silinecektir.
+                </p>
+                <Button variant="destructive" className="w-full" onClick={() => setShowDeleteAccountDialog(true)}>
+                  Hesabımı Sil
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -453,6 +478,37 @@ export default function ProfilePage() {
                 <CreateBlogCard />
               </div>
             )}
+            
+            <div className="mt-8 bg-card border border-border rounded-lg p-8">
+              <h2 className="text-2xl font-outfit font-bold mb-4">Çerçevelerim</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {FRAMES.map((frame) => {
+                  const isOwned = user.owned_frames?.includes(frame.name) ?? false;
+                  const isSelected = user.selected_frame === frame.name;
+                  return (
+                    <div key={frame.name} className="flex flex-col items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          "w-28 h-28 p-0 rounded-lg border-2 flex items-center justify-center relative transition-all",
+                          isSelected ? "border-primary ring-2 ring-primary" : "border-border",
+                          !isOwned && "opacity-50 grayscale cursor-not-allowed"
+                        )}
+                        onClick={() => isOwned && handleFrameSelect(frame.name)}
+                        disabled={!isOwned}
+                      >
+                        <div className={cn("w-24 h-24 flex items-center justify-center", frame.className)}>
+                          <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                        </div>
+                        {!isOwned && <Lock className="absolute bottom-1 right-1 h-4 w-4 text-foreground bg-background rounded-full p-0.5" />}
+                        {isSelected && <CheckCircle className="absolute top-1 right-1 h-5 w-5 text-primary bg-background rounded-full" />}
+                      </Button>
+                      <p className="text-xs text-center font-medium">{frame.name}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -462,6 +518,7 @@ export default function ProfilePage() {
               <AlertDialogTitle>Blog Yazısını Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
               <AlertDialogDescription>
                 Bu işlem geri alınamaz. Blog yazınız, tüm yorumları ve oylarıyla birlikte kalıcı olarak silinecektir.
+                <span className="font-bold text-destructive"> Ayrıca, bu gönderiden kazandığınız 25 EXP'yi kaybedeceksiniz.</span>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -487,11 +544,26 @@ export default function ProfilePage() {
         />
       )}
 
-      <EmailChangeAuthorizationDialog
-        open={isAuthDialogOpen}
-        onClose={() => setIsAuthDialogOpen(false)}
-        currentEmail={user.email || ""}
-      />
+      <AlertDialog open={showDeleteAccountDialog} onOpenChange={setShowDeleteAccountDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hesabınızı Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu işlem geri alınamaz. Tüm blog yazılarınız, yorumlarınız ve profil verileriniz kalıcı olarak silinecektir. Bu işlemi onaylıyor musunuz?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={isDeletingAccount}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isDeletingAccount ? "Siliniyor..." : "Evet, Hesabımı Sil"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

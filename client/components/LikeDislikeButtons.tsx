@@ -71,24 +71,34 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
 
       if (isLiking) {
         const { likes: newLikes } = await getVoteCounts(postId);
-        if (newLikes === 5) {
-          const { data: post, error: postError } = await supabase
-            .from('blog_posts')
-            .select('user_id')
-            .eq('id', postId)
-            .single();
+        
+        const { data: post, error: postError } = await supabase
+          .from('blog_posts')
+          .select('user_id')
+          .eq('id', postId)
+          .single();
+        
+        if (postError) {
+          console.error("Error fetching post author for badge:", postError);
+          return;
+        }
+
+        if (post && post.user_id) {
+          let profileAfterUpdate = null;
+
+          if (newLikes === 5) {
+            const badgeUpdate = await awardBadge(post.user_id, "Beğeni Mıknatısı");
+            if (badgeUpdate) profileAfterUpdate = badgeUpdate;
+          }
           
-          if (postError) {
-            console.error("Error fetching post author for badge:", postError);
-            return;
+          if (newLikes === 10) {
+            const badgeUpdate = await awardBadge(post.user_id, "Popüler Yazar");
+            if (badgeUpdate) profileAfterUpdate = badgeUpdate;
           }
 
-          if (post && post.user_id) {
-            const badgeUpdate = await awardBadge(post.user_id, "Beğeni Mıknatısı");
-            // Eğer rozeti kazanan kişi şu anki kullanıcı ise, context'i güncelle
-            if (badgeUpdate && post.user_id === user.id) {
-              updateUser(badgeUpdate);
-            }
+          // If the badge earner is the current user, update context
+          if (profileAfterUpdate && post.user_id === user.id) {
+            updateUser(profileAfterUpdate);
           }
         }
       }

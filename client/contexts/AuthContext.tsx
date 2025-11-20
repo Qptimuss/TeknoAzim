@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { Profile } from "@shared/api";
+import { toast } from "sonner";
 
 export type User = Profile & { email?: string };
 
@@ -14,6 +15,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper to check if the last reward was claimed today
+const isSameDay = (d1: Date, d2: Date) => {
+  return d1.getFullYear() === d2.getFullYear() &&
+         d1.getMonth() === d2.getMonth() &&
+         d1.getDate() === d2.getDate();
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -21,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('id, name, avatar_url, description, level, exp, badges, selected_title')
+      .select('id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at')
       .eq('id', supabaseUser.id)
       .single();
 
@@ -36,11 +44,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } as User;
   };
 
+  const handleDailyReward = async (profile: User): Promise<User | null> => {
+    const lastClaimed = profile.last_daily_reward_claimed_at ? new Date(profile.last_daily_reward_claimed_at) : null;
+    const today = new Date();
+
+    if (!lastClaimed || !isSameDay(lastClaimed, today)) {
+      const newGems = (profile.gems || 0) + 5;
+      const { data: updatedProfile, error } = await supabase
+        .from('profiles')
+        .update({ gems: newGems, last_daily_reward_claimed_at: today.toISOString() })
+        .eq('id', profile.id)
+        .select('id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at')
+        .single();
+      
+      if (error) {
+        console.error("Error claiming daily reward:", error);
+        return profile; // Return original profile on error
+      }
+      
+      toast.success("Günlük Giriş Ödülü", { description: "Hesabına 5 Gem eklendi!" });
+      return { ...updatedProfile, email: profile.email } as User;
+    }
+    return profile; // No reward needed, return original profile
+  };
+
   useEffect(() => {
     const getSessionAndProfile = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        const profile = await fetchUserProfile(session.user);
+        let profile = await fetchUserProfile(session.user);
+        if (profile) {
+          profile = await handleDailyReward(profile);
+        }
         setUser(profile);
       }
       setLoading(false);
@@ -50,7 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        const profile = await fetchUserProfile(session.user);
+        let profile = await fetchUserProfile(session.user);
+        if (profile) {
+          profile = await handleDailyReward(profile);
+        }
         setUser(profile);
       } else {
         setUser(null);
@@ -81,7 +119,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw updateError;
     }
 
-    // Refetch the full user session and profile to ensure data consistency
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
       const updatedProfile = await fetchUserProfile(session.user);
