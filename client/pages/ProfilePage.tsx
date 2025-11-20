@@ -176,6 +176,7 @@ export default function ProfilePage() {
             toast.error("E-posta güncellenirken hata oluştu.", { description: error.message });
         }
       } else {
+        // Başarılı: Kullanıcıya mevcut e-postasına onay gönderildiğini bildir.
         setIsEditingEmail(false);
         setIsAuthDialogOpen(true);
       }
