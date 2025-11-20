@@ -414,7 +414,7 @@ export default function ProfilePage() {
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Bir ünvan seç..." />
-                            </Trigger>
+                            </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="none">Ünvan Yok</SelectItem>
