@@ -40,7 +40,7 @@ import ImageCropperDialog from "@/components/ImageCropperDialog";
 const profileSchema = z.object({
   name: z.string().min(2, "İsim en az 2 karakter olmalıdır."),
   description: z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").optional(),
-  selected_title: z.string().optional(), // Ünvan alanı eklendi
+  selected_title: z.string().optional(),
 });
 
 export default function ProfilePage() {
@@ -52,11 +52,8 @@ export default function ProfilePage() {
   const [postToDelete, setPostToDelete] = useState<{id: string, imageUrl?: string | null} | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Cropping States
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [isCropperOpen, setIsCropperOpen] = useState(false);
-  const [croppedAvatarFile, setCroppedAvatarFile] = useState<File | null>(null);
-
 
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -67,7 +64,9 @@ export default function ProfilePage() {
     },
   });
 
-  // Cleanup preview URL when component unmounts
+  const { isDirty, isSubmitting } = form.formState;
+  const watchedValues = form.watch();
+
   useEffect(() => {
     return () => {
       if (avatarPreview) URL.revokeObjectURL(avatarPreview);
@@ -92,7 +91,32 @@ export default function ProfilePage() {
     }
   }, [user, form]);
 
-  // Handle file selection and open cropper
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const handler = setTimeout(async () => {
+      if (!user) return;
+      
+      const values = form.getValues();
+      const profileUpdateData = {
+        name: values.name,
+        description: values.description || '',
+        selected_title: values.selected_title === 'none' ? null : values.selected_title || null,
+      };
+
+      await toast.promise(updateUser(profileUpdateData), {
+        loading: 'Kaydediliyor...',
+        success: () => {
+          form.reset(values);
+          return 'Değişiklikler kaydedildi.';
+        },
+        error: 'Kaydederken bir hata oluştu.',
+      });
+    }, 1500); // 1.5 saniye sonra otomatik kaydet
+
+    return () => clearTimeout(handler);
+  }, [watchedValues, isDirty, user, updateUser, form]);
+
   const handleFileChange = (files: FileList | null) => {
     if (files && files.length > 0) {
       const file = files[0];
@@ -100,71 +124,45 @@ export default function ProfilePage() {
         toast.error("Resim boyutu 2MB'den küçük olmalıdır.");
         return;
       }
-      
-      // Create a temporary URL for the cropper
       const newUrl = URL.createObjectURL(file);
       setImageToCrop(newUrl);
       setIsCropperOpen(true);
-      
-      // Clear the native input value to allow re-selection of the same file later
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  // Handle crop completion
-  const handleCropComplete = (croppedBlob: Blob) => {
-    // Create a File object from the Blob
-    const croppedFile = new File([croppedBlob], "avatar.jpeg", { type: "image/jpeg" });
-    setCroppedAvatarFile(croppedFile);
-    
-    // Create a preview URL for the cropped image
-    const newPreviewUrl = URL.createObjectURL(croppedFile);
-    setAvatarPreview(newPreviewUrl);
-    
-    // Close cropper and clear original image URL
+  const handleCropComplete = async (croppedBlob: Blob) => {
     setIsCropperOpen(false);
-    if (imageToCrop) {
-      URL.revokeObjectURL(imageToCrop);
-    }
+    if (imageToCrop) URL.revokeObjectURL(imageToCrop);
     setImageToCrop(null);
-  };
 
-  async function onSubmit(values: z.infer<typeof profileSchema>) {
     if (!user) return;
 
+    const croppedFile = new File([croppedBlob], "avatar.jpeg", { type: "image/jpeg" });
+    const newPreviewUrl = URL.createObjectURL(croppedFile);
+    setAvatarPreview(newPreviewUrl);
+
     try {
-      let newAvatarUrl = user.avatar_url;
-
-      // Check if a new cropped file exists
-      if (croppedAvatarFile) {
-        toast.info("Profil fotoğrafı yükleniyor...");
-        const uploadedUrl = await uploadAvatar(croppedAvatarFile, user.id);
-        if (uploadedUrl) {
-          newAvatarUrl = uploadedUrl;
+      await toast.promise(
+        async () => {
+          const uploadedUrl = await uploadAvatar(croppedFile, user.id);
+          if (uploadedUrl) {
+            await updateUser({ avatar_url: uploadedUrl });
+          }
+        },
+        {
+          loading: "Profil fotoğrafı yükleniyor...",
+          success: () => {
+            setAvatarPreview(null);
+            return "Profil fotoğrafı güncellendi!";
+          },
+          error: "Profil fotoğrafı güncellenirken bir hata oluştu.",
         }
-        setCroppedAvatarFile(null); // Clear the temporary file
-        setAvatarPreview(null); // Clear the preview URL
-      }
-
-      const profileUpdateData = {
-        name: values.name,
-        description: values.description || '',
-        avatar_url: newAvatarUrl,
-        selected_title: values.selected_title === 'none' ? null : values.selected_title || null,
-      };
-
-      await updateUser(profileUpdateData);
-      
-      form.reset({ ...values });
-
-      toast.success("Profiliniz başarıyla güncellendi!");
+      );
     } catch (error) {
-      toast.error("Profil güncellenirken bir hata oluştu.");
-      console.error(error);
+      setAvatarPreview(null);
     }
-  }
+  };
 
   const handleDeleteRequest = (postId: string, imageUrl?: string | null) => {
     setPostToDelete({ id: postId, imageUrl });
@@ -190,13 +188,12 @@ export default function ProfilePage() {
   }
 
   if (!user) {
-    return null; // ProtectedRoute handles redirection
+    return null;
   }
 
   const { level, expForNextLevel, currentLevelExp } = calculateLevel(user.exp || 0);
   const expInCurrentLevel = (user.exp || 0) - currentLevelExp;
   const expProgress = expForNextLevel === 0 ? 100 : (expInCurrentLevel / expForNextLevel) * 100;
-
   const unlockedTitles = Object.entries(TITLES)
     .filter(([levelKey]) => level >= parseInt(levelKey))
     .map(([, title]) => title);
@@ -289,8 +286,7 @@ export default function ProfilePage() {
 
               <h3 className="text-card-foreground text-xl font-outfit font-bold mb-4 border-t border-border pt-6">Bilgileri Güncelle</h3>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  {/* Hidden file input for triggering file selection */}
+                <form className="space-y-6">
                   <Input 
                     type="file" 
                     accept="image/png, image/jpeg, image/gif"
@@ -299,58 +295,57 @@ export default function ProfilePage() {
                     className="hidden"
                   />
                   
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Kullanıcı Adı</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Açıklama (Maks 200 karakter)</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="Kendinizden bahsedin..." {...field} value={field.value || ''} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="selected_title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ünvan</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || 'none'}>
+                  <fieldset disabled={isSubmitting}>
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Kullanıcı Adı</FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Bir ünvan seç..." />
-                            </SelectTrigger>
+                            <Input {...field} />
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="none">Ünvan Yok</SelectItem>
-                            {unlockedTitles.map(title => (
-                              <SelectItem key={title} value={title}>{title}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
-                    {form.formState.isSubmitting ? "Kaydediliyor..." : "Kaydet"}
-                  </Button>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem className="mt-6">
+                          <FormLabel>Açıklama (Maks 200 karakter)</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Kendinizden bahsedin..." {...field} value={field.value || ''} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="selected_title"
+                      render={({ field }) => (
+                        <FormItem className="mt-6">
+                          <FormLabel>Ünvan</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || 'none'}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Bir ünvan seç..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="none">Ünvan Yok</SelectItem>
+                              {unlockedTitles.map(title => (
+                                <SelectItem key={title} value={title}>{title}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </fieldset>
                 </form>
               </Form>
             </div>
