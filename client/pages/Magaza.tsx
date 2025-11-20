@@ -1,0 +1,53 @@
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Gift, Info } from "lucide-react";
+import CrateInfoDialog from "@/components/CrateInfoDialog";
+import { toast } from "sonner";
+
+export default function Magaza() {
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
+
+  const handleOpenCrate = () => {
+    // TODO: Implement crate opening logic
+    toast.info("Sandık açma özelliği yakında geliyor!");
+  };
+
+  return (
+    <>
+      <div className="container mx-auto px-5 py-12">
+        <h1 className="text-foreground text-4xl md:text-5xl font-outfit font-bold mb-8">
+          Mağaza
+        </h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <Card className="w-full flex flex-col transition-all hover:border-primary hover:scale-105 relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 z-10 text-muted-foreground hover:text-foreground"
+              onClick={() => setIsInfoOpen(true)}
+            >
+              <Info className="h-5 w-5" />
+              <span className="sr-only">Sandık Bilgisi</span>
+            </Button>
+            <CardHeader className="items-center text-center">
+              <Gift className="h-24 w-24 text-primary" />
+            </CardHeader>
+            <CardContent className="flex-grow text-center">
+              <CardTitle className="font-outfit text-2xl">Çerçeve Sandığı</CardTitle>
+              <CardDescription className="mt-2">
+                Profil fotoğrafın için özel çerçeveler kazanma şansı yakala!
+              </CardDescription>
+            </CardContent>
+            <CardFooter>
+              <Button className="w-full" onClick={handleOpenCrate}>
+                Sandığı Aç (Yakında)
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+      <CrateInfoDialog open={isInfoOpen} onOpenChange={setIsInfoOpen} />
+    </>
+  );
+}

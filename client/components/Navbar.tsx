@@ -33,6 +33,7 @@ export default function Navbar() {
 
   const authLinks = [
     { to: "/profil", label: "Profil" },
+    { to: "/magaza", label: "Mağaza" },
   ];
 
   return (
@@ -67,6 +68,9 @@ export default function Navbar() {
             <div className="flex items-center gap-4 md:gap-6 lg:gap-8 px-2">
               {user ? (
                 <>
+                  <Link to="/magaza" className="font-bakbak text-base md:text-base font-normal text-foreground whitespace-nowrap shrink-0">
+                    Mağaza
+                  </Link>
                   <Button onClick={handleLogout} variant="ghost" className="font-bakbak text-base md:text-base font-normal text-foreground whitespace-nowrap shrink-0 p-0 hover:bg-transparent">
                     Çıkış Yap
                   </Button>

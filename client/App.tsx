@@ -22,6 +22,7 @@ import SifreSifirla from "./pages/SifreSifirla";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./components/ThemeProvider";
+import Magaza from "./pages/Magaza";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const App = () => (
                 <Route element={<ProtectedRoute />}>
                   <Route path="/blog-olustur" element={<CreateBlogPage />} />
                   <Route path="/profil" element={<ProfilePage />} />
+                  <Route path="/magaza" element={<Magaza />} />
                 </Route>
               </Route>
               
