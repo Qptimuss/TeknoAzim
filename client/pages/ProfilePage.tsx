@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, CheckCircle } from "lucide-react";
+import { User as UserIcon, CheckCircle, Pencil } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { calculateLevel, ALL_BADGES, TITLES } from "@/lib/gamification";
@@ -37,9 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import ImageCropperDialog from "@/components/ImageCropperDialog";
 
-const profileSchema = z.object({
-  name: z.string().min(2, "İsim en az 2 karakter olmalıdır."),
-  description: z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").optional(),
+const titleSchema = z.object({
   selected_title: z.string().optional(),
 });
 
@@ -47,40 +45,40 @@ export default function ProfilePage() {
   const { user, updateUser, loading } = useAuth();
   const [userPosts, setUserPosts] = useState<BlogPostWithAuthor[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [postToDelete, setPostToDelete] = useState<{id: string, imageUrl?: string | null} | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Inline editing states
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [nameValue, setNameValue] = useState("");
+  const [descriptionValue, setDescriptionValue] = useState("");
+
+  // Cropping States
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [isCropperOpen, setIsCropperOpen] = useState(false);
 
-  const form = useForm<z.infer<typeof profileSchema>>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      selected_title: "",
-    },
+  const form = useForm<z.infer<typeof titleSchema>>({
+    resolver: zodResolver(titleSchema),
+    defaultValues: { selected_title: "" },
   });
 
-  const { isDirty, isSubmitting } = form.formState;
-  const watchedValues = form.watch();
+  const { isDirty } = form.formState;
+  const watchedTitle = form.watch("selected_title");
 
   useEffect(() => {
     return () => {
-      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
       if (imageToCrop) URL.revokeObjectURL(imageToCrop);
     };
-  }, [avatarPreview, imageToCrop]);
+  }, [imageToCrop]);
 
   useEffect(() => {
     if (user) {
-      form.reset({ 
-        name: user.name || "", 
-        description: user.description || "",
-        selected_title: user.selected_title || "",
-      });
+      setNameValue(user.name || "");
+      setDescriptionValue(user.description || "");
+      form.reset({ selected_title: user.selected_title || "" });
+      
       const fetchUserPosts = async () => {
         setPostsLoading(true);
         const posts = await getPostsByUserId(user.id);
@@ -91,31 +89,58 @@ export default function ProfilePage() {
     }
   }, [user, form]);
 
+  // Autosave for title dropdown
   useEffect(() => {
-    if (!isDirty) return;
+    if (!isDirty || !user) return;
 
     const handler = setTimeout(async () => {
-      if (!user) return;
+      const newTitle = form.getValues().selected_title;
+      const updateData = { selected_title: newTitle === 'none' ? null : newTitle };
       
-      const values = form.getValues();
-      const profileUpdateData = {
-        name: values.name,
-        description: values.description || '',
-        selected_title: values.selected_title === 'none' ? null : values.selected_title || null,
-      };
-
-      await toast.promise(updateUser(profileUpdateData), {
-        loading: 'Kaydediliyor...',
-        success: () => {
-          form.reset(values);
-          return 'Değişiklikler kaydedildi.';
-        },
-        error: 'Kaydederken bir hata oluştu.',
+      await toast.promise(updateUser(updateData), {
+        loading: 'Ünvan kaydediliyor...',
+        success: 'Ünvan güncellendi.',
+        error: 'Hata oluştu.',
       });
-    }, 1500); // 1.5 saniye sonra otomatik kaydet
+      form.reset({ selected_title: newTitle });
+    }, 1000);
 
     return () => clearTimeout(handler);
-  }, [watchedValues, isDirty, user, updateUser, form]);
+  }, [watchedTitle, isDirty, user, updateUser, form]);
+
+  const handleNameSave = async () => {
+    setIsEditingName(false);
+    if (user && nameValue !== user.name) {
+      const result = z.string().min(2, "İsim en az 2 karakter olmalıdır.").safeParse(nameValue);
+      if (!result.success) {
+        toast.error(result.error.issues[0].message);
+        setNameValue(user.name || "");
+        return;
+      }
+      await toast.promise(updateUser({ name: nameValue }), {
+        loading: 'İsim güncelleniyor...',
+        success: 'İsim güncellendi!',
+        error: 'Hata oluştu.',
+      });
+    }
+  };
+
+  const handleDescriptionSave = async () => {
+    setIsEditingDescription(false);
+    if (user && descriptionValue !== user.description) {
+      const result = z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").optional().safeParse(descriptionValue);
+      if (!result.success) {
+        toast.error(result.error.issues[0].message);
+        setDescriptionValue(user.description || "");
+        return;
+      }
+      await toast.promise(updateUser({ description: descriptionValue }), {
+        loading: 'Açıklama güncelleniyor...',
+        success: 'Açıklama güncellendi!',
+        error: 'Hata oluştu.',
+      });
+    }
+  };
 
   const handleFileChange = (files: FileList | null) => {
     if (files && files.length > 0) {
@@ -135,33 +160,20 @@ export default function ProfilePage() {
     setIsCropperOpen(false);
     if (imageToCrop) URL.revokeObjectURL(imageToCrop);
     setImageToCrop(null);
-
     if (!user) return;
 
     const croppedFile = new File([croppedBlob], "avatar.jpeg", { type: "image/jpeg" });
-    const newPreviewUrl = URL.createObjectURL(croppedFile);
-    setAvatarPreview(newPreviewUrl);
-
-    try {
-      await toast.promise(
-        async () => {
-          const uploadedUrl = await uploadAvatar(croppedFile, user.id);
-          if (uploadedUrl) {
-            await updateUser({ avatar_url: uploadedUrl });
-          }
-        },
-        {
-          loading: "Profil fotoğrafı yükleniyor...",
-          success: () => {
-            setAvatarPreview(null);
-            return "Profil fotoğrafı güncellendi!";
-          },
-          error: "Profil fotoğrafı güncellenirken bir hata oluştu.",
-        }
-      );
-    } catch (error) {
-      setAvatarPreview(null);
-    }
+    await toast.promise(
+      async () => {
+        const uploadedUrl = await uploadAvatar(croppedFile, user.id);
+        if (uploadedUrl) await updateUser({ avatar_url: uploadedUrl });
+      },
+      {
+        loading: "Profil fotoğrafı yükleniyor...",
+        success: "Profil fotoğrafı güncellendi!",
+        error: "Profil fotoğrafı güncellenirken bir hata oluştu.",
+      }
+    );
   };
 
   const handleDeleteRequest = (postId: string, imageUrl?: string | null) => {
@@ -211,7 +223,7 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center mb-6 text-center">
                 <button type="button" onClick={() => fileInputRef.current?.click()} className="relative group cursor-pointer">
                   <Avatar className="h-24 w-24 mb-4">
-                    <AvatarImage src={avatarPreview || user.avatar_url || undefined} alt={user.name || ''} />
+                    <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
                     <AvatarFallback>
                       <UserIcon className="h-12 w-12 text-muted-foreground" />
                     </AvatarFallback>
@@ -220,16 +232,56 @@ export default function ProfilePage() {
                     <p className="text-white text-xs font-bold">Değiştir</p>
                   </div>
                 </button>
-                <h2 className="text-card-foreground text-2xl font-outfit font-bold">{user.name}</h2>
+                <Input type="file" accept="image/png, image/jpeg, image/gif" ref={fileInputRef} onChange={(e) => handleFileChange(e.target.files)} className="hidden" />
+
+                <div className="flex items-center gap-2 group relative">
+                  {isEditingName ? (
+                    <Input
+                      value={nameValue}
+                      onChange={(e) => setNameValue(e.target.value)}
+                      onBlur={handleNameSave}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleNameSave(); }}
+                      autoFocus
+                      className="text-2xl font-outfit font-bold text-center h-auto"
+                    />
+                  ) : (
+                    <>
+                      <h2 className="text-card-foreground text-2xl font-outfit font-bold">{user.name}</h2>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => setIsEditingName(true)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+
                 {user.selected_title && (
                   <p className="text-yellow-400 font-semibold text-sm mt-1 flex items-center gap-1">
                     <CheckCircle className="h-4 w-4" /> {user.selected_title}
                   </p>
                 )}
                 <p className="text-muted-foreground mt-1">{user.email}</p>
-                {user.description && (
-                  <p className="text-card-foreground mt-4 text-sm">{user.description}</p>
-                )}
+                
+                <div className="flex items-start gap-2 group relative mt-2 w-full">
+                  {isEditingDescription ? (
+                    <Textarea
+                      value={descriptionValue}
+                      onChange={(e) => setDescriptionValue(e.target.value)}
+                      onBlur={handleDescriptionSave}
+                      autoFocus
+                      placeholder="Kendinizden bahsedin..."
+                      className="text-sm text-center min-h-[80px]"
+                    />
+                  ) : (
+                    <>
+                      <p className="text-card-foreground text-sm text-center flex-1 min-h-[24px]">
+                        {user.description || <span className="text-muted-foreground italic">Açıklama ekle...</span>}
+                      </p>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => setIsEditingDescription(true)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
 
               <div className="mb-6 border-t border-border pt-6">
@@ -262,12 +314,7 @@ export default function ProfilePage() {
                     const Icon = badge.icon;
                     return (
                       <div key={badge.name} className="flex items-start gap-4">
-                        <div
-                          className={cn(
-                            "flex items-center justify-center bg-card p-3 rounded-full border border-border shrink-0",
-                            !hasBadge && "opacity-30 grayscale"
-                          )}
-                        >
+                        <div className={cn("flex items-center justify-center bg-card p-3 rounded-full border border-border shrink-0", !hasBadge && "opacity-30 grayscale")}>
                           <Icon className="h-6 w-6 text-yellow-400" />
                         </div>
                         <div>
@@ -284,68 +331,31 @@ export default function ProfilePage() {
                 </p>
               </div>
 
-              <h3 className="text-card-foreground text-xl font-outfit font-bold mb-4 border-t border-border pt-6">Bilgileri Güncelle</h3>
               <Form {...form}>
-                <form className="space-y-6">
-                  <Input 
-                    type="file" 
-                    accept="image/png, image/jpeg, image/gif"
-                    ref={fileInputRef}
-                    onChange={(e) => handleFileChange(e.target.files)}
-                    className="hidden"
+                <form className="space-y-6 border-t border-border pt-6">
+                  <FormField
+                    control={form.control}
+                    name="selected_title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ünvan</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || 'none'}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Bir ünvan seç..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">Ünvan Yok</SelectItem>
+                            {unlockedTitles.map(title => (
+                              <SelectItem key={title} value={title}>{title}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                  
-                  <fieldset disabled={isSubmitting}>
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Kullanıcı Adı</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem className="mt-6">
-                          <FormLabel>Açıklama (Maks 200 karakter)</FormLabel>
-                          <FormControl>
-                            <Textarea placeholder="Kendinizden bahsedin..." {...field} value={field.value || ''} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="selected_title"
-                      render={({ field }) => (
-                        <FormItem className="mt-6">
-                          <FormLabel>Ünvan</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || 'none'}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Bir ünvan seç..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="none">Ünvan Yok</SelectItem>
-                              {unlockedTitles.map(title => (
-                                <SelectItem key={title} value={title}>{title}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </fieldset>
                 </form>
               </Form>
             </div>
