@@ -29,7 +29,8 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      {/* ThemeProvider'ı sadece dark mode kullanacak şekilde ayarladık */}
+      <ThemeProvider attribute="class">
         <Toaster />
         <Sonner />
         <AuthProvider>

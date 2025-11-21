@@ -7,7 +7,6 @@ import { User as UserIcon, Gem } from "lucide-react";
 import AppLogo from "./AppLogo";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { ThemeToggle } from "./ThemeToggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 export default function Navbar() {
@@ -109,7 +108,6 @@ export default function Navbar() {
                   </Link>
                 ))
               )}
-              <ThemeToggle />
             </div>
           </div>
         </nav>
