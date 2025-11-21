@@ -27,11 +27,10 @@ export const handleUpdateProfile: RequestHandler = async (req, res) => {
       description: validatedData.description || null,
     };
 
-    // supabaseAdmin kullanarak profili güncelliyoruz ve güncellemeyi 
-    // JWT'den gelen kullanıcı kimliğine zorluyoruz (IDOR koruması).
+    // FIX 5: Cast update payload to any
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .update(updatePayload)
+      .update(updatePayload as any)
       .eq('id', userId) 
       .select('id, name, avatar_url, description')
       .single();

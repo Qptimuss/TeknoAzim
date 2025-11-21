@@ -45,10 +45,10 @@ export const handleCreatePost: RequestHandler = async (req, res) => {
       user_id: userId, // Enforce user ID from JWT, not client input
     };
 
-    // Server-side insertion, ensuring user_id is set by the authenticated user
+    // FIX 1: Cast insert payload to any[]
     const { data, error } = await supabaseAdmin
       .from("blog_posts")
-      .insert(insertData)
+      .insert([insertData] as any[])
       .select()
       .single();
 
@@ -77,12 +77,15 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
     const validatedData = updatePostSchema.parse(req.body);
     const supabaseAdmin = getSupabaseAdmin();
 
-    // 1. Check ownership (using RLS bypass capability of supabaseAdmin)
-    const { data: existingPost, error: fetchError } = await supabaseAdmin
+    // 1. Check ownership
+    const { data: existingPostData, error: fetchError } = await supabaseAdmin
       .from("blog_posts")
       .select("user_id")
       .eq("id", postId)
       .single();
+      
+    // Explicitly cast the result of select
+    const existingPost = existingPostData as { user_id: string } | null;
 
     if (fetchError || !existingPost) {
       return res.status(404).json({ error: "Blog post not found." });
@@ -98,10 +101,10 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
       image_url: validatedData.imageUrl,
     };
 
-    // 2. Perform update
+    // FIX 2: Cast update payload to any
     const { data, error } = await supabaseAdmin
       .from("blog_posts")
-      .update(updateData)
+      .update(updateData as any)
       .eq('id', postId)
       .select()
       .single();
@@ -131,11 +134,13 @@ export const handleDeletePost: RequestHandler = async (req, res) => {
     const supabaseAdmin = getSupabaseAdmin();
     
     // 1. Check ownership
-    const { data: existingPost, error: fetchError } = await supabaseAdmin
+    const { data: existingPostData, error: fetchError } = await supabaseAdmin
       .from("blog_posts")
       .select("user_id")
       .eq("id", postId)
       .single();
+      
+    const existingPost = existingPostData as { user_id: string } | null;
 
     if (fetchError || !existingPost) {
       return res.status(404).json({ error: "Blog post not found." });
@@ -178,10 +183,10 @@ export const handleAddComment: RequestHandler = async (req, res) => {
       user_id: userId,
     };
 
-    // Server-side insertion, enforcing user_id from JWT
+    // FIX 3: Cast insert payload to any[]
     const { data, error } = await supabaseAdmin
       .from('comments')
-      .insert(insertData)
+      .insert([insertData] as any[])
       .select()
       .single();
 
@@ -210,11 +215,14 @@ export const handleDeleteComment: RequestHandler = async (req, res) => {
     const supabaseAdmin = getSupabaseAdmin();
     
     // 1. Check ownership
-    const { data: existingComment, error: fetchError } = await supabaseAdmin
+    const { data: existingCommentData, error: fetchError } = await supabaseAdmin
       .from("comments")
       .select("user_id")
       .eq("id", commentId)
       .single();
+      
+    // Explicitly cast the result of select
+    const existingComment = existingCommentData as { user_id: string } | null;
 
     if (fetchError || !existingComment) {
       return res.status(404).json({ error: "Comment not found." });
@@ -267,10 +275,10 @@ export const handleCastVote: RequestHandler = async (req, res) => {
         .eq('user_id', userId);
       if (error) throw error;
     } else {
-      // Add or update vote
+      // FIX 4: Cast upsert payload to any[]
       const { error } = await supabaseAdmin
         .from('post_votes')
-        .upsert(upsertData, { onConflict: 'user_id, post_id' });
+        .upsert([upsertData] as any[], { onConflict: 'user_id, post_id' });
       if (error) throw error;
     }
 
