@@ -27,13 +27,13 @@ export const handleUpdateProfile: RequestHandler = async (req, res) => {
       description: validatedData.description || null,
     };
 
-    // FIX 5: Keep 'as any' cast for update
-    const { data, error } = await supabaseAdmin
+    // FIX 5: Cast the entire update operation to any
+    const { data, error } = await (supabaseAdmin
       .from("profiles")
       .update(updatePayload as any)
       .eq('id', userId) 
       .select('id, name, avatar_url, description')
-      .single();
+      .single() as any);
 
     if (error) {
       console.error("Supabase update profile error:", error);

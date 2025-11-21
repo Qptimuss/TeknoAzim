@@ -45,12 +45,12 @@ export const handleCreatePost: RequestHandler = async (req, res) => {
       user_id: userId, // Enforce user ID from JWT, not client input
     };
 
-    // FIX 1: Cast insert payload to any[]
-    const { data, error } = await supabaseAdmin
+    // FIX 1: Cast the entire insert operation to any
+    const { data, error } = await (supabaseAdmin
       .from("blog_posts")
       .insert([insertData] as any[])
       .select()
-      .single();
+      .single() as any);
 
     if (error) {
       console.error("Supabase insert error:", error);
@@ -101,13 +101,13 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
       image_url: validatedData.imageUrl,
     };
 
-    // FIX 2: Cast update payload to any
-    const { data, error } = await supabaseAdmin
+    // FIX 2: Cast the entire update operation to any
+    const { data, error } = await (supabaseAdmin
       .from("blog_posts")
       .update(updateData as any)
       .eq('id', postId)
       .select()
-      .single();
+      .single() as any);
 
     if (error) {
       console.error("Supabase update error:", error);
@@ -183,12 +183,12 @@ export const handleAddComment: RequestHandler = async (req, res) => {
       user_id: userId,
     };
 
-    // FIX 3: Cast insert payload to any[]
-    const { data, error } = await supabaseAdmin
+    // FIX 3: Cast the entire insert operation to any
+    const { data, error } = await (supabaseAdmin
       .from('comments')
       .insert([insertData] as any[])
       .select()
-      .single();
+      .single() as any);
 
     if (error) {
       console.error("Supabase insert error:", error);
@@ -275,10 +275,10 @@ export const handleCastVote: RequestHandler = async (req, res) => {
         .eq('user_id', userId);
       if (error) throw error;
     } else {
-      // FIX 4: Cast upsert payload to any[]
-      const { error } = await supabaseAdmin
+      // FIX 4: Cast the entire upsert operation to any
+      const { error } = await (supabaseAdmin
         .from('post_votes')
-        .upsert([upsertData] as any[], { onConflict: 'user_id, post_id' });
+        .upsert([upsertData] as any[], { onConflict: 'user_id, post_id' }) as any);
       if (error) throw error;
     }
 
