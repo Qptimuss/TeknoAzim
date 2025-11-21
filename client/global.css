@@ -13,13 +13,13 @@
   */
   :root {
     --background: 0 0% 80%; /* Parlaklık %80'e düşürüldü */
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 222.2 84% 15%; /* Yazı rengi parlaklığı %4.9'dan %15'e çıkarıldı (daha az siyah) */
 
     --card: 0 0% 80%; /* Parlaklık %80'e düşürüldü */
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 222.2 84% 15%; /* Yazı rengi parlaklığı %15 */
 
     --popover: 0 0% 80%; /* Parlaklık %80'e düşürüldü */
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 222.2 84% 15%; /* Yazı rengi parlaklığı %15 */
 
     --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
