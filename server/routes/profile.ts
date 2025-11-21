@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import { getSupabaseAdmin } from "../lib/supabase-admin.ts";
 import { z } from "zod";
+import { Database } from "../lib/database.types.ts";
 
 const updateProfileSchema = z.object({
   name: z.string().min(2),
@@ -20,7 +21,7 @@ export const handleUpdateProfile: RequestHandler = async (req, res) => {
     const supabaseAdmin = getSupabaseAdmin();
 
     // Supabase'e boş string yerine null göndermek için dönüşüm yapıyoruz.
-    const updatePayload = {
+    const updatePayload: Database['public']['Tables']['profiles']['Update'] = {
       name: validatedData.name,
       avatar_url: validatedData.avatar_url || null,
       description: validatedData.description || null,

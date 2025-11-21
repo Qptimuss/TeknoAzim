@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import { getSupabaseAdmin } from "../lib/supabase-admin.ts";
 import { z } from "zod";
+import { Database } from "../lib/database.types.ts";
 
 // --- Schemas for validation ---
 
@@ -37,15 +38,17 @@ export const handleCreatePost: RequestHandler = async (req, res) => {
     const validatedData = newPostSchema.parse(req.body);
     const supabaseAdmin = getSupabaseAdmin();
 
+    const insertData: Database['public']['Tables']['blog_posts']['Insert'] = {
+      title: validatedData.title,
+      content: validatedData.content,
+      image_url: validatedData.imageUrl,
+      user_id: userId, // Enforce user ID from JWT, not client input
+    };
+
     // Server-side insertion, ensuring user_id is set by the authenticated user
     const { data, error } = await supabaseAdmin
       .from("blog_posts")
-      .insert({
-        title: validatedData.title,
-        content: validatedData.content,
-        image_url: validatedData.imageUrl,
-        user_id: userId, // Enforce user ID from JWT, not client input
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -89,14 +92,16 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
       return res.status(403).json({ error: "Forbidden: You do not own this post." });
     }
 
+    const updateData: Database['public']['Tables']['blog_posts']['Update'] = {
+      title: validatedData.title,
+      content: validatedData.content,
+      image_url: validatedData.imageUrl,
+    };
+
     // 2. Perform update
     const { data, error } = await supabaseAdmin
       .from("blog_posts")
-      .update({
-        title: validatedData.title,
-        content: validatedData.content,
-        image_url: validatedData.imageUrl,
-      })
+      .update(updateData)
       .eq('id', postId)
       .select()
       .single();
@@ -167,14 +172,16 @@ export const handleAddComment: RequestHandler = async (req, res) => {
     const validatedData = newCommentSchema.parse(req.body);
     const supabaseAdmin = getSupabaseAdmin();
 
+    const insertData: Database['public']['Tables']['comments']['Insert'] = {
+      content: validatedData.content,
+      post_id: validatedData.postId,
+      user_id: userId,
+    };
+
     // Server-side insertion, enforcing user_id from JWT
     const { data, error } = await supabaseAdmin
       .from('comments')
-      .insert({
-        content: validatedData.content,
-        post_id: validatedData.postId,
-        user_id: userId,
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -245,6 +252,12 @@ export const handleCastVote: RequestHandler = async (req, res) => {
     const { postId, voteType } = validatedData;
     const supabaseAdmin = getSupabaseAdmin();
 
+    const upsertData: Database['public']['Tables']['post_votes']['Insert'] = {
+      post_id: postId,
+      user_id: userId,
+      vote_type: voteType === 'like' ? 1 : -1,
+    };
+
     if (voteType === 'null') {
       // Remove vote
       const { error } = await supabaseAdmin
@@ -257,11 +270,7 @@ export const handleCastVote: RequestHandler = async (req, res) => {
       // Add or update vote
       const { error } = await supabaseAdmin
         .from('post_votes')
-        .upsert({
-          post_id: postId,
-          user_id: userId,
-          vote_type: voteType === 'like' ? 1 : -1,
-        }, { onConflict: 'user_id, post_id' });
+        .upsert(upsertData, { onConflict: 'user_id, post_id' });
       if (error) throw error;
     }
 

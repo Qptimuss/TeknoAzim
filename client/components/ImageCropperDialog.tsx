@@ -36,12 +36,22 @@ export default function ImageCropperDialog({
     setCrop(crop);
   }, []);
 
-  const onZoomChange = useCallback((zoom: number[]) => {
-    setZoom(zoom[0]);
+  // Handlers for Cropper (accepts single number)
+  const handleCropperZoomChange = useCallback((zoom: number) => {
+    setZoom(zoom);
   }, []);
 
-  const onRotationChange = useCallback((rotation: number[]) => {
-    setRotation(rotation[0]);
+  const handleCropperRotationChange = useCallback((rotation: number) => {
+    setRotation(rotation);
+  }, []);
+
+  // Handlers for Slider (accepts number array)
+  const handleSliderZoomChange = useCallback((zoomArray: number[]) => {
+    setZoom(zoomArray[0]);
+  }, []);
+
+  const handleSliderRotationChange = useCallback((rotationArray: number[]) => {
+    setRotation(rotationArray[0]);
   }, []);
 
   const onCropAreaChange = useCallback(
@@ -100,8 +110,8 @@ export default function ImageCropperDialog({
               rotation={rotation}
               aspect={1} // Square aspect ratio for avatar
               onCropChange={onCropChange}
-              onZoomChange={onZoomChange}
-              onRotationChange={onRotationChange}
+              onZoomChange={handleCropperZoomChange} // Use Cropper handler
+              onRotationChange={handleCropperRotationChange} // Use Cropper handler
               onCropComplete={onCropAreaChange}
               cropShape="round"
               showGrid={false}
@@ -119,7 +129,7 @@ export default function ImageCropperDialog({
                 max={3}
                 step={0.1}
                 value={[zoom]}
-                onValueChange={onZoomChange}
+                onValueChange={handleSliderZoomChange} // Use Slider handler
                 className="flex-1"
               />
             </div>
@@ -130,7 +140,7 @@ export default function ImageCropperDialog({
                 max={360}
                 step={1}
                 value={[rotation]}
-                onValueChange={onRotationChange}
+                onValueChange={handleSliderRotationChange} // Use Slider handler
                 className="flex-1"
               />
               <Button
