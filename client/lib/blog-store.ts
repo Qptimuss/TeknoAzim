@@ -46,6 +46,31 @@ export const uploadBlogImage = async (file: File, userId: string): Promise<strin
   return publicUrl;
 };
 
+// Upload a user avatar to Supabase Storage
+export const uploadAvatar = async (file: File, userId: string): Promise<string | null> => {
+  // Avatars are stored in a specific path, overwriting the previous one for the user
+  const filePath = `avatars/${userId}.jpeg`; // Use jpeg extension for consistency after cropping
+
+  // Use upsert to replace the existing avatar
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(filePath, file, {
+      upsert: true,
+      contentType: 'image/jpeg',
+    });
+
+  if (uploadError) {
+    console.error('Error uploading avatar:', uploadError);
+    throw uploadError;
+  }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('avatars')
+    .getPublicUrl(filePath);
+    
+  return publicUrl;
+};
+
 
 // Fetch all blog posts with their authors
 export const getBlogPosts = async (): Promise<BlogPostWithAuthor[]> => {
@@ -152,9 +177,35 @@ export const updateBlogPost = async (postId: string, postData: UpdateBlogPost) =
 };
 
 // Delete a blog post (NOW SECURE VIA SERVER)
-export const deleteBlogPost = async (postId: string) => {
+export const deleteBlogPost = async (postId: string, imageUrl?: string | null) => {
   const headers = await getAuthHeaders();
 
+  // 1. Delete image from storage if it exists
+  if (imageUrl) {
+    try {
+      const url = new URL(imageUrl);
+      const pathSegments = url.pathname.split('/');
+      const bucketIndex = pathSegments.indexOf('blog_images');
+      
+      if (bucketIndex !== -1 && bucketIndex < pathSegments.length - 1) {
+        // The file path relative to the bucket is everything after 'blog_images'
+        const filePathInBucket = pathSegments.slice(bucketIndex + 1).join('/');
+        
+        const { error: storageError } = await supabase.storage
+          .from('blog_images')
+          .remove([filePathInBucket]);
+        
+        if (storageError) {
+          console.error("Error deleting blog image from storage:", storageError);
+          // Log error but continue to delete the post record
+        }
+      }
+    } catch (e) {
+      console.error("Error parsing image URL for deletion:", e);
+    }
+  }
+
+  // 2. Delete post record via server API
   const response = await fetch(`/api/blog/post/${postId}`, {
     method: 'DELETE',
     headers,
@@ -277,7 +328,6 @@ export const getPostsByUserId = async (userId: string): Promise<BlogPostWithAuth
   return data as any;
 };
 
-// Fetch a single profile by ID (READ operation, remains client-side)
 export const getProfileById = async (userId: string): Promise<Profile | null> => {
   const { data, error } = await supabase
     .from("profiles")
@@ -289,5 +339,6 @@ export const getProfileById = async (userId: string): Promise<Profile | null> =>
     console.error("Error fetching profile:", error);
     return null;
   }
-  return data;
+
+  return data as Profile | null;
 };

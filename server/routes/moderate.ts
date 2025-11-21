@@ -1,49 +1,23 @@
-import { RequestHandler } from "express";
-import "dotenv/config";
+// routes/moderate.ts
+import { Request, Response } from "express";
 
-export const handleModerate: RequestHandler = async (req, res) => {
+// Bu handler, moderation (içerik kontrol) endpointi için temel bir örnektir.
+export const handleModerate = (req: Request, res: Response) => {
+  // İsteğe bağlı: req.body üzerinden gönderilen verileri alabilirsin
   const { text } = req.body;
 
-  if (!text) {
-    return res.status(400).json({ error: "Text to moderate is required." });
+  // Basit bir kontrol örneği: metin uzunluğu
+  if (!text || text.trim() === "") {
+    return res.status(400).json({ error: "Text is required for moderation." });
   }
 
-  const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-  if (!OPENAI_API_KEY) {
-    console.error("OPENAI_API_KEY is not set in the .env file.");
-    return res.status(500).json({ error: "Server configuration error." });
-  }
+  // Bu kısımda gerçek moderasyon mantığını ekleyebilirsin
+  // Örneğin bir API çağrısı veya kelime filtresi
+  const isSafe = text.length < 1000; // basit örnek kontrol
 
-  try {
-    const response = await fetch("https://api.openai.com/v1/moderations", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({ input: text }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("OpenAI API error:", errorData);
-      
-      // OpenAI'den gelen hatayı istemciye iletmek için 400/401/403 gibi bir durum kodu kullanıyoruz.
-      // Hata mesajını doğrudan errorData'dan alıp döndürüyoruz.
-      return res.status(response.status).json({ 
-        error: "OpenAI API hatası", 
-        details: errorData.error?.message || `API yanıtı başarısız oldu: ${response.status}` 
-      });
-    }
-
-    const data = await response.json();
-    const isFlagged = data.results[0].flagged;
-
-    // If flagged, it's not appropriate.
-    res.status(200).json({ isAppropriate: !isFlagged });
-
-  } catch (error) {
-    console.error("Error calling OpenAI Moderation API:", error);
-    res.status(500).json({ error: "Failed to moderate content." });
-  }
+  res.json({
+    originalText: text,
+    safe: isSafe,
+    message: isSafe ? "Text is safe." : "Text might not be safe.",
+  });
 };

@@ -1,9 +1,9 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import { handleDemo } from "./routes/demo.ts";
-import { handleModerate } from "./routes/moderate.ts";
-import { requireAuth } from "./middleware/auth.ts";
+import { handleDemo } from "./routes/demo";
+import { handleModerate } from "./routes/moderate";
+import { requireAuth } from "./middleware/auth";
 import { 
   handleCreatePost, 
   handleUpdatePost, 
@@ -11,8 +11,9 @@ import {
   handleAddComment, 
   handleDeleteComment, 
   handleCastVote 
-} from "./routes/blog.ts";
-import { handleUpdateProfile } from "./routes/profile.ts";
+} from "./routes/blog";
+import { handleUpdateProfile } from "./routes/profile";
+import { handleDeleteUser } from "./routes/user";
 
 export function createServer() {
   const app = express();
@@ -34,7 +35,7 @@ export function createServer() {
   app.post("/api/moderate", handleModerate);
 
   // --- Secure Routes (Requires Authentication) ---
-  
+
   // Profile
   app.put("/api/profile", requireAuth, handleUpdateProfile);
 
@@ -49,6 +50,9 @@ export function createServer() {
 
   // Votes
   app.post("/api/blog/vote", requireAuth, handleCastVote);
+
+  // User
+  app.delete("/api/user", requireAuth, handleDeleteUser);
 
   return app;
 }

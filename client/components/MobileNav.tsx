@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface NavLink {
   to: string;
@@ -25,7 +26,7 @@ export function MobileNav({ mainLinks, authLinks, logo, onMouseEnter, onMouseLea
         <Button 
           variant="ghost" 
           // Arka planı her zaman şeffaf yapıyoruz.
-          className="md:hidden h-auto p-2 flex items-center gap-2 text-[#090a0c] bg-transparent hover:bg-transparent transition-all duration-200 hover:-translate-y-0.5"
+          className="md:hidden h-auto p-2 flex items-center gap-2 text-foreground bg-transparent hover:bg-transparent transition-all duration-200 hover:-translate-y-0.5"
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
         >
@@ -36,7 +37,7 @@ export function MobileNav({ mainLinks, authLinks, logo, onMouseEnter, onMouseLea
           <span className="sr-only">Toggle navigation menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[250px] sm:w-[300px] bg-[#e6e6e6] p-4 h-auto bottom-auto rounded-br-lg">
+      <SheetContent side="left" className="w-[250px] sm:w-[300px] bg-background p-4 h-auto bottom-auto rounded-br-lg flex flex-col">
         <div className="flex flex-col gap-4">
           <Link to="/" className="flex items-center gap-2">
             {logo}
@@ -46,28 +47,30 @@ export function MobileNav({ mainLinks, authLinks, logo, onMouseEnter, onMouseLea
               <Link
                 key={link.to}
                 to={link.to}
-                className="font-bakbak text-xl text-[#090a0c] hover:text-gray-700"
+                className="font-bakbak text-xl text-foreground hover:text-muted-foreground whitespace-nowrap"
               >
                 {link.label}
               </Link>
             ))}
           </div>
-          <Separator className="my-2 bg-[#090a0c] h-0.5 rounded-full w-11/12 mx-auto" />
+          <Separator className="my-2 bg-border h-0.5 rounded-full w-11/12 mx-auto" />
           <div className="flex flex-col gap-2">
             {authLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
                 className={cn(
-                  "font-bakbak text-xl",
-                  link.to === "/giris" ? "text-black" : "text-[#090a0c]",
-                  "hover:text-gray-700"
+                  "font-bakbak text-xl text-foreground whitespace-nowrap",
+                  "hover:text-muted-foreground"
                 )}
               >
                 {link.label}
               </Link>
             ))}
           </div>
+        </div>
+        <div className="mt-auto flex justify-end">
+          <ThemeToggle />
         </div>
       </SheetContent>
     </Sheet>

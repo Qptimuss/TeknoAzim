@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TeknoAzim Şifre Sıfırlama</title>
+  <title>TeknoAzim Hesap Doğrulama</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@700&family=Roboto:wght@400&display=swap');
     body {
@@ -22,16 +22,25 @@
       padding: 40px;
       text-align: center;
     }
+    .header {
+      margin-bottom: 20px;
+    }
     .header h1 {
       font-family: 'Outfit', sans-serif;
       font-size: 28px;
       color: #ffffff;
       margin: 0;
     }
+    .logo {
+      max-width: 150px; /* Logo boyutunu belirle */
+      height: auto;
+      margin-bottom: 20px;
+    }
     .content p {
       font-size: 18px;
       line-height: 1.6;
       margin: 20px 0;
+      color: #ffffff;
     }
     .button {
       display: inline-block;
@@ -62,19 +71,19 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>Şifreni Sıfırla</h1>
+      <img src="{{ .SiteURL }}/logo.png" alt="TeknoAzim Logo" class="logo">
+      <h1>TeknoAzim'e Hoş Geldin!</h1>
     </div>
     <div class="content">
-      <p>Hesabın için şifre sıfırlama talebi aldık. Yeni bir şifre oluşturmak için aşağıdaki düğmeye tıkla.</p>
-      <a href="{{ .ConfirmationURL }}" class="button">Şifremi Sıfırla</a>
+      <p>Aramıza katılmana çok az kaldı. Aşağıdaki düğmeye tıklayarak hesabını doğrulayabilir ve düşüncelerini paylaşmaya başlayabilirsin.</p>
+      <a href="{{ .ConfirmationURL }}" class="button">Hesabımı Doğrula</a>
       <p style="font-size: 14px; color: #999999; margin-top: 20px;">
         Düğme çalışmazsa, aşağıdaki bağlantıyı kopyalayıp tarayıcına yapıştırabilirsin:<br>
         <a href="{{ .ConfirmationURL }}" style="color: #eeeeee; text-decoration: underline; word-break: break-all;">{{ .ConfirmationURL }}</a>
       </p>
     </div>
     <div class="footer">
-      <p>Bu talebi sen yapmadıysan, bu e-postayı güvenle silebilirsin.</p>
-      <p>&copy; 2024 TeknoAzim. Tüm hakları saklıdır.</p>
+      <p>Bu e-postayı sen istemediysen, lütfen dikkate alma.</p>
     </div>
   </div>
 </body>

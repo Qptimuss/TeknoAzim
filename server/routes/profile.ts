@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { supabaseAdmin } from "../lib/supabase-admin.ts";
+import { getSupabaseAdmin } from "../lib/supabase-admin.ts";
 import { z } from "zod";
 
 const updateProfileSchema = z.object({
@@ -17,6 +17,7 @@ export const handleUpdateProfile: RequestHandler = async (req, res) => {
 
   try {
     const validatedData = updateProfileSchema.parse(req.body);
+    const supabaseAdmin = getSupabaseAdmin();
 
     // Supabase'e boş string yerine null göndermek için dönüşüm yapıyoruz.
     const updatePayload = {

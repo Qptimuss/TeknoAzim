@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/contexts/AuthContext";
-import { getPostsByUserId, deleteBlogPost } from "@/lib/blog-store";
+import { getPostsByUserId, uploadAvatar, deleteBlogPost } from "@/lib/blog-store";
 import { BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Trash2, Edit } from "lucide-react";
-import { Link } from "react-router-dom";
+import { User as UserIcon, CheckCircle, Pencil, Check, X, Lock, ImageIcon } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { calculateLevel, ALL_BADGES, TITLES, removeExp, EXP_ACTIONS } from "@/lib/gamification";
+import CreateBlogCard from "@/components/CreateBlogCard";
+import { cn } from "@/lib/utils";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,41 +29,46 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
-const profileSchema = z.object({
-  name: z.string().min(2, "İsim en az 2 karakter olmalıdır."),
-  avatar_url: z.string().url("Lütfen geçerli bir URL girin.").optional().or(z.literal('')),
-  description: z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").optional(),
-});
+import ImageCropperDialog from "@/components/ImageCropperDialog";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { FRAMES } from "@/lib/store-items";
 
 export default function ProfilePage() {
-  const { user, updateUser, loading } = useAuth();
+  const { user, updateUser, loading, logout } = useAuth();
+  const navigate = useNavigate();
   const [userPosts, setUserPosts] = useState<BlogPostWithAuthor[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
-  const [postToDelete, setPostToDelete] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [postToDelete, setPostToDelete] = useState<{id: string, imageUrl?: string | null} | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const form = useForm<z.infer<typeof profileSchema>>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: "",
-      avatar_url: "",
-      description: "",
-    },
-  });
+  // Inline editing states
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [nameValue, setNameValue] = useState("");
+  const [descriptionValue, setDescriptionValue] = useState("");
+  
+  // Cropping States
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
 
-  const fetchUserPosts = async (userId: string) => {
-    setPostsLoading(true);
-    const posts = await getPostsByUserId(userId);
-    setUserPosts(posts);
-    setPostsLoading(false);
-  };
+  // Account Deletion States
+  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (imageToCrop) URL.revokeObjectURL(imageToCrop);
+    };
+  }, [imageToCrop]);
 
   useEffect(() => {
     if (user) {
-
-      form.reset({ name: user.name || "", avatar_url: user.avatar_url || "", description: user.description || "" });
+      setNameValue(user.name || "");
+      setDescriptionValue(user.description || "");
+      
       const fetchUserPosts = async () => {
         setPostsLoading(true);
         const posts = await getPostsByUserId(user.id);
@@ -65,165 +76,494 @@ export default function ProfilePage() {
         setPostsLoading(false);
       };
       fetchUserPosts();
-
     }
-  }, [user, form]);
+  }, [user]);
 
-  async function onSubmit(values: z.infer<typeof profileSchema>) {
-    try {
-      await updateUser({ name: values.name, avatar_url: values.avatar_url || '', description: values.description || '' });
-      toast.success("Profiliniz başarıyla güncellendi!");
-    } catch (error) {
-      toast.error("Profil güncellenirken bir hata oluştu.");
+  const handleTitleChange = async (newTitle: string) => {
+    if (!user) return;
+    const updateData = { selected_title: newTitle === 'none' ? null : newTitle };
+    
+    await toast.promise(updateUser(updateData), {
+      loading: 'Ünvan kaydediliyor...',
+      success: 'Ünvan güncellendi.',
+      error: 'Hata oluştu.',
+    });
+  };
+
+  const handleFrameSelect = async (frameName: string) => {
+    if (!user) return;
+    const newFrame = user.selected_frame === frameName ? null : frameName;
+    await toast.promise(updateUser({ selected_frame: newFrame }), {
+      loading: 'Çerçeve ayarlanıyor...',
+      success: 'Çerçeve güncellendi!',
+      error: 'Hata oluştu.',
+    });
+  };
+
+  // --- Name Handlers ---
+  const handleNameSave = async () => {
+    if (!user) return;
+    setIsEditingName(false);
+    if (nameValue !== user.name) {
+      const result = z.string().min(2, "İsim en az 2 karakter olmalıdır.").safeParse(nameValue);
+      if (!result.success) {
+        toast.error(result.error.issues[0].message);
+        setNameValue(user.name || "");
+        return;
+      }
+      await toast.promise(updateUser({ name: nameValue }), {
+        loading: 'İsim güncelleniyor...',
+        success: 'İsim güncellendi!',
+        error: 'Hata oluştu.',
+      });
     }
-  }
+  };
 
-  const handleDeletePost = async () => {
+  const handleNameCancel = () => {
+    setIsEditingName(false);
+    setNameValue(user?.name || "");
+  };
+
+  // --- Description Handlers ---
+  const handleDescriptionSave = async () => {
+    if (!user) return;
+    setIsEditingDescription(false);
+    if (descriptionValue !== user.description) {
+      const result = z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").optional().safeParse(descriptionValue);
+      if (!result.success) {
+        toast.error(result.error.issues[0].message);
+        setDescriptionValue(user.description || "");
+        return;
+      }
+      await toast.promise(updateUser({ description: descriptionValue }), {
+        loading: 'Açıklama güncelleniyor...',
+        success: 'Açıklama güncellendi!',
+        error: 'Hata oluştu.',
+      });
+    }
+  };
+
+  const handleDescriptionCancel = () => {
+    setIsEditingDescription(false);
+    setDescriptionValue(user?.description || "");
+  };
+
+  // --- Avatar Handlers ---
+  const handleAvatarEditClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (files: FileList | null) => {
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("Resim boyutu 2MB'den küçük olmalıdır.");
+        return;
+      }
+      const newUrl = URL.createObjectURL(file);
+      setImageToCrop(newUrl);
+      setIsCropperOpen(true);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setIsCropperOpen(false);
+    if (imageToCrop) URL.revokeObjectURL(imageToCrop);
+    setImageToCrop(null);
+    if (!user) return;
+
+    const croppedFile = new File([croppedBlob], "avatar.jpeg", { type: "image/jpeg" });
+    await toast.promise(
+      async () => {
+        const uploadedUrl = await uploadAvatar(croppedFile, user.id);
+        if (uploadedUrl) await updateUser({ avatar_url: uploadedUrl });
+      },
+      {
+        loading: "Profil fotoğrafı yükleniyor...",
+        success: "Profil fotoğrafı güncellendi!",
+        error: "Profil fotoğrafı güncellenirken bir hata oluştu.",
+      }
+    );
+  };
+
+  const handleDeleteRequest = (postId: string, imageUrl?: string | null) => {
+    setPostToDelete({ id: postId, imageUrl });
+  };
+
+  const handleDeleteConfirm = async () => {
     if (!postToDelete || !user) return;
+    setIsDeleting(true);
     try {
-      await deleteBlogPost(postToDelete);
+      await deleteBlogPost(postToDelete.id, postToDelete.imageUrl);
+      setUserPosts(prev => prev.filter(p => p.id !== postToDelete.id));
+      
+      const updatedProfile = await removeExp(user.id, EXP_ACTIONS.CREATE_POST);
+      if (updatedProfile) {
+        updateUser(updatedProfile);
+      }
+
       toast.success("Blog yazısı başarıyla silindi.");
-      // Refresh posts list
-      await fetchUserPosts(user.id);
     } catch (error) {
       toast.error("Blog yazısı silinirken bir hata oluştu.");
-      console.error(error);
     } finally {
+      setIsDeleting(false);
       setPostToDelete(null);
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    setIsDeletingAccount(true);
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error("Kimlik doğrulama oturumu bulunamadı.");
+      }
+
+      const response = await fetch('/api/user', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Hesap silinemedi.' }));
+        throw new Error(errorData.error);
+      }
+
+      toast.success("Hesabınız başarıyla silindi.");
+      await logout(); 
+      navigate('/');
+
+    } catch (error) {
+      toast.error("Hesap silinirken bir hata oluştu.", {
+        description: error instanceof Error ? error.message : "Lütfen tekrar deneyin.",
+      });
+    } finally {
+      setIsDeletingAccount(false);
+      setShowDeleteAccountDialog(false);
+    }
+  };
+
   if (loading) {
-    return <div className="text-white text-center p-12">Yükleniyor...</div>;
+    return <div className="text-foreground text-center p-12">Yükleniyor...</div>;
   }
 
   if (!user) {
-    return null; // ProtectedRoute handles redirection
+    return null;
   }
 
+  const { level, expForNextLevel, currentLevelExp } = calculateLevel(user.exp || 0);
+  const expInCurrentLevel = (user.exp || 0) - currentLevelExp;
+  const expProgress = expForNextLevel === 0 ? 100 : (expInCurrentLevel / expForNextLevel) * 100;
+
+  const selectedTitleObject = Object.values(TITLES).find(t => t.name === user.selected_title);
+  const SelectedTitleIcon = selectedTitleObject ? selectedTitleObject.icon : CheckCircle;
+  const selectedFrame = FRAMES.find(f => f.name === user.selected_frame);
+
   return (
-    <div className="container mx-auto px-5 py-12">
-      <h1 className="text-white text-4xl md:text-5xl font-outfit font-bold mb-8">
-        Profilim
-      </h1>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1">
-          <div className="bg-[#090a0c] border border-[#2a2d31] rounded-lg p-8">
-            <div className="flex flex-col items-center mb-6 text-center">
-              <Avatar className="h-24 w-24 mb-4">
-                <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-                <AvatarFallback>
-                  <UserIcon className="h-12 w-12 text-muted-foreground" />
-                </AvatarFallback>
-              </Avatar>
-              <h2 className="text-white text-2xl font-outfit font-bold">{user.name}</h2>
-              <p className="text-muted-foreground">{user.email}</p>
-              {user.description && (
-                <p className="text-white mt-4 text-sm">{user.description}</p>
-              )}
-            </div>
-            <h3 className="text-white text-xl font-outfit font-bold mb-4 border-t border-[#2a2d31] pt-6">Bilgileri Güncelle</h3>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-white">Kullanıcı Adı</FormLabel>
-                      <FormControl>
-                        <Input {...field} className="bg-[#151313] border-[#42484c] text-white" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+    <>
+      <div className="container mx-auto px-5 py-12">
+        <h1 className="text-foreground text-4xl md:text-5xl font-outfit font-bold mb-8">
+          Profilim
+        </h1>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-1">
+            <div className="bg-card border border-border rounded-lg p-8">
+              <div className="flex flex-col items-center mb-6 space-y-2 text-center">
+                
+                <div className="flex items-center justify-center gap-2">
+                  <div className={cn("p-1", selectedFrame?.className)}>
+                    <Avatar className="h-24 w-24">
+                      <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
+                      <AvatarFallback>
+                        <UserIcon className="h-12 w-12 text-muted-foreground" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6" 
+                    onClick={handleAvatarEditClick}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </div>
+                <Input type="file" accept="image/png, image/jpeg, image/gif" ref={fileInputRef} onChange={(e) => handleFileChange(e.target.files)} className="hidden" />
+
+                <div className="flex min-h-[40px] items-center justify-center gap-2">
+                  {isEditingName ? (
+                    <>
+                      <Input
+                        value={nameValue}
+                        onChange={(e) => setNameValue(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleNameSave(); }}
+                        autoFocus
+                        className="w-48 text-center text-2xl font-bold font-outfit h-auto"
+                      />
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={handleNameSave}>
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleNameCancel}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <h2 className="text-card-foreground text-2xl font-outfit font-bold">{user.name}</h2>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingName(true)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </>
                   )}
-                />
-                <FormField
-                  control={form.control}
-                  name="avatar_url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-white">Profil Fotoğrafı URL'si</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://ornek.com/resim.jpg" {...field} value={field.value || ''} className="bg-[#151313] border-[#42484c] text-white" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                </div>
+
+                {user.selected_title && (
+                  <p className="text-yellow-400 font-semibold text-sm flex items-center justify-center gap-1">
+                    <SelectedTitleIcon className="h-4 w-4" /> {user.selected_title}
+                  </p>
+                )}
+                
+                <p className="text-muted-foreground">{user.email}</p>
+                
+                <div className="flex w-full items-start justify-center gap-2">
+                  {isEditingDescription ? (
+                    <>
+                      <Textarea
+                        value={descriptionValue}
+                        onChange={(e) => setDescriptionValue(e.target.value)}
+                        autoFocus
+                        placeholder="Kendinizden bahsedin..."
+                        className="w-full max-w-xs text-sm text-center min-h-[80px]"
+                      />
+                      <div className="flex flex-col gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={handleDescriptionSave}>
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleDescriptionCancel}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-card-foreground text-sm text-center min-h-[24px] max-w-xs">
+                        {user.description || <span className="text-muted-foreground italic">Açıklama ekle...</span>}
+                      </p>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingDescription(true)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </>
                   )}
-                />
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-white">Açıklama (Maks 200 karakter)</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Kendinizden bahsedin..." {...field} value={field.value || ''} className="bg-[#151313] border-[#42484c] text-white" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full bg-[#151313]/95 border border-[#42484c] text-white transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:shadow-white/10">
-                  Kaydet
+                </div>
+              </div>
+
+              <div className="mb-6 border-t border-border pt-6">
+                <h3 className="text-card-foreground text-xl font-outfit font-bold mb-4 text-center">Seviye {level}</h3>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger className="w-full">
+                      <Progress value={expProgress} className="w-full" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Toplam Deneyim: {user.exp || 0} EXP</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <div className="text-center text-sm text-muted-foreground mt-2">
+                  {`${expInCurrentLevel} / ${expForNextLevel} EXP`}
+                </div>
+              </div>
+
+              <div className="mb-6 border-t border-border pt-6">
+                <h3 className="text-card-foreground text-xl font-outfit font-bold mb-4">Ünvanlar</h3>
+                <RadioGroup
+                  value={user.selected_title || 'none'}
+                  onValueChange={handleTitleChange}
+                  className="space-y-2"
+                >
+                  <div className="flex items-center space-x-3">
+                    <RadioGroupItem value="none" id="title-none" />
+                    <Label htmlFor="title-none" className="italic text-muted-foreground">Ünvan Yok</Label>
+                  </div>
+                  {Object.entries(TITLES).map(([levelKey, titleObject]) => {
+                    const { name: title, icon: Icon } = titleObject;
+                    const levelRequired = parseInt(levelKey);
+                    const isUnlocked = level >= levelRequired;
+                    return (
+                      <div key={title} className="flex items-center space-x-3">
+                        <RadioGroupItem value={title} id={`title-${levelKey}`} disabled={!isUnlocked} />
+                        <Label
+                          htmlFor={`title-${levelKey}`}
+                          className={cn(
+                            "flex items-center gap-2 w-full",
+                            !isUnlocked && "text-muted-foreground opacity-60 cursor-not-allowed"
+                          )}
+                        >
+                          <Icon className="h-4 w-4" />
+                          <span>{title}</span>
+                          {!isUnlocked && (
+                            <span className="ml-auto flex items-center gap-1 text-xs">
+                              <Lock className="h-3 w-3" />
+                              Seviye {levelRequired}
+                            </span>
+                          )}
+                        </Label>
+                      </div>
+                    );
+                  })}
+                </RadioGroup>
+              </div>
+
+              <div className="mb-6 border-t border-border pt-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-card-foreground text-xl font-outfit font-bold">Rozetler</h3>
+                  <span className="text-sm text-muted-foreground">
+                    {user.badges?.length || 0} / {ALL_BADGES.length}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-4 p-4 bg-background rounded-lg border border-border">
+                  {ALL_BADGES.map((badge) => {
+                    const hasBadge = user.badges?.includes(badge.name);
+                    const Icon = badge.icon;
+                    return (
+                      <div key={badge.name} className="flex items-start gap-4">
+                        <div className={cn("flex items-center justify-center bg-card p-3 rounded-full border border-border shrink-0", !hasBadge && "opacity-30 grayscale")}>
+                          <Icon className="h-6 w-6 text-yellow-400" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-foreground">{badge.name}</p>
+                          <p className="text-sm text-muted-foreground">{badge.description}</p>
+                          {!hasBadge && <p className="text-xs text-red-400 mt-1">(Henüz kazanılmadı)</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  Bir blog oluşturmak 25 EXP, bir rozet kazanmak 50 EXP verir.
+                </p>
+              </div>
+
+              <div className="border-t border-border pt-6 mt-6">
+                <h3 className="text-destructive text-xl font-outfit font-bold mb-4">Tehlikeli Bölge</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Hesabınızı silmek kalıcı bir eylemdir ve geri alınamaz. Tüm blog yazılarınız ve verileriniz silinecektir.
+                </p>
+                <Button variant="destructive" className="w-full" onClick={() => setShowDeleteAccountDialog(true)}>
+                  Hesabımı Sil
                 </Button>
-              </form>
-            </Form>
+              </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-2">
+            <h2 className="text-foreground text-2xl font-outfit font-bold mb-4">Bloglarım ({userPosts.length})</h2>
+            {postsLoading ? (
+              <p className="text-muted-foreground">Bloglar yükleniyor...</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {userPosts.map(post => (
+                  <BlogCard 
+                    key={post.id} 
+                    post={post} 
+                    showDelete={true}
+                    onDelete={handleDeleteRequest}
+                  />
+                ))}
+                <CreateBlogCard />
+              </div>
+            )}
+            
+            <div className="mt-8 bg-card border border-border rounded-lg p-8">
+              <h2 className="text-2xl font-outfit font-bold mb-4">Çerçevelerim</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {FRAMES.map((frame) => {
+                  const isOwned = user.owned_frames?.includes(frame.name) ?? false;
+                  const isSelected = user.selected_frame === frame.name;
+                  return (
+                    <div key={frame.name} className="flex flex-col items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          "w-28 h-28 p-0 rounded-lg border-2 flex items-center justify-center relative transition-all",
+                          isSelected ? "border-primary ring-2 ring-primary" : "border-border",
+                          !isOwned && "opacity-50 grayscale cursor-not-allowed"
+                        )}
+                        onClick={() => isOwned && handleFrameSelect(frame.name)}
+                        disabled={!isOwned}
+                      >
+                        <div className={cn("w-24 h-24 flex items-center justify-center", frame.className)}>
+                          <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                        </div>
+                        {!isOwned && <Lock className="absolute bottom-1 right-1 h-4 w-4 text-foreground bg-background rounded-full p-0.5" />}
+                        {isSelected && <CheckCircle className="absolute top-1 right-1 h-5 w-5 text-primary bg-background rounded-full" />}
+                      </Button>
+                      <p className="text-xs text-center font-medium">{frame.name}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="lg:col-span-2">
-          <h2 className="text-white text-2xl font-outfit font-bold mb-4">Bloglarım ({userPosts.length})</h2>
-          {postsLoading ? (
-             <p className="text-muted-foreground">Bloglar yükleniyor...</p>
-          ) : userPosts.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {userPosts.map(post => (
-                <div key={post.id} className="relative group">
-                  <BlogCard post={post} />
-                  <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button asChild size="icon" variant="secondary" className="bg-[#151313]/95 border border-[#42484c] hover:bg-[#151313] text-white">
-                      <Link to={`/bloglar/${post.id}/duzenle`}>
-                        <Edit className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button 
-                      size="icon" 
-                      variant="destructive" 
-                      onClick={() => setPostToDelete(post.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-[#090a0c] border border-[#2a2d31] rounded-lg p-8 text-center">
-              <p className="text-muted-foreground">Henüz hiç blog yazısı oluşturmadınız.</p>
-            </div>
-          )}
-        </div>
+        <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Blog Yazısını Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Bu işlem geri alınamaz. Blog yazınız, tüm yorumları ve oylarıyla birlikte kalıcı olarak silinecektir.
+                <span className="font-bold text-destructive"> Ayrıca, bu gönderiden kazandığınız 25 EXP'yi kaybedeceksiniz.</span>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>İptal</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteConfirm} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 text-white">
+                {isDeleting ? "Siliniyor..." : "Sil"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
+      
+      {imageToCrop && (
+        <ImageCropperDialog
+          imageSrc={imageToCrop}
+          open={isCropperOpen}
+          onClose={() => {
+            setIsCropperOpen(false);
+            if (imageToCrop) URL.revokeObjectURL(imageToCrop);
+            setImageToCrop(null);
+          }}
+          onCropComplete={handleCropComplete}
+        />
+      )}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
-        <AlertDialogContent className="bg-[#090a0c] border-[#2a2d31] text-white">
+      <AlertDialog open={showDeleteAccountDialog} onOpenChange={setShowDeleteAccountDialog}>
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Blog Yazısını Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[#eeeeee]">
-              Bu işlem geri alınamaz. Seçtiğiniz blog yazısı kalıcı olarak silinecektir.
+            <AlertDialogTitle>Hesabınızı Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu işlem geri alınamaz. Tüm blog yazılarınız, yorumlarınız ve profil verileriniz kalıcı olarak silinecektir. Bu işlemi onaylıyor musunuz?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-transparent border-[#42484c] hover:bg-[#151313]">İptal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeletePost} className="bg-red-600 hover:bg-red-700 text-white">
-              Sil
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={isDeletingAccount}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isDeletingAccount ? "Siliniyor..." : "Evet, Hesabımı Sil"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }

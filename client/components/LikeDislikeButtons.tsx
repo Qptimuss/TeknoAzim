@@ -5,13 +5,15 @@ import { getVoteCounts, getUserVote, castVote } from "@/lib/blog-store";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { awardBadge } from "@/lib/gamification";
 
 interface LikeDislikeButtonsProps {
   postId: string;
 }
 
 export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [likes, setLikes] = useState(0);
   const [dislikes, setDislikes] = useState(0);
   const [userAction, setUserAction] = useState<'liked' | 'disliked' | null>(null);
@@ -38,26 +40,23 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
       return;
     }
 
+    const isLiking = action === 'like' && userAction !== 'liked';
     let newUserAction: 'liked' | 'disliked' | null = null;
 
     if (action === 'like') {
       if (userAction === 'liked') {
-        // Unlike
         setLikes(l => l - 1);
         newUserAction = null;
       } else {
-        // Like
         setLikes(l => l + 1);
         if (userAction === 'disliked') setDislikes(d => d - 1);
         newUserAction = 'liked';
       }
-    } else { // dislike
+    } else {
       if (userAction === 'disliked') {
-        // Undislike
         setDislikes(d => d - 1);
         newUserAction = null;
       } else {
-        // Dislike
         setDislikes(d => d + 1);
         if (userAction === 'liked') setLikes(l => l - 1);
         newUserAction = 'disliked';
@@ -67,12 +66,44 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
     setUserAction(newUserAction);
     
     try {
-      // Map internal state ('liked'/'disliked') to API type ('like'/'dislike')
       const apiVoteType = newUserAction === 'liked' ? 'like' : newUserAction === 'disliked' ? 'dislike' : null;
       await castVote(postId, user.id, apiVoteType);
+
+      if (isLiking) {
+        const { likes: newLikes } = await getVoteCounts(postId);
+        
+        const { data: post, error: postError } = await supabase
+          .from('blog_posts')
+          .select('user_id')
+          .eq('id', postId)
+          .single();
+        
+        if (postError) {
+          console.error("Error fetching post author for badge:", postError);
+          return;
+        }
+
+        if (post && post.user_id) {
+          let profileAfterUpdate = null;
+
+          if (newLikes === 5) {
+            const badgeUpdate = await awardBadge(post.user_id, "Beğeni Mıknatısı");
+            if (badgeUpdate) profileAfterUpdate = badgeUpdate;
+          }
+          
+          if (newLikes === 10) {
+            const badgeUpdate = await awardBadge(post.user_id, "Popüler Yazar");
+            if (badgeUpdate) profileAfterUpdate = badgeUpdate;
+          }
+
+          // If the badge earner is the current user, update context
+          if (profileAfterUpdate && post.user_id === user.id) {
+            updateUser(profileAfterUpdate);
+          }
+        }
+      }
     } catch (error) {
       toast.error("Oy verilirken bir hata oluştu.");
-      // Revert optimistic update on error
       fetchVotes();
     }
   };
@@ -89,7 +120,7 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
         onClick={() => handleVote('like')} 
         disabled={!user}
         className={cn(
-          "flex items-center gap-2 text-muted-foreground hover:text-white",
+          "flex items-center gap-2 text-muted-foreground hover:text-foreground",
           userAction === 'liked' && "text-blue-500 hover:text-blue-400"
         )}
       >
@@ -102,7 +133,7 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
         onClick={() => handleVote('dislike')} 
         disabled={!user}
         className={cn(
-          "flex items-center gap-2 text-muted-foreground hover:text-white",
+          "flex items-center gap-2 text-muted-foreground hover:text-foreground",
           userAction === 'disliked' && "text-red-500 hover:text-red-400"
         )}
       >

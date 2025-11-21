@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { supabaseAdmin } from "../lib/supabase-admin.ts";
+import { getSupabaseAdmin } from "../lib/supabase-admin.ts";
 import { z } from "zod";
 
 // --- Schemas for validation ---
@@ -35,6 +35,7 @@ export const handleCreatePost: RequestHandler = async (req, res) => {
 
   try {
     const validatedData = newPostSchema.parse(req.body);
+    const supabaseAdmin = getSupabaseAdmin();
 
     // Server-side insertion, ensuring user_id is set by the authenticated user
     const { data, error } = await supabaseAdmin
@@ -71,6 +72,7 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
 
   try {
     const validatedData = updatePostSchema.parse(req.body);
+    const supabaseAdmin = getSupabaseAdmin();
 
     // 1. Check ownership (using RLS bypass capability of supabaseAdmin)
     const { data: existingPost, error: fetchError } = await supabaseAdmin
@@ -121,6 +123,8 @@ export const handleDeletePost: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    
     // 1. Check ownership
     const { data: existingPost, error: fetchError } = await supabaseAdmin
       .from("blog_posts")
@@ -161,6 +165,7 @@ export const handleAddComment: RequestHandler = async (req, res) => {
 
   try {
     const validatedData = newCommentSchema.parse(req.body);
+    const supabaseAdmin = getSupabaseAdmin();
 
     // Server-side insertion, enforcing user_id from JWT
     const { data, error } = await supabaseAdmin
@@ -195,6 +200,8 @@ export const handleDeleteComment: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    
     // 1. Check ownership
     const { data: existingComment, error: fetchError } = await supabaseAdmin
       .from("comments")
@@ -236,6 +243,7 @@ export const handleCastVote: RequestHandler = async (req, res) => {
   try {
     const validatedData = castVoteSchema.parse(req.body);
     const { postId, voteType } = validatedData;
+    const supabaseAdmin = getSupabaseAdmin();
 
     if (voteType === 'null') {
       // Remove vote

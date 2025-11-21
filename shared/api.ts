@@ -8,6 +8,14 @@ export interface Profile {
   name: string | null;
   avatar_url: string | null;
   description: string | null;
+  level: number;
+  exp: number;
+  badges: string[];
+  selected_title?: string | null;
+  owned_frames?: string[];
+  selected_frame?: string | null;
+  gems: number;
+  last_daily_reward_claimed_at?: string | null;
 }
 
 // This will represent a row in the `comments` table, joined with the author's profile
@@ -26,6 +34,6 @@ export interface BlogPostWithAuthor {
   content: string;
   image_url?: string | null;
   created_at: string;
-  user_id: string; // Added user_id for ownership checks
+  user_id: string; // The ID of the author
   profiles: Profile | null; // The author of the blog post
 }
