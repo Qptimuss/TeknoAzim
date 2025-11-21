@@ -12,13 +12,13 @@
    * A different format will require also updating the theme in tailwind.config.ts.
   */
   :root {
-    --background: 0 0% 95%; /* Parlaklık %100'den %95'e düşürüldü */
+    --background: 0 0% 80%; /* Parlaklık %80'e düşürüldü */
     --foreground: 222.2 84% 4.9%;
 
-    --card: 0 0% 95%; /* Parlaklık %100'den %95'e düşürüldü */
+    --card: 0 0% 80%; /* Parlaklık %80'e düşürüldü */
     --card-foreground: 222.2 84% 4.9%;
 
-    --popover: 0 0% 95%; /* Parlaklık %100'den %95'e düşürüldü */
+    --popover: 0 0% 80%; /* Parlaklık %80'e düşürüldü */
     --popover-foreground: 222.2 84% 4.9%;
 
     --primary: 222.2 47.4% 11.2%;
