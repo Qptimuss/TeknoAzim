@@ -27,7 +27,7 @@ export const handleUpdateProfile: RequestHandler = async (req, res) => {
       description: validatedData.description || null,
     };
 
-    // FIX 5: Cast update payload to any
+    // FIX 5: Keep 'as any' cast for update
     const { data, error } = await supabaseAdmin
       .from("profiles")
       .update(updatePayload as any)
