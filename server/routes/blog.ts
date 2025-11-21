@@ -45,12 +45,12 @@ export const handleCreatePost: RequestHandler = async (req, res) => {
       user_id: userId, // Enforce user ID from JWT, not client input
     };
 
-    // FIX 1: Cast the entire insert operation to any
+    // FIX 1: Cast the result of .from() to any
     const { data, error } = await (supabaseAdmin
-      .from("blog_posts")
-      .insert([insertData] as any[])
+      .from("blog_posts") as any)
+      .insert([insertData])
       .select()
-      .single() as any);
+      .single();
 
     if (error) {
       console.error("Supabase insert error:", error);
@@ -101,13 +101,13 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
       image_url: validatedData.imageUrl,
     };
 
-    // FIX 2: Cast the entire update operation to any
+    // FIX 2: Cast the result of .from() to any
     const { data, error } = await (supabaseAdmin
-      .from("blog_posts")
-      .update(updateData as any)
+      .from("blog_posts") as any)
+      .update(updateData)
       .eq('id', postId)
       .select()
-      .single() as any);
+      .single();
 
     if (error) {
       console.error("Supabase update error:", error);
@@ -183,12 +183,12 @@ export const handleAddComment: RequestHandler = async (req, res) => {
       user_id: userId,
     };
 
-    // FIX 3: Cast the entire insert operation to any
+    // FIX 3: Cast the result of .from() to any
     const { data, error } = await (supabaseAdmin
-      .from('comments')
-      .insert([insertData] as any[])
+      .from('comments') as any)
+      .insert([insertData])
       .select()
-      .single() as any);
+      .single();
 
     if (error) {
       console.error("Supabase insert error:", error);
@@ -221,7 +221,6 @@ export const handleDeleteComment: RequestHandler = async (req, res) => {
       .eq("id", commentId)
       .single();
       
-    // Explicitly cast the result of select
     const existingComment = existingCommentData as { user_id: string } | null;
 
     if (fetchError || !existingComment) {
@@ -275,10 +274,10 @@ export const handleCastVote: RequestHandler = async (req, res) => {
         .eq('user_id', userId);
       if (error) throw error;
     } else {
-      // FIX 4: Cast the entire upsert operation to any
+      // FIX 4: Cast the result of .from() to any
       const { error } = await (supabaseAdmin
-        .from('post_votes')
-        .upsert([upsertData] as any[], { onConflict: 'user_id, post_id' }) as any);
+        .from('post_votes') as any)
+        .upsert([upsertData], { onConflict: 'user_id, post_id' });
       if (error) throw error;
     }
 
