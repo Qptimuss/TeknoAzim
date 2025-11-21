@@ -21,11 +21,11 @@ export default function Index() {
         <div className="relative z-10 px-5 md:px-10 lg:px-20 pb-8 flex flex-col items-center pt-32">
           <div className="w-full max-w-[1122px]">
             {/* Hero Content */}
-            <h1 className="text-white dark:text-foreground text-3xl md:text-4xl lg:text-5xl font-outfit font-bold text-center mt-12 md:mt-16 lg:mt-20 px-4">
+            <h1 className="text-foreground dark:text-foreground text-3xl md:text-4xl lg:text-5xl font-outfit font-bold text-center mt-12 md:mt-16 lg:mt-20 px-4">
               Düşüncelerle derinleşen,yazılarla genişleyen bir dünya.
             </h1>
 
-            <p className="text-white dark:text-muted-foreground text-lg md:text-2xl lg:text-[25px] font-roboto font-normal text-center mt-6 md:mt-8 px-4">
+            <p className="text-muted-foreground dark:text-muted-foreground text-lg md:text-2xl lg:text-[25px] font-roboto font-normal text-center mt-6 md:mt-8 px-4">
               Hobilerinle ilgili bilgilerini diğer öğrencilerle paylaş.
             </p>
 
