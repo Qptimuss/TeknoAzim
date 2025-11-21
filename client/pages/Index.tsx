@@ -109,7 +109,7 @@ export default function Index() {
                 </h2>
 
                 <h3 className="text-foreground text-4xl md:text-5xl lg:text-[70px] font-outfit font-bold leading-tight md:leading-[85px]">
-                  Güvenlik
+                  Güvenlik Kötü söz ve içerikleri filtreleyen yapay zekâ desteği
                 </h3>
 
                 <p className="text-muted-foreground text-xl md:text-2xl lg:text-[25px] font-roboto font-medium leading-relaxed md:leading-[40px] mt-6 md:mt-8">
