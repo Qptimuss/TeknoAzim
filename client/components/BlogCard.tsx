@@ -8,9 +8,9 @@ import {
 import { BlogPostWithAuthor } from "@shared/api";
 import { Link } from "react-router-dom";
 import LikeDislikeButtons from "./LikeDislikeButtons";
-import { Trash2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User as UserIcon, Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
-import ProfileAvatar from "./ProfileAvatar";
 
 interface BlogCardProps {
   post: BlogPostWithAuthor;
@@ -59,7 +59,12 @@ export default function BlogCard({ post, showDelete = false, onDelete }: BlogCar
               className="inline-flex items-center gap-2 z-10 relative w-fit rounded-full bg-background px-3 py-1 border border-border transition-all duration-200 hover:border-primary hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10"
               onClick={(e) => e.stopPropagation()}
             >
-              <ProfileAvatar profile={post.profiles} className="h-6 w-6" />
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={post.profiles?.avatar_url || undefined} alt={post.profiles?.name || ''} />
+                <AvatarFallback>
+                  <UserIcon className="h-4 w-4" />
+                </AvatarFallback>
+              </Avatar>
               <span className="text-sm text-foreground">
                 {post.profiles?.name || "Anonim"}
               </span>

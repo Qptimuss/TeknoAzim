@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { getBlogPostById, getCommentsForPost, deleteBlogPost } from "@/lib/blog-store";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, User as UserIcon, Trash2 } from "lucide-react";
 import { BlogPostWithAuthor, CommentWithAuthor } from "@shared/api";
 import LikeDislikeButtons from "@/components/LikeDislikeButtons";
 import CommentSection from "@/components/CommentSection";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +22,6 @@ import {
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { removeExp, EXP_ACTIONS } from "@/lib/gamification";
-import ProfileAvatar from "@/components/ProfileAvatar";
 
 export default function BlogPostPage() {
   const { id } = useParams<{ id: string }>();
@@ -128,7 +128,12 @@ export default function BlogPostPage() {
           <div className="p-8">
             {post.profiles && (
               <Link to={`/kullanici/${post.profiles.id}`} className="inline-flex items-center gap-2 mb-4 w-fit rounded-full bg-background px-3 py-1 border border-border transition-all duration-200 hover:border-primary hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10">
-                <ProfileAvatar profile={post.profiles} className="h-8 w-8" />
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={post.profiles?.avatar_url || undefined} alt={post.profiles?.name || ''} />
+                  <AvatarFallback>
+                    <UserIcon className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
                 <span className="text-sm text-muted-foreground">{post.profiles?.name || "Anonim"}</span>
               </Link>
             )}
@@ -163,7 +168,12 @@ export default function BlogPostPage() {
                   <h3 className="text-sm font-semibold text-muted-foreground mb-2">Yazar:</h3>
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-6 bg-muted p-6 rounded-lg">
                     <div className="flex items-center gap-4">
-                      <ProfileAvatar profile={post.profiles} className="h-16 w-16" />
+                      <Avatar className="h-16 w-16">
+                        <AvatarImage src={post.profiles.avatar_url || undefined} alt={post.profiles.name || ''} />
+                        <AvatarFallback>
+                          <UserIcon className="h-8 w-8" />
+                        </AvatarFallback>
+                      </Avatar>
                       <div>
                         <p className="font-bold text-lg text-foreground">{post.profiles.name}</p>
                         <p className="text-sm text-muted-foreground mt-1">{post.profiles.description}</p>

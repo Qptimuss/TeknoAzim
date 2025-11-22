@@ -10,6 +10,7 @@ import { addComment, deleteComment } from "@/lib/blog-store";
 import { CommentWithAuthor } from "@shared/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Trash2 } from "lucide-react";
 import {
   AlertDialog,
@@ -24,7 +25,6 @@ import {
 import { Link } from "react-router-dom";
 import { awardBadge } from "@/lib/gamification";
 import { supabase } from "@/integrations/supabase/client";
-import ProfileAvatar from "./ProfileAvatar";
 
 const commentSchema = z.object({
   content: z.string().min(3, "Yorum en az 3 karakter olmalıdır."),
@@ -127,12 +127,17 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                   <div className="flex items-center gap-3">
                     {comment.profiles ? (
                       <Link to={`/kullanici/${comment.profiles.id}`} className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-1 border border-border transition-all duration-200 hover:border-primary hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5">
-                        <ProfileAvatar profile={comment.profiles} className="h-6 w-6" />
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={comment.profiles?.avatar_url || undefined} />
+                          <AvatarFallback>{comment.profiles?.name?.charAt(0) || 'A'}</AvatarFallback>
+                        </Avatar>
                         <span className="font-semibold text-foreground">{comment.profiles?.name || "Anonim"}</span>
                       </Link>
                     ) : (
                       <div className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-1 border border-border">
-                        <ProfileAvatar profile={null} className="h-6 w-6" />
+                        <Avatar className="h-6 w-6">
+                          <AvatarFallback>{'A'}</AvatarFallback>
+                        </Avatar>
                         <p className="font-semibold text-foreground">Anonim</p>
                       </div>
                     )}
