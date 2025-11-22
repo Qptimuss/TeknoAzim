@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { calculateLevel, ALL_BADGES, TITLES } from "@/lib/gamification";
 import { cn } from "@/lib/utils";
+import { FRAMES } from "@/lib/store-items";
 
 export default function UserProfilePage() {
   const { userId } = useParams<{ userId: string }>();
@@ -52,6 +53,7 @@ export default function UserProfilePage() {
 
   const selectedTitleObject = Object.values(TITLES).find(t => t.name === userProfile.selected_title);
   const SelectedTitleIcon = selectedTitleObject ? selectedTitleObject.icon : CheckCircle;
+  const selectedFrame = FRAMES.find(f => f.name === userProfile.selected_frame);
 
   return (
     <div className="container mx-auto px-5 py-12">
@@ -63,12 +65,14 @@ export default function UserProfilePage() {
         <div className="lg:col-span-1">
           <div className="bg-card border border-border rounded-lg p-8">
             <div className="flex flex-col items-center mb-6 text-center">
-              <Avatar className="h-24 w-24 mb-4">
-                <AvatarImage src={userProfile.avatar_url || undefined} alt={userProfile.name || ''} />
-                <AvatarFallback>
-                  <UserIcon className="h-12 w-12 text-muted-foreground" />
-                </AvatarFallback>
-              </Avatar>
+              <div className={cn("p-1 mb-4", selectedFrame?.className)}>
+                <Avatar className="h-24 w-24">
+                  <AvatarImage src={userProfile.avatar_url || undefined} alt={userProfile.name || ''} />
+                  <AvatarFallback>
+                    <UserIcon className="h-12 w-12 text-muted-foreground" />
+                  </AvatarFallback>
+                </Avatar>
+              </div>
               <h2 className="text-card-foreground text-2xl font-outfit font-bold">{userProfile.name}</h2>
               {userProfile.selected_title && (
                 <p className="text-yellow-400 font-semibold text-sm mt-1 flex items-center gap-1">
