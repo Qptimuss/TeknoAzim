@@ -18,7 +18,7 @@ export async function filterContent(content: string | null | undefined): Promise
 
   try {
     const { data, error } = await supabase.functions.invoke('content-filter', {
-      body: { content },
+      body: { text: content },
       signal: controller.signal,
     });
 
