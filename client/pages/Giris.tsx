@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext"; // useAuth'u import et
 
 export default function Giris() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,6 +17,7 @@ export default function Giris() {
     password: "",
   });
   const navigate = useNavigate();
+  const { login } = useAuth(); // login fonksiyonunu al
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -27,7 +29,7 @@ export default function Giris() {
     setIsSubmitting(true);
     setShowResendLink(false);
     
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: formData.email,
       password: formData.password,
     });
@@ -43,9 +45,11 @@ export default function Giris() {
       } else {
         toast.error("Giriş Hatası", { description: error.message });
       }
-    } else {
+    } else if (data.user) {
+      // Başarılı giriş: AuthContext'i güncelle ve günlük ödülü kontrol et
+      await login(data.user);
       toast.success("Giriş başarılı!", { description: "Yönlendiriliyorsunuz..." });
-      navigate("/profil");
+      navigate("/"); // Ana sayfaya yönlendir
     }
   };
 
