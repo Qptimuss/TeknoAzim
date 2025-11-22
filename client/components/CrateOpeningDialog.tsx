@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Gift, ImageIcon, Loader2 } from "lucide-react";
+import { Gift, ImageIcon, Loader2, Gem } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RARITIES } from "@/lib/store-items";
 
@@ -76,7 +76,12 @@ export default function CrateOpeningDialog({ open, onClose, isProcessing, wonFra
                 <p className={cn("font-semibold", rarityInfo.color)}>{rarityInfo.name}</p>
               )}
               {alreadyOwned && (
-                <p className="text-sm text-muted-foreground">(Bu çerçeveye zaten sahipsin)</p>
+                <div className="text-center mt-2 p-2 bg-muted rounded-md border border-border">
+                  <p className="text-sm text-muted-foreground">(Bu çerçeveye zaten sahipsin)</p>
+                  <p className="text-sm font-semibold text-green-500 flex items-center justify-center gap-1">
+                    +5 <Gem className="h-4 w-4" /> Teselli Ödülü!
+                  </p>
+                </div>
               )}
             </div>
           ) : (
