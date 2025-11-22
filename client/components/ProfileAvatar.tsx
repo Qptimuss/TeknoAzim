@@ -23,8 +23,9 @@ export default function ProfileAvatar({ profile, className }: ProfileAvatarProps
 
   const selectedFrame = FRAMES.find(f => f.name === profile.selected_frame);
 
+  // The core avatar element, which should fill its parent container.
   const avatarElement = (
-    <Avatar className={className}>
+    <Avatar className="h-full w-full">
       <AvatarImage src={profile.avatar_url || undefined} alt={profile.name || ''} />
       <AvatarFallback>
         <UserIcon />
@@ -33,14 +34,23 @@ export default function ProfileAvatar({ profile, className }: ProfileAvatarProps
   );
 
   if (profile.selected_frame === 'Nova') {
-    return <NovaFrame>{avatarElement}</NovaFrame>;
+    // Apply size to the NovaFrame wrapper
+    return <NovaFrame className={className}>{avatarElement}</NovaFrame>;
   }
 
   if (selectedFrame) {
-    // The parent component will handle padding and layout.
-    // This component just applies the frame's core classes.
-    return <div className={cn(selectedFrame.className)}>{avatarElement}</div>;
+    // Apply size and frame styles to the wrapper div.
+    // The avatarElement will fill the space inside the border/padding.
+    return <div className={cn(selectedFrame.className, className)}>{avatarElement}</div>;
   }
 
-  return avatarElement;
+  // No frame, just the avatar with the size class.
+  return (
+    <Avatar className={className}>
+      <AvatarImage src={profile.avatar_url || undefined} alt={profile.name || ''} />
+      <AvatarFallback>
+        <UserIcon />
+      </AvatarFallback>
+    </Avatar>
+  );
 }
