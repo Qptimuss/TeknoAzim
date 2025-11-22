@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { pipeline } from "https://esm.sh/@xenova/transformers@2.17.1";
+import { pipeline, type Pipeline } from "https://esm.sh/@xenova/transformers@2.17.1";
 
 // CORS headers for cross-origin requests
 const corsHeaders = {
@@ -8,26 +8,34 @@ const corsHeaders = {
 };
 
 // --- Katman 1: Anahtar Kelime Filtresi ---
-// Bu listeyi istediğimiz gibi genişletebiliriz.
 const bannedWords = [
   "aptal", "salak", "gerizekalı", // Hakaret
-  // --- Cinsel içerik ve küfürler buraya eklenebilir ---
-  // Örnek olarak birkaç kelime ekliyorum, bu liste detaylandırılmalı.
   "lan", "oç", "amk", 
 ];
 
-// Metnin içinde yasaklı kelime olup olmadığını kontrol eden fonksiyon
 function containsBannedWords(text: string): boolean {
   const lowerCaseText = text.toLowerCase();
   return bannedWords.some(word => lowerCaseText.includes(word));
 }
 
-// --- Katman 2: Yapay Zeka Modeli ---
-// Modeli bir kere yükleyip tekrar kullanmak için sınıf dışında tanımlıyoruz.
-const classifier = await pipeline('text-classification', 'savasy/bert-base-turkish-toxicity-classifier');
+// --- Katman 2: Yapay Zeka Modeli (Tembel Yükleme) ---
+let classifier: Pipeline | null = null;
+
+async function getClassifier() {
+  if (classifier === null) {
+    try {
+      console.log("AI model is loading for the first time...");
+      classifier = await pipeline('text-classification', 'savasy/bert-base-turkish-toxicity-classifier');
+      console.log("AI model loaded successfully.");
+    } catch (e) {
+      console.error("Failed to load text classification model:", e);
+      throw new Error("AI modeli yüklenemedi. Lütfen daha sonra tekrar deneyin.");
+    }
+  }
+  return classifier;
+}
 
 serve(async (req) => {
-  // Handle OPTIONS request for CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -51,12 +59,11 @@ serve(async (req) => {
       });
     }
 
-    // 2. Katman Kontrolü
-    const result = await classifier(text);
-    const topResult = result[0];
+    // 2. Katman Kontrolü (Modeli burada çağır)
+    const aiClassifier = await getClassifier();
+    const result = await aiClassifier(text);
+    const topResult = Array.isArray(result) ? result[0] : result;
 
-    // Modelin sonucuna göre karar ver.
-    // 'TOXIC' etiketini %90'dan fazla bir güvenle tahmin ederse engelle.
     if (topResult.label === 'TOXIC' && topResult.score > 0.9) {
       return new Response(JSON.stringify({
         isAllowed: false,
@@ -72,8 +79,8 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error(error);
-    return new Response(JSON.stringify({ error: 'An internal error occurred.' }), {
+    console.error("Error in Edge Function:", error);
+    return new Response(JSON.stringify({ error: error.message || 'An internal error occurred.' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
