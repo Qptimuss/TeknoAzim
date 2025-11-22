@@ -6,8 +6,37 @@ import CrateInfoDialog from "@/components/CrateInfoDialog";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { RARITIES, FRAMES } from "@/lib/store-items";
+import { supabase } from "@/integrations/supabase/client";
 
 const CRATE_COST = 10;
+
+// Helper function to select a random frame based on rarity
+const selectRandomFrame = () => {
+  const rand = Math.random() * 100;
+  let selectedRarityName: string;
+
+  if (rand < 50) { // 50% chance for Sıradan
+    selectedRarityName = RARITIES.SIRADAN.name;
+  } else if (rand < 80) { // 30% chance for Sıradışı
+    selectedRarityName = RARITIES.SIRADISI.name;
+  } else if (rand < 95) { // 15% chance for Ender
+    selectedRarityName = RARITIES.ENDER.name;
+  } else { // 5% chance for Efsanevi
+    selectedRarityName = RARITIES.EFSANEVI.name;
+  }
+
+  const framesInRarity = FRAMES.filter(frame => frame.rarity === selectedRarityName);
+  
+  // Fallback to common if no frames for a given rarity exist, to prevent errors
+  if (framesInRarity.length === 0) {
+    const commonFrames = FRAMES.filter(frame => frame.rarity === RARITIES.SIRADAN.name);
+    return commonFrames[Math.floor(Math.random() * commonFrames.length)];
+  }
+
+  const randomFrameIndex = Math.floor(Math.random() * framesInRarity.length);
+  return framesInRarity[randomFrameIndex];
+};
 
 export default function Magaza() {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
@@ -38,26 +67,50 @@ export default function Magaza() {
 
     await toast.promise(
       async () => {
-        // Simulate server delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Deduct gems
-        await updateUser({ gems: user.gems - CRATE_COST });
+        // 1. Select a random frame
+        const wonFrame = selectRandomFrame();
 
-        // TODO: Implement actual crate opening logic here
-        // For now, just show a success message
-        return { success: true };
+        // 2. Get current user data to ensure atomicity
+        const { data: currentProfile, error: fetchError } = await supabase
+          .from('profiles')
+          .select('gems, owned_frames')
+          .eq('id', user.id)
+          .single();
+
+        if (fetchError || !currentProfile) {
+          throw new Error("Kullanıcı profili alınamadı.");
+        }
+
+        if (currentProfile.gems < CRATE_COST) {
+          throw new Error("Yetersiz bakiye.");
+        }
+
+        // 3. Prepare update payload
+        const newGems = currentProfile.gems - CRATE_COST;
+        const currentFrames = currentProfile.owned_frames || [];
+        
+        const alreadyOwned = currentFrames.includes(wonFrame.name);
+        const newFrames = alreadyOwned ? currentFrames : [...currentFrames, wonFrame.name];
+
+        // 4. Update the database and then the local state via updateUser
+        await updateUser({ gems: newGems, owned_frames: newFrames });
+
+        return { wonFrame, alreadyOwned };
       },
       {
         loading: "Sandık açılıyor...",
-        success: () => {
+        success: ({ wonFrame, alreadyOwned }) => {
           setIsOpening(false);
-          // TODO: Replace with actual item won
-          return "Tebrikler! Sandık açıldı (Ödül sistemi yakında eklenecek).";
+          if (alreadyOwned) {
+            return `"${wonFrame.name}" (${wonFrame.rarity}) kazandın, ama zaten sende vardı!`;
+          }
+          return `Tebrikler! Yeni bir çerçeve kazandın: "${wonFrame.name}" (${wonFrame.rarity})!`;
         },
-        error: () => {
+        error: (err) => {
           setIsOpening(false);
-          return "Sandık açılırken bir hata oluştu.";
+          // Refresh user data in case of error to sync gems
+          updateUser({});
+          return err.message || "Sandık açılırken bir hata oluştu.";
         },
       }
     );
