@@ -523,9 +523,19 @@ export default function ProfilePage() {
                         onClick={() => isOwned && handleFrameSelect(frame.name)}
                         disabled={!isOwned}
                       >
-                        <div className={cn("w-24 h-24 flex items-center justify-center", frame.className)}>
-                          <ImageIcon className="h-10 w-10 text-muted-foreground" />
-                        </div>
+                        {frame.name === 'Nova' ? (
+                          <div className="w-24 h-24 flex items-center justify-center">
+                            <NovaFrame>
+                              <div className="w-20 h-20 flex items-center justify-center bg-background rounded-full">
+                                <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                              </div>
+                            </NovaFrame>
+                          </div>
+                        ) : (
+                          <div className={cn("w-24 h-24 flex items-center justify-center", frame.className)}>
+                            <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                          </div>
+                        )}
                         {!isOwned && <Lock className="absolute bottom-1 right-1 h-4 w-4 text-foreground bg-background rounded-full p-0.5" />}
                         {isSelected && <CheckCircle className="absolute top-1 right-1 h-5 w-5 text-primary bg-background rounded-full" />}
                       </Button>
