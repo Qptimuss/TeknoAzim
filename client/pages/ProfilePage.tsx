@@ -35,6 +35,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { FRAMES } from "@/lib/store-items";
 import NovaFrame from "@/components/frames/NovaFrame";
+import ImageViewerDialog from "@/components/ImageViewerDialog";
 
 export default function ProfilePage() {
   const { user, updateUser, loading, logout } = useAuth();
@@ -44,6 +45,7 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [postToDelete, setPostToDelete] = useState<{id: string, imageUrl?: string | null} | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   // Inline editing states
   const [isEditingName, setIsEditingName] = useState(false);
@@ -98,12 +100,10 @@ export default function ProfilePage() {
     let successMessage: string;
 
     if (user.selected_frame === frameName) {
-      // Unequip action: remove frame and refund gems
       const newGems = (user.gems || 0) + 5;
       updateData = { selected_frame: null, gems: newGems };
       successMessage = 'Çerçeve kaldırıldı ve 5 elmas geri kazanıldı!';
     } else {
-      // Equip action: set new frame
       updateData = { selected_frame: frameName };
       successMessage = 'Çerçeve güncellendi!';
     }
@@ -115,7 +115,6 @@ export default function ProfilePage() {
     });
   };
 
-  // --- Name Handlers ---
   const handleNameSave = async () => {
     if (!user) return;
     setIsEditingName(false);
@@ -139,7 +138,6 @@ export default function ProfilePage() {
     setNameValue(user?.name || "");
   };
 
-  // --- Description Handlers ---
   const handleDescriptionSave = async () => {
     if (!user) return;
     setIsEditingDescription(false);
@@ -163,7 +161,6 @@ export default function ProfilePage() {
     setDescriptionValue(user?.description || "");
   };
 
-  // --- Avatar Handlers ---
   const handleAvatarEditClick = () => {
     fileInputRef.current?.click();
   };
@@ -291,25 +288,31 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center mb-6 space-y-2 text-center">
                 
                 <div className="flex items-center justify-center gap-2">
-                  {user.selected_frame === 'Nova' ? (
-                    <NovaFrame>
-                      <Avatar className="h-24 w-24">
-                        <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-                        <AvatarFallback>
-                          <UserIcon className="h-12 w-12 text-muted-foreground" />
-                        </AvatarFallback>
-                      </Avatar>
-                    </NovaFrame>
-                  ) : (
-                    <div className={cn("p-1", selectedFrame?.className)}>
-                      <Avatar className="h-24 w-24">
-                        <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-                        <AvatarFallback>
-                          <UserIcon className="h-12 w-12 text-muted-foreground" />
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                  )}
+                  <button
+                    onClick={() => user.avatar_url && setIsViewerOpen(true)}
+                    disabled={!user.avatar_url}
+                    className="disabled:cursor-default"
+                  >
+                    {user.selected_frame === 'Nova' ? (
+                      <NovaFrame>
+                        <Avatar className="h-24 w-24">
+                          <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
+                          <AvatarFallback>
+                            <UserIcon className="h-12 w-12 text-muted-foreground" />
+                          </AvatarFallback>
+                        </Avatar>
+                      </NovaFrame>
+                    ) : (
+                      <div className={cn("p-1", selectedFrame?.className)}>
+                        <Avatar className="h-24 w-24">
+                          <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
+                          <AvatarFallback>
+                            <UserIcon className="h-12 w-12 text-muted-foreground" />
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                    )}
+                  </button>
                   <Button 
                     variant="ghost" 
                     size="icon" 
@@ -601,6 +604,15 @@ export default function ProfilePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {user.avatar_url && (
+        <ImageViewerDialog
+          open={isViewerOpen}
+          onOpenChange={setIsViewerOpen}
+          imageUrl={user.avatar_url}
+          imageAlt={user.name || "Profil Fotoğrafı"}
+        />
+      )}
     </>
   );
 }
