@@ -86,13 +86,12 @@ export default function Navbar() {
                       </Avatar>
                     </Link>
                     <div className="flex items-center gap-1 mt-1">
-                      <Link to="/magaza" className="flex items-center gap-1 bg-muted/50 rounded-full px-2 py-0.5 text-xs">
-                        <span className="font-bold">{user.gems ?? 0}</span>
-                        <Gem className="h-3 w-3 text-green-500" />
-                      </Link>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                          <div className="flex items-center gap-1 bg-muted/50 rounded-full px-2 py-0.5 text-xs cursor-help">
+                            <span className="font-bold">{user.gems ?? 0}</span>
+                            <Gem className="h-3 w-3 text-green-500" />
+                          </div>
                         </TooltipTrigger>
                         <TooltipContent>
                           <div className="text-center">
