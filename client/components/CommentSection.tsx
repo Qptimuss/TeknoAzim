@@ -10,8 +10,7 @@ import { addComment, deleteComment } from "@/lib/blog-store";
 import { CommentWithAuthor } from "@shared/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Trash2 } from "lucide-react";
+import { MoreHorizontal, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +24,13 @@ import {
 import { Link } from "react-router-dom";
 import { awardBadge } from "@/lib/gamification";
 import { supabase } from "@/integrations/supabase/client";
+import ProfileAvatar from "./ProfileAvatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const commentSchema = z.object({
   content: z.string().min(3, "Yorum en az 3 karakter olmalıdır."),
@@ -126,18 +132,28 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
                     {comment.profiles ? (
-                      <Link to={`/kullanici/${comment.profiles.id}`} className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-1 border border-border transition-all duration-200 hover:border-primary hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={comment.profiles?.avatar_url || undefined} />
-                          <AvatarFallback>{comment.profiles?.name?.charAt(0) || 'A'}</AvatarFallback>
-                        </Avatar>
-                        <span className="font-semibold text-foreground">{comment.profiles?.name || "Anonim"}</span>
-                      </Link>
+                      <>
+                        <Link to={`/kullanici/${comment.profiles.id}`} className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-1 border border-border transition-all duration-200 hover:border-primary hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5">
+                          <ProfileAvatar profile={comment.profiles} className="h-6 w-6" />
+                          <span className="font-semibold text-foreground">{comment.profiles?.name || "Anonim"}</span>
+                        </Link>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-6 w-6">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Seçenekler</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem asChild>
+                              <Link to={`/kullanici/${comment.profiles.id}`}>Kullanıcının profiline bak</Link>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </>
                     ) : (
                       <div className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-1 border border-border">
-                        <Avatar className="h-6 w-6">
-                          <AvatarFallback>{'A'}</AvatarFallback>
-                        </Avatar>
+                        <ProfileAvatar profile={null} className="h-6 w-6" />
                         <p className="font-semibold text-foreground">Anonim</p>
                       </div>
                     )}
