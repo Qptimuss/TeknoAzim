@@ -59,7 +59,7 @@ export default function CrateInfoDialog({ open, onOpenChange }: CrateInfoDialogP
                       <div className="w-24 h-24 flex items-center justify-center">
                         {frame.name === 'Nova' ? (
                           <div className="w-20 h-20">
-                            <NovaFrame>
+                            <NovaFrame animated={false}>
                               <div className="w-full h-full flex items-center justify-center">
                                 <ImageIcon className="h-8 w-8 text-muted-foreground" />
                               </div>

@@ -49,9 +49,10 @@ function Stars() {
 // This is the main component that wraps the Avatar
 interface NovaFrameProps {
   children: React.ReactNode;
+  animated?: boolean;
 }
 
-export default function NovaFrame({ children }: NovaFrameProps) {
+export default function NovaFrame({ children, animated = true }: NovaFrameProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -67,7 +68,7 @@ export default function NovaFrame({ children }: NovaFrameProps) {
       
       {/* The 3D canvas for the stars, layered on top */}
       <div className="absolute inset-[-10%] pointer-events-none">
-        {isMounted && containerRef.current && (
+        {animated && isMounted && containerRef.current && (
           <Canvas 
             camera={{ position: [0, 0, 2], fov: 75 }}
             eventSource={containerRef} // Explicitly set the event source
