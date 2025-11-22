@@ -40,7 +40,9 @@ export default function BlogCard({ post, showDelete = false, onDelete, hideProfi
   const handleViewPhoto = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    setIsViewerOpen(true);
+    if (post.profiles?.avatar_url) {
+      setIsViewerOpen(true);
+    }
   };
 
   return (
@@ -110,7 +112,7 @@ export default function BlogCard({ post, showDelete = false, onDelete, hideProfi
                           <DropdownMenuItem asChild>
                             <Link to={`/kullanici/${post.profiles.id}`}>Kullanıcının profiline bak</Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={handleViewPhoto}>
+                          <DropdownMenuItem onClick={handleViewPhoto} disabled={!post.profiles.avatar_url}>
                             <Eye className="mr-2 h-4 w-4" />
                             <span>Fotoğrafa Bak</span>
                           </DropdownMenuItem>
@@ -132,12 +134,14 @@ export default function BlogCard({ post, showDelete = false, onDelete, hideProfi
           <LikeDislikeButtons postId={post.id} />
         </CardFooter>
       </Card>
-      <ImageViewerDialog
-        open={isViewerOpen}
-        onOpenChange={setIsViewerOpen}
-        imageUrl={post.profiles?.avatar_url}
-        imageAlt={post.profiles?.name || "Profil Fotoğrafı"}
-      />
+      {post.profiles?.avatar_url && (
+        <ImageViewerDialog
+          open={isViewerOpen}
+          onOpenChange={setIsViewerOpen}
+          imageUrl={post.profiles.avatar_url}
+          imageAlt={post.profiles.name || "Profil Fotoğrafı"}
+        />
+      )}
     </>
   );
 }

@@ -46,7 +46,7 @@ interface CommentSectionProps {
 export default function CommentSection({ postId, comments, onCommentAdded: onCommentsChange }: CommentSectionProps) {
   const { user, updateUser } = useAuth();
   const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
-  const [viewerState, setViewerState] = useState<{ open: boolean; url: string | null | undefined; alt: string }>({ open: false, url: '', alt: '' });
+  const [viewerState, setViewerState] = useState<{ open: boolean; url: string; alt: string }>({ open: false, url: '', alt: '' });
 
   const form = useForm<z.infer<typeof commentSchema>>({
     resolver: zodResolver(commentSchema),
@@ -122,11 +122,13 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
   };
 
   const handleViewPhoto = (comment: CommentWithAuthor) => {
-    setViewerState({
-      open: true,
-      url: comment.profiles?.avatar_url,
-      alt: comment.profiles?.name || "Profil Fotoğrafı",
-    });
+    if (comment.profiles?.avatar_url) {
+      setViewerState({
+        open: true,
+        url: comment.profiles.avatar_url,
+        alt: comment.profiles.name || "Profil Fotoğrafı",
+      });
+    }
   };
 
   return (
@@ -159,7 +161,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                               <DropdownMenuItem asChild>
                                 <Link to={`/kullanici/${comment.profiles.id}`}>Kullanıcının profiline bak</Link>
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleViewPhoto(comment)}>
+                              <DropdownMenuItem onClick={() => handleViewPhoto(comment)} disabled={!comment.profiles.avatar_url}>
                                 <Eye className="mr-2 h-4 w-4" />
                                 <span>Fotoğrafa Bak</span>
                               </DropdownMenuItem>

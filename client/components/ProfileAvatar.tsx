@@ -1,49 +1,56 @@
-import { Profile } from "@shared/api";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import NovaFrame from "./frames/NovaFrame";
-import { FRAMES } from "@/lib/store-items";
+import React from 'react';
+import { cn } from '@/lib/utils';
+import { Profile } from '@shared/api';
+import { FRAMES } from '@/lib/store-items';
+import NovaFrame from '@/components/frames/NovaFrame';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { User as UserIcon } from 'lucide-react';
 
 interface ProfileAvatarProps {
-  profile: Pick<Profile, 'name' | 'avatar_url' | 'selected_frame'> | null;
-  className?: string;
+  profile: Profile | null;
+  className?: string; // This will be for the size, e.g., "h-8 w-8"
 }
 
-const getInitials = (name?: string | null) => {
-  if (!name) return "AN";
-  const names = name.trim().split(/\s+/);
-  if (names.length === 1) {
-    return names[0].substring(0, 2).toUpperCase();
+const ProfileAvatar = ({ profile, className }: ProfileAvatarProps) => {
+  if (!profile) {
+    return (
+      <Avatar className={className}>
+        <AvatarFallback>
+          <UserIcon className="h-4/6 w-4/6" />
+        </AvatarFallback>
+      </Avatar>
+    );
   }
-  return (names[0][0] + (names[1]?.[0] || '')).toUpperCase();
-};
 
-export default function ProfileAvatar({ profile, className }: ProfileAvatarProps) {
-  const selectedFrame = FRAMES.find(f => f.name === profile?.selected_frame);
+  const selectedFrame = FRAMES.find(f => f.name === profile.selected_frame);
 
-  const AvatarComponent = (
-    <Avatar className={cn("h-8 w-8", className)}>
-      <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.name || 'Avatar'} />
+  const avatarComponent = (
+    <Avatar className={className}>
+      <AvatarImage src={profile.avatar_url || undefined} alt={profile.name || ''} />
       <AvatarFallback>
-        {profile?.name ? getInitials(profile.name) : <UserIcon className="h-4 w-4" />}
+        <UserIcon className="h-4/6 w-4/6" />
       </AvatarFallback>
     </Avatar>
   );
 
-  if (profile?.selected_frame === 'Nova') {
+  if (profile.selected_frame === 'Nova') {
+    // NovaFrame is special and has its own structure.
+    // It should be able to wrap a sized avatar.
+    return <NovaFrame>{avatarComponent}</NovaFrame>;
+  }
+
+  if (selectedFrame) {
+    // For other frames, we wrap the avatar in a div with the frame's styles.
+    // The div itself shouldn't have size, it should derive from the child.
     return (
-      <div className={cn("relative flex items-center justify-center", className)}>
-        <NovaFrame animated={false}>
-          {AvatarComponent}
-        </NovaFrame>
+      <div className={cn("w-fit h-fit", selectedFrame.className)}>
+        {avatarComponent}
       </div>
     );
   }
 
-  return (
-    <div className={cn("relative flex items-center justify-center p-0.5", selectedFrame?.className, className)}>
-      {AvatarComponent}
-    </div>
-  );
-}
+  // Default avatar with no frame
+  return avatarComponent;
+};
+
+export default ProfileAvatar;

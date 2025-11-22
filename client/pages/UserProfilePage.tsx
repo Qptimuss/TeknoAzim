@@ -4,7 +4,7 @@ import { getProfileById, getPostsByUserId } from "@/lib/blog-store";
 import { Profile, BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CheckCircle } from "lucide-react";
+import { User as UserIcon, CheckCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { calculateLevel, ALL_BADGES, TITLES } from "@/lib/gamification";
@@ -12,15 +12,6 @@ import { cn } from "@/lib/utils";
 import { FRAMES } from "@/lib/store-items";
 import NovaFrame from "@/components/frames/NovaFrame";
 import ImageViewerDialog from "@/components/ImageViewerDialog";
-
-const getInitials = (name?: string | null) => {
-  if (!name) return "AN";
-  const names = name.trim().split(/\s+/);
-  if (names.length === 1) {
-    return names[0].substring(0, 2).toUpperCase();
-  }
-  return (names[0][0] + (names[1]?.[0] || '')).toUpperCase();
-};
 
 export default function UserProfilePage() {
   const { userId } = useParams<{ userId: string }>();
@@ -79,15 +70,16 @@ export default function UserProfilePage() {
             <div className="bg-card border border-border rounded-lg p-8">
               <div className="flex flex-col items-center mb-6 text-center">
                 <button
-                  onClick={() => setIsViewerOpen(true)}
-                  className="mb-4"
+                  onClick={() => userProfile.avatar_url && setIsViewerOpen(true)}
+                  disabled={!userProfile.avatar_url}
+                  className="disabled:cursor-default mb-4"
                 >
                   {userProfile.selected_frame === 'Nova' ? (
                     <NovaFrame>
                       <Avatar className="h-24 w-24">
                         <AvatarImage src={userProfile.avatar_url || undefined} alt={userProfile.name || ''} />
-                        <AvatarFallback className="text-4xl font-bold">
-                          {getInitials(userProfile.name)}
+                        <AvatarFallback>
+                          <UserIcon className="h-12 w-12 text-muted-foreground" />
                         </AvatarFallback>
                       </Avatar>
                     </NovaFrame>
@@ -95,8 +87,8 @@ export default function UserProfilePage() {
                     <div className={cn("p-1", selectedFrame?.className)}>
                       <Avatar className="h-24 w-24">
                         <AvatarImage src={userProfile.avatar_url || undefined} alt={userProfile.name || ''} />
-                        <AvatarFallback className="text-4xl font-bold">
-                          {getInitials(userProfile.name)}
+                        <AvatarFallback>
+                          <UserIcon className="h-12 w-12 text-muted-foreground" />
                         </AvatarFallback>
                       </Avatar>
                     </div>
@@ -179,12 +171,14 @@ export default function UserProfilePage() {
           </div>
         </div>
       </div>
-      <ImageViewerDialog
-        open={isViewerOpen}
-        onOpenChange={setIsViewerOpen}
-        imageUrl={userProfile.avatar_url}
-        imageAlt={userProfile.name || "Profil Fotoğrafı"}
-      />
+      {userProfile.avatar_url && (
+        <ImageViewerDialog
+          open={isViewerOpen}
+          onOpenChange={setIsViewerOpen}
+          imageUrl={userProfile.avatar_url}
+          imageAlt={userProfile.name || "Profil Fotoğrafı"}
+        />
+      )}
     </>
   );
 }
