@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { calculateLevel, ALL_BADGES, TITLES } from "@/lib/gamification";
 import { cn } from "@/lib/utils";
 import { FRAMES } from "@/lib/store-items";
+import NovaFrame from "@/components/frames/NovaFrame";
 
 export default function UserProfilePage() {
   const { userId } = useParams<{ userId: string }>();
@@ -65,14 +66,27 @@ export default function UserProfilePage() {
         <div className="lg:col-span-1">
           <div className="bg-card border border-border rounded-lg p-8">
             <div className="flex flex-col items-center mb-6 text-center">
-              <div className={cn("p-1 mb-4", selectedFrame?.className)}>
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src={userProfile.avatar_url || undefined} alt={userProfile.name || ''} />
-                  <AvatarFallback>
-                    <UserIcon className="h-12 w-12 text-muted-foreground" />
-                  </AvatarFallback>
-                </Avatar>
-              </div>
+              {userProfile.selected_frame === 'Nova' ? (
+                <div className="mb-4">
+                  <NovaFrame>
+                    <Avatar className="h-24 w-24">
+                      <AvatarImage src={userProfile.avatar_url || undefined} alt={userProfile.name || ''} />
+                      <AvatarFallback>
+                        <UserIcon className="h-12 w-12 text-muted-foreground" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </NovaFrame>
+                </div>
+              ) : (
+                <div className={cn("p-1 mb-4", selectedFrame?.className)}>
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage src={userProfile.avatar_url || undefined} alt={userProfile.name || ''} />
+                    <AvatarFallback>
+                      <UserIcon className="h-12 w-12 text-muted-foreground" />
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+              )}
               <h2 className="text-card-foreground text-2xl font-outfit font-bold">{userProfile.name}</h2>
               {userProfile.selected_title && (
                 <p className="text-yellow-400 font-semibold text-sm mt-1 flex items-center gap-1">

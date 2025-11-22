@@ -34,6 +34,7 @@ import ImageCropperDialog from "@/components/ImageCropperDialog";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { FRAMES } from "@/lib/store-items";
+import NovaFrame from "@/components/frames/NovaFrame";
 
 export default function ProfilePage() {
   const { user, updateUser, loading, logout } = useAuth();
@@ -290,14 +291,25 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center mb-6 space-y-2 text-center">
                 
                 <div className="flex items-center justify-center gap-2">
-                  <div className={cn("p-1", selectedFrame?.className)}>
-                    <Avatar className="h-24 w-24">
-                      <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-                      <AvatarFallback>
-                        <UserIcon className="h-12 w-12 text-muted-foreground" />
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
+                  {user.selected_frame === 'Nova' ? (
+                    <NovaFrame>
+                      <Avatar className="h-24 w-24">
+                        <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
+                        <AvatarFallback>
+                          <UserIcon className="h-12 w-12 text-muted-foreground" />
+                        </AvatarFallback>
+                      </Avatar>
+                    </NovaFrame>
+                  ) : (
+                    <div className={cn("p-1", selectedFrame?.className)}>
+                      <Avatar className="h-24 w-24">
+                        <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
+                        <AvatarFallback>
+                          <UserIcon className="h-12 w-12 text-muted-foreground" />
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                  )}
                   <Button 
                     variant="ghost" 
                     size="icon" 
