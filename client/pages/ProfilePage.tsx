@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, User } from "@/contexts/AuthContext";
 import { getPostsByUserId, uploadAvatar, deleteBlogPost } from "@/lib/blog-store";
 import { BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
@@ -92,10 +92,24 @@ export default function ProfilePage() {
 
   const handleFrameSelect = async (frameName: string) => {
     if (!user) return;
-    const newFrame = user.selected_frame === frameName ? null : frameName;
-    await toast.promise(updateUser({ selected_frame: newFrame }), {
-      loading: 'Çerçeve ayarlanıyor...',
-      success: 'Çerçeve güncellendi!',
+
+    let updateData: Partial<User>;
+    let successMessage: string;
+
+    if (user.selected_frame === frameName) {
+      // Unequip action: remove frame and refund gems
+      const newGems = (user.gems || 0) + 5;
+      updateData = { selected_frame: null, gems: newGems };
+      successMessage = 'Çerçeve kaldırıldı ve 5 elmas geri kazanıldı!';
+    } else {
+      // Equip action: set new frame
+      updateData = { selected_frame: frameName };
+      successMessage = 'Çerçeve güncellendi!';
+    }
+
+    await toast.promise(updateUser(updateData), {
+      loading: 'İşleniyor...',
+      success: successMessage,
       error: 'Hata oluştu.',
     });
   };

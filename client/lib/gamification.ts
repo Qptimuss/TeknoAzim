@@ -184,7 +184,7 @@ export const awardBadge = async (userId: string, badgeName: string): Promise<Pro
   }
 
   toast.success("Yeni Rozet Kazandın!", {
-    description: `"${badgeName}" rozetini kazandın, ${EXP_ACTIONS.EARN_BADGE} EXP ve 10 Gem elde ettin!`,
+    description: `"${badgeName}" rozetini kazandın, ${EXP_ACTIONS.EARN_BADGE} EXP ve 10 Elmas elde ettin!`,
   });
 
   if (newLevel > (profile.level || 1)) {

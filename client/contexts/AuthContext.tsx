@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return profile; // Return original profile on error
       }
       
-      toast.success("Günlük Giriş Ödülü", { description: "Hesabına 5 Gem eklendi!" });
+      toast.success("Günlük Giriş Ödülü", { description: "Hesabına 5 Elmas eklendi!" });
       return { ...updatedProfile, email: profile.email } as User;
     }
     return profile; // No reward needed, return original profile

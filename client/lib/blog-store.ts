@@ -297,7 +297,7 @@ export const getPostsByUserId = async (userId: string): Promise<BlogPostWithAuth
 export const getProfileById = async (userId: string): Promise<Profile | null> => {
   const { data, error } = await supabase
     .from("profiles")
-    .select('id, name, avatar_url, description, level, exp, badges, selected_title')
+    .select('id, name, avatar_url, description, level, exp, badges, selected_title, selected_frame')
     .eq('id', userId)
     .single();
 
