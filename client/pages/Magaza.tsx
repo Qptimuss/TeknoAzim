@@ -58,7 +58,7 @@ export default function Magaza() {
 
     if (user.gems < CRATE_COST) {
       toast.error("Yetersiz Bakiye", {
-        description: `Sandığı açmak için ${CRATE_COST} geme ihtiyacın var. Sende ${user.gems} gem var.`,
+        description: `Sandığı açmak için ${CRATE_COST} elmasa ihtiyacın var. Sende ${user.gems} elmas var.`,
       });
       return;
     }
