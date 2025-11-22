@@ -77,9 +77,6 @@ export default function Magaza() {
 
       if (isOwned) {
         newGems += 5; // 5 elmas iade et
-        toast.info("Bu çerçeveye zaten sahipsin!", {
-          description: "Teselli ödülü olarak 5 elmas kazandın."
-        });
       } else {
         newFrames = [...currentFrames, frame.name];
       }
