@@ -37,6 +37,7 @@ import { FRAMES } from "@/lib/store-items";
 import NovaFrame from "@/components/frames/NovaFrame";
 import ImageViewerDialog from "@/components/ImageViewerDialog";
 import { filterContent } from "@/lib/content-filter";
+import ContentFilterTester from "@/components/ContentFilterTester";
 
 export default function ProfilePage() {
   const { user, updateUser, loading, logout } = useAuth();
@@ -508,6 +509,9 @@ export default function ProfilePage() {
           </div>
 
           <div className="lg:col-span-2">
+            <div className="mb-8">
+              <ContentFilterTester />
+            </div>
             <h2 className="text-foreground text-2xl font-outfit font-bold mb-4">Bloglarım ({userPosts.length})</h2>
             {postsLoading ? (
               <p className="text-muted-foreground">Bloglar yükleniyor...</p>
