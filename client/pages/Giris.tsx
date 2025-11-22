@@ -50,6 +50,7 @@ export default function Giris() {
       await login(data.user);
       toast.success("Giriş başarılı!", { description: "Yönlendiriliyorsunuz..." });
       navigate("/"); // Ana sayfaya yönlendir
+      return; // Başarılı yönlendirmeden sonra hemen çık
     }
   };
 
