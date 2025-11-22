@@ -29,7 +29,7 @@ const NovaFrame = ({ children, className }: NovaFrameProps) => {
           );
         })}
       </div>
-      <div className="relative z-10 p-1 bg-gradient-to-tr from-purple-500 via-indigo-700 to-fuchsia-500 rounded-full shadow-[0_0_20px_theme(colors.purple.400)]">
+      <div className="relative z-10 p-1 bg-gradient-to-tr from-purple-500 via-indigo-700 to-fuchsia-500 rounded-full shadow-[0_0_20px_theme(colors.purple.400),inset_0_0_5px_rgba(0,0,0,0.4)]">
         {children}
       </div>
     </div>
