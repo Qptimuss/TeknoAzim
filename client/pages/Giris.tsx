@@ -17,7 +17,13 @@ export default function Giris() {
     password: "",
   });
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { user } = useAuth(); // Sadece kullanıcı durumunu kontrol etmek için alıyoruz
+
+  // Eğer kullanıcı zaten giriş yapmışsa, ana sayfaya yönlendir.
+  if (user) {
+    navigate("/");
+    return null;
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -46,16 +52,9 @@ export default function Giris() {
         toast.error("Giriş Hatası", { description: error.message });
       }
     } else if (data.user) {
-      // Başarılı giriş: AuthContext'i güncelle ve günlük ödülü kontrol et
-      await login(data.user);
+      // Başarılı giriş. Yönlendirmeyi AuthContext'in otomatik olarak yapmasını bekliyoruz.
       toast.success("Giriş başarılı!", { description: "Yönlendiriliyorsunuz..." });
-      
-      // Yönlendirmeyi 100ms geciktirerek React'e state'i güncellemesi için zaman tanıyoruz.
-      setTimeout(() => {
-        navigate("/"); 
-      }, 100);
-      
-      return;
+      // NOT: Burada navigate() çağırmıyoruz. AuthContext'in oturum değişikliğini yakalamasını bekliyoruz.
     }
   };
 
