@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const today = new Date();
 
     if (!lastClaimed || !isSameDay(lastClaimed, today)) {
-      const newGems = (profile.gems || 0) + 5;
+      const newGems = (profile.gems || 0) + 20;
       const { data: updatedProfile, error } = await supabase
         .from('profiles')
         .update({ gems: newGems, last_daily_reward_claimed_at: today.toISOString() })
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return profile; // Return original profile on error
       }
       
-      toast.success("Günlük Giriş Ödülü", { description: "Hesabına 5 Elmas eklendi!" });
+      toast.success("Günlük Giriş Ödülü", { description: "Hesabına 20 Elmas eklendi!" });
       return { ...updatedProfile, email: profile.email } as User;
     }
     return profile; // No reward needed, return original profile
