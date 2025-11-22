@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, CheckCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { calculateLevel, ALL_BADGES, TITLES } from "@/lib/gamification";
+import { calculateLevel, ALL_BADGES, TITLES, XP_ACTIONS } from "@/lib/gamification";
 import { cn } from "@/lib/utils";
 
 export default function UserProfilePage() {
@@ -46,9 +46,9 @@ export default function UserProfilePage() {
     return <div className="text-foreground text-center p-12">Kullanıcı bulunamadı.</div>;
   }
 
-  const { level, expForNextLevel, currentLevelExp } = calculateLevel(userProfile.exp || 0);
-  const expInCurrentLevel = (userProfile.exp || 0) - currentLevelExp;
-  const expProgress = expForNextLevel === 0 ? 100 : (expInCurrentLevel / expForNextLevel) * 100;
+  const { level, xpForNextLevel, currentLevelXp } = calculateLevel(userProfile.xp || 0);
+  const xpInCurrentLevel = (userProfile.xp || 0) - currentLevelXp;
+  const xpProgress = xpForNextLevel === 0 ? 100 : (xpInCurrentLevel / xpForNextLevel) * 100;
 
   const selectedTitleObject = Object.values(TITLES).find(t => t.name === userProfile.selected_title);
   const SelectedTitleIcon = selectedTitleObject ? selectedTitleObject.icon : CheckCircle;
@@ -84,15 +84,15 @@ export default function UserProfilePage() {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger className="w-full">
-                    <Progress value={expProgress} className="w-full" />
+                    <Progress value={xpProgress} className="w-full" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Toplam Deneyim: {userProfile.exp || 0} EXP</p>
+                    <p>Toplam Deneyim: {userProfile.xp || 0} XP</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
               <div className="text-center text-sm text-muted-foreground mt-2">
-                {`${expInCurrentLevel} / ${expForNextLevel} EXP`}
+                {`${xpInCurrentLevel} / ${xpForNextLevel} XP`}
               </div>
             </div>
 
@@ -128,7 +128,7 @@ export default function UserProfilePage() {
                 })}
               </div>
               <p className="text-xs text-muted-foreground mt-2 text-center">
-                Bir blog oluşturmak 25 EXP, bir rozet kazanmak 50 EXP verir.
+                Bir blog oluşturmak {XP_ACTIONS.CREATE_POST} XP, bir rozet kazanmak {XP_ACTIONS.EARN_BADGE} XP verir.
               </p>
             </div>
             {/* End of Badges Section */}

@@ -9,7 +9,7 @@ export interface Profile {
   avatar_url: string | null;
   description: string | null;
   level: number;
-  exp: number;
+  xp: number;
   badges: string[];
   selected_title?: string | null;
   owned_frames?: string[];

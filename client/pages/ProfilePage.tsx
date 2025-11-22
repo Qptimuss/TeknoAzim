@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, CheckCircle, Pencil, Check, X, Lock, ImageIcon } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { calculateLevel, ALL_BADGES, TITLES, removeExp, EXP_ACTIONS } from "@/lib/gamification";
+import { calculateLevel, ALL_BADGES, TITLES, removeXp, XP_ACTIONS } from "@/lib/gamification";
 import CreateBlogCard from "@/components/CreateBlogCard";
 import { cn } from "@/lib/utils";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -198,7 +198,7 @@ export default function ProfilePage() {
       await deleteBlogPost(postToDelete.id, postToDelete.imageUrl);
       setUserPosts(prev => prev.filter(p => p.id !== postToDelete.id));
       
-      const updatedProfile = await removeExp(user.id, EXP_ACTIONS.CREATE_POST);
+      const updatedProfile = await removeXp(user.id, XP_ACTIONS.CREATE_POST);
       if (updatedProfile) {
         updateUser(updatedProfile);
       }
@@ -255,9 +255,9 @@ export default function ProfilePage() {
     return null;
   }
 
-  const { level, expForNextLevel, currentLevelExp } = calculateLevel(user.exp || 0);
-  const expInCurrentLevel = (user.exp || 0) - currentLevelExp;
-  const expProgress = expForNextLevel === 0 ? 100 : (expInCurrentLevel / expForNextLevel) * 100;
+  const { level, xpForNextLevel, currentLevelXp } = calculateLevel(user.xp || 0);
+  const xpInCurrentLevel = (user.xp || 0) - currentLevelXp;
+  const xpProgress = xpForNextLevel === 0 ? 100 : (xpInCurrentLevel / xpForNextLevel) * 100;
 
   const selectedTitleObject = Object.values(TITLES).find(t => t.name === user.selected_title);
   const SelectedTitleIcon = selectedTitleObject ? selectedTitleObject.icon : CheckCircle;
@@ -367,15 +367,15 @@ export default function ProfilePage() {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger className="w-full">
-                      <Progress value={expProgress} className="w-full" />
+                      <Progress value={xpProgress} className="w-full" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Toplam Deneyim: {user.exp || 0} EXP</p>
+                      <p>Toplam Deneyim: {user.xp || 0} XP</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
                 <div className="text-center text-sm text-muted-foreground mt-2">
-                  {`${expInCurrentLevel} / ${expForNextLevel} EXP`}
+                  {`${xpInCurrentLevel} / ${xpForNextLevel} XP`}
                 </div>
               </div>
 
@@ -445,7 +445,7 @@ export default function ProfilePage() {
                   })}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Bir blog oluşturmak 25 EXP, bir rozet kazanmak 50 EXP verir.
+                  Bir blog oluşturmak {XP_ACTIONS.CREATE_POST} XP, bir rozet kazanmak {XP_ACTIONS.EARN_BADGE} XP verir.
                 </p>
               </div>
 
@@ -518,7 +518,7 @@ export default function ProfilePage() {
               <AlertDialogTitle>Blog Yazısını Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
               <AlertDialogDescription>
                 Bu işlem geri alınamaz. Blog yazınız, tüm yorumları ve oylarıyla birlikte kalıcı olarak silinecektir.
-                <span className="font-bold text-destructive"> Ayrıca, bu gönderiden kazandığınız 25 EXP'yi kaybedeceksiniz.</span>
+                <span className="font-bold text-destructive"> Ayrıca, bu gönderiden kazandığınız {XP_ACTIONS.CREATE_POST} XP'yi kaybedeceksiniz.</span>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

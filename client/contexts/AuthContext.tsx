@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: profile, error } = await supabase
       .from("profiles")
       .select(
-        "id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at"
+        "id, name, avatar_url, description, level, xp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at"
       )
       .eq("id", supabaseUser.id)
       .single();
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .update({ gems: newGems, last_daily_reward_claimed_at: today.toISOString() })
         .eq("id", profile.id)
         .select(
-          "id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at"
+          "id, name, avatar_url, description, level, xp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at"
         )
         .single();
 

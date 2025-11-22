@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
-import { removeExp, EXP_ACTIONS } from "@/lib/gamification";
+import { removeXp, XP_ACTIONS } from "@/lib/gamification";
 
 export default function BlogPostPage() {
   const { id } = useParams<{ id: string }>();
@@ -56,7 +56,7 @@ export default function BlogPostPage() {
     try {
       await deleteBlogPost(post.id, post.image_url);
       
-      const updatedProfile = await removeExp(user.id, EXP_ACTIONS.CREATE_POST);
+      const updatedProfile = await removeXp(user.id, XP_ACTIONS.CREATE_POST);
       if (updatedProfile) {
         updateUser(updatedProfile);
       }
@@ -200,7 +200,7 @@ export default function BlogPostPage() {
             <AlertDialogTitle>Blog Yazısını Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
             <AlertDialogDescription>
               Bu işlem geri alınamaz. Blog yazınız, tüm yorumları ve oylarıyla birlikte kalıcı olarak silinecektir.
-              <span className="font-bold text-destructive"> Ayrıca, bu gönderiden kazandığınız 25 EXP'yi kaybedeceksiniz.</span>
+              <span className="font-bold text-destructive"> Ayrıca, bu gönderiden kazandığınız {XP_ACTIONS.CREATE_POST} XP'yi kaybedeceksiniz.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
