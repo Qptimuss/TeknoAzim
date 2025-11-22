@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, CheckCircle, Pencil, Check, X, Lock, ImageIcon } from "lucide-react";
+import { CheckCircle, Pencil, Check, X, Lock, ImageIcon } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { calculateLevel, ALL_BADGES, TITLES, removeExp, EXP_ACTIONS } from "@/lib/gamification";
@@ -36,6 +36,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { FRAMES } from "@/lib/store-items";
 import NovaFrame from "@/components/frames/NovaFrame";
 import ImageViewerDialog from "@/components/ImageViewerDialog";
+
+const getInitials = (name?: string | null) => {
+  if (!name) return "AN";
+  const names = name.trim().split(/\s+/);
+  if (names.length === 1) {
+    return names[0].substring(0, 2).toUpperCase();
+  }
+  return (names[0][0] + (names[1]?.[0] || '')).toUpperCase();
+};
 
 export default function ProfilePage() {
   const { user, updateUser, loading, logout } = useAuth();
@@ -297,8 +306,8 @@ export default function ProfilePage() {
                       <NovaFrame>
                         <Avatar className="h-24 w-24">
                           <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-                          <AvatarFallback>
-                            <UserIcon className="h-12 w-12 text-muted-foreground" />
+                          <AvatarFallback className="text-4xl font-bold">
+                            {getInitials(user.name)}
                           </AvatarFallback>
                         </Avatar>
                       </NovaFrame>
@@ -306,8 +315,8 @@ export default function ProfilePage() {
                       <div className={cn("p-1", selectedFrame?.className)}>
                         <Avatar className="h-24 w-24">
                           <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-                          <AvatarFallback>
-                            <UserIcon className="h-12 w-12 text-muted-foreground" />
+                          <AvatarFallback className="text-4xl font-bold">
+                            {getInitials(user.name)}
                           </AvatarFallback>
                         </Avatar>
                       </div>
