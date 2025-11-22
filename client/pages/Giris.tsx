@@ -17,7 +17,7 @@ export default function Giris() {
     password: "",
   });
   const navigate = useNavigate();
-  const { user } = useAuth(); // Sadece kullanıcı durumunu kontrol etmek için alıyoruz
+  const { user, login } = useAuth(); // login fonksiyonunu geri alıyoruz
 
   // Eğer kullanıcı zaten giriş yapmışsa, ana sayfaya yönlendir.
   if (user) {
@@ -52,9 +52,11 @@ export default function Giris() {
         toast.error("Giriş Hatası", { description: error.message });
       }
     } else if (data.user) {
-      // Başarılı giriş. Yönlendirmeyi AuthContext'in otomatik olarak yapmasını bekliyoruz.
+      // Başarılı giriş. AuthContext'teki login fonksiyonunu çağırarak profil verilerini yükle.
+      await login(data.user);
+      
       toast.success("Giriş başarılı!", { description: "Yönlendiriliyorsunuz..." });
-      // NOT: Burada navigate() çağırmıyoruz. AuthContext'in oturum değişikliğini yakalamasını bekliyoruz.
+      navigate("/"); // Profil yüklendikten sonra yönlendir.
     }
   };
 
