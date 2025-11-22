@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { addBlogPost, uploadBlogImage, getPostsByUserId } from "@/lib/blog-store";
 import { useAuth } from "@/contexts/AuthContext";
 import { addExp, awardBadge, EXP_ACTIONS } from "@/lib/gamification";
+import { filterContent } from "@/lib/content-filter";
 
 const blogSchema = z.object({
   title: z.string().min(5, "Başlık en az 5 karakter olmalıdır."),
@@ -64,6 +65,19 @@ export default function CreateBlogPage() {
   async function onSubmit(values: z.infer<typeof blogSchema>) {
     if (!user) {
       toast.error("Blog yazısı oluşturmak için giriş yapmalısınız.");
+      return;
+    }
+
+    // İçerik Filtreleme
+    const titleFilterResult = await filterContent(values.title);
+    if (!titleFilterResult.isAllowed) {
+      toast.error("Başlık Uygun Değil", { description: titleFilterResult.reason });
+      return;
+    }
+
+    const contentFilterResult = await filterContent(values.content);
+    if (!contentFilterResult.isAllowed) {
+      toast.error("İçerik Uygun Değil", { description: contentFilterResult.reason });
       return;
     }
 

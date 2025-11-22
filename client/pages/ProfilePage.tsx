@@ -36,6 +36,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { FRAMES } from "@/lib/store-items";
 import NovaFrame from "@/components/frames/NovaFrame";
 import ImageViewerDialog from "@/components/ImageViewerDialog";
+import { filterContent } from "@/lib/content-filter";
 
 export default function ProfilePage() {
   const { user, updateUser, loading, logout } = useAuth();
@@ -125,6 +126,14 @@ export default function ProfilePage() {
         setNameValue(user.name || "");
         return;
       }
+      
+      const filterResult = await filterContent(nameValue);
+      if (!filterResult.isAllowed) {
+        toast.error("Kullanıcı Adı Uygun Değil", { description: filterResult.reason });
+        setNameValue(user.name || "");
+        return;
+      }
+
       await toast.promise(updateUser({ name: nameValue }), {
         loading: 'İsim güncelleniyor...',
         success: 'İsim güncellendi!',
@@ -148,6 +157,14 @@ export default function ProfilePage() {
         setDescriptionValue(user.description || "");
         return;
       }
+
+      const filterResult = await filterContent(descriptionValue);
+      if (!filterResult.isAllowed) {
+        toast.error("Açıklama Uygun Değil", { description: filterResult.reason });
+        setDescriptionValue(user.description || "");
+        return;
+      }
+
       await toast.promise(updateUser({ description: descriptionValue }), {
         loading: 'Açıklama güncelleniyor...',
         success: 'Açıklama güncellendi!',
