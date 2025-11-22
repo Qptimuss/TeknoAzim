@@ -117,7 +117,18 @@ export default function BlogPostPage() {
           Tüm Bloglara Geri Dön
         </Link>
         
-        <article className="bg-card border border-border rounded-lg overflow-hidden">
+        <article className="bg-card border border-border rounded-lg overflow-hidden relative">
+          {isAuthor && (
+            <Button
+              variant="destructive"
+              size="icon"
+              className="absolute top-4 right-4 z-10"
+              onClick={() => setShowDeleteDialog(true)}
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="sr-only">Sil</span>
+            </Button>
+          )}
           {post.image_url && (
             <img
               src={post.image_url}
@@ -141,20 +152,7 @@ export default function BlogPostPage() {
             <h1 className="text-card-foreground text-3xl md:text-5xl font-outfit font-bold mb-4">
               {post.title}
             </h1>
-            <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground mb-6">
-              <div className="flex items-center gap-4">
-                {isAuthor && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-500 hover:bg-red-500/10 hover:text-red-500"
-                    onClick={() => setShowDeleteDialog(true)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Sil
-                  </Button>
-                )}
-              </div>
+            <div className="flex flex-wrap items-center justify-end gap-4 text-sm text-muted-foreground mb-6">
               <LikeDislikeButtons postId={post.id} />
             </div>
             <div className="text-card-foreground text-lg leading-relaxed whitespace-pre-wrap">
