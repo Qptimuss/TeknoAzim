@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { RARITIES, FRAMES } from "@/lib/store-items";
 import { ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import NovaFrame from "@/components/frames/NovaFrame";
 
 interface CrateInfoDialogProps {
   open: boolean;
@@ -56,9 +57,17 @@ export default function CrateInfoDialog({ open, onOpenChange }: CrateInfoDialogP
                   {rarityGroup.items.map(frame => (
                     <div key={frame.name} className="flex flex-col items-center gap-2">
                       <div className="w-24 h-24 flex items-center justify-center">
-                        <div className={cn("w-20 h-20 flex items-center justify-center", frame.className)}>
-                          <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                        </div>
+                        {frame.name === 'Nova' ? (
+                          <NovaFrame>
+                            <div className="w-20 h-20 flex items-center justify-center bg-background rounded-full">
+                              <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          </NovaFrame>
+                        ) : (
+                          <div className={cn("w-20 h-20 flex items-center justify-center", frame.className)}>
+                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        )}
                       </div>
                       <p className="text-xs text-center font-medium">{frame.name}</p>
                     </div>
