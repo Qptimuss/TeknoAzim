@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { cn } from '@/lib/utils';
@@ -53,6 +53,12 @@ interface NovaFrameProps {
 
 export default function NovaFrame({ children }: NovaFrameProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    // This ensures the component has mounted on the client, and the ref is available.
+    setIsMounted(true);
+  }, []);
 
   return (
     <div ref={containerRef} className="relative w-full h-full">
@@ -61,14 +67,16 @@ export default function NovaFrame({ children }: NovaFrameProps) {
       
       {/* The 3D canvas for the stars, layered on top */}
       <div className="absolute inset-[-10%] pointer-events-none">
-        <Canvas 
-          camera={{ position: [0, 0, 2], fov: 75 }}
-          eventSource={containerRef} // Explicitly set the event source
-          className="pointer-events-none" // Ensure canvas itself doesn't capture events
-        >
-          <ambientLight intensity={0.5} />
-          <Stars />
-        </Canvas>
+        {isMounted && containerRef.current && (
+          <Canvas 
+            camera={{ position: [0, 0, 2], fov: 75 }}
+            eventSource={containerRef} // Explicitly set the event source
+            className="pointer-events-none" // Ensure canvas itself doesn't capture events
+          >
+            <ambientLight intensity={0.5} />
+            <Stars />
+          </Canvas>
+        )}
       </div>
 
       {/* The actual content (Avatar) */}
