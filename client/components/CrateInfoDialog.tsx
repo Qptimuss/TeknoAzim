@@ -50,8 +50,9 @@ export default function CrateInfoDialog({ open, onOpenChange }: CrateInfoDialogP
 
             {framesByRarity.map(rarityGroup => (
               <div key={rarityGroup.name}>
-                <h3 className={cn("text-lg font-semibold mb-4", rarityGroup.color)}>
-                  {rarityGroup.name} Çerçeveler
+                <h3 className={cn("text-lg font-semibold mb-4 flex items-baseline gap-2", rarityGroup.color)}>
+                  <span>{rarityGroup.name} Çerçeveler</span>
+                  <span className="text-sm font-normal text-muted-foreground">({rarityGroup.chance})</span>
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {rarityGroup.items.map(frame => (
