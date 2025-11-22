@@ -32,7 +32,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import ImageViewerDialog from "./ImageViewerDialog";
-import { filterContent } from "@/lib/content-filter";
 
 const commentSchema = z.object({
   content: z.string().min(3, "Yorum en az 3 karakter olmalıdır."),
@@ -57,13 +56,6 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
   async function onSubmit(values: z.infer<typeof commentSchema>) {
     if (!user) {
       toast.error("Yorum yapmak için giriş yapmalısınız.");
-      return;
-    }
-
-    // İçerik Filtreleme
-    const contentFilterResult = await filterContent(values.content);
-    if (!contentFilterResult.isAllowed) {
-      toast.error("Yorum Uygun Değil", { description: contentFilterResult.reason });
       return;
     }
     
