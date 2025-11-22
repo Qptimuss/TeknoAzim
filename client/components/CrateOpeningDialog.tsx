@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Gift, ImageIcon, Loader2, Gem } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RARITIES } from "@/lib/store-items";
+import NovaFrame from "@/components/frames/NovaFrame";
 
 interface WonFrame {
   name: string;
@@ -68,8 +69,18 @@ export default function CrateOpeningDialog({ open, onClose, isProcessing, wonFra
             </div>
           ) : wonFrame && animationState === "revealed" ? (
             <div className="flex flex-col items-center gap-4 animate-reveal-prize">
-              <div className={cn("w-32 h-32 flex items-center justify-center", wonFrame.className)}>
-                <ImageIcon className="h-16 w-16 text-muted-foreground" />
+              <div className="w-32 h-32 flex items-center justify-center">
+                {wonFrame.name === 'Nova' ? (
+                  <NovaFrame>
+                    <div className="w-28 h-28 flex items-center justify-center bg-background rounded-full">
+                      <ImageIcon className="h-16 w-16 text-muted-foreground" />
+                    </div>
+                  </NovaFrame>
+                ) : (
+                  <div className={cn("w-32 h-32 flex items-center justify-center", wonFrame.className)}>
+                    <ImageIcon className="h-16 w-16 text-muted-foreground" />
+                  </div>
+                )}
               </div>
               <h3 className="text-xl font-bold">{wonFrame.name}</h3>
               {rarityInfo && (
