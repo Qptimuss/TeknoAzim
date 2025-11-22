@@ -17,14 +17,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 interface BlogCardProps {
   post: BlogPostWithAuthor;
   showDelete?: boolean;
   onDelete?: (postId: string, imageUrl?: string | null) => void;
+  hideProfileLink?: boolean;
 }
 
-export default function BlogCard({ post, showDelete = false, onDelete }: BlogCardProps) {
+export default function BlogCard({ post, showDelete = false, onDelete, hideProfileLink = false }: BlogCardProps) {
   const formattedDate = new Date(post.created_at).toLocaleDateString("tr-TR", {
     year: "numeric",
     month: "long",
@@ -62,31 +64,45 @@ export default function BlogCard({ post, showDelete = false, onDelete }: BlogCar
           {post.profiles && (
             <div className="flex items-center justify-between w-full">
               <div 
-                className="inline-flex items-center gap-2 z-10 relative w-fit rounded-full bg-background px-3 py-1 border border-border transition-all duration-200 hover:border-primary hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10"
+                className={cn(
+                  "inline-flex items-center gap-2 z-10 relative w-fit rounded-full bg-background px-3 py-1 border border-border",
+                  !hideProfileLink && "transition-all duration-200 hover:border-primary hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10"
+                )}
               >
-                <Link 
-                  to={`/kullanici/${post.profiles.id}`} 
-                  className="flex items-center gap-2"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <ProfileAvatar profile={post.profiles} className="h-6 w-6" />
-                  <span className="text-sm text-foreground">
-                    {post.profiles?.name || "Anonim"}
-                  </span>
-                </Link>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 z-10 p-0">
-                      <MoreHorizontal className="h-4 w-4" />
-                      <span className="sr-only">Seçenekler</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenuItem asChild>
-                      <Link to={`/kullanici/${post.profiles.id}`}>Kullanıcının profiline bak</Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {hideProfileLink ? (
+                  <div className="flex items-center gap-2">
+                    <ProfileAvatar profile={post.profiles} className="h-6 w-6" />
+                    <span className="text-sm text-foreground">
+                      {post.profiles?.name || "Anonim"}
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <Link 
+                      to={`/kullanici/${post.profiles.id}`} 
+                      className="flex items-center gap-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ProfileAvatar profile={post.profiles} className="h-6 w-6" />
+                      <span className="text-sm text-foreground">
+                        {post.profiles?.name || "Anonim"}
+                      </span>
+                    </Link>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 z-10 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Seçenekler</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenuItem asChild>
+                          <Link to={`/kullanici/${post.profiles.id}`}>Kullanıcının profiline bak</Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
+                )}
               </div>
             </div>
           )}

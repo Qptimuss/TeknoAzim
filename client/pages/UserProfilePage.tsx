@@ -161,7 +161,7 @@ export default function UserProfilePage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {userPosts.map(post => (
-                <BlogCard key={post.id} post={post} />
+                <BlogCard key={post.id} post={post} hideProfileLink={true} />
               ))}
             </div>
           )}

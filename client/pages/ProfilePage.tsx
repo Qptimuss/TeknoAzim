@@ -499,6 +499,7 @@ export default function ProfilePage() {
                     post={post} 
                     showDelete={true}
                     onDelete={handleDeleteRequest}
+                    hideProfileLink={true}
                   />
                 ))}
                 <CreateBlogCard />
