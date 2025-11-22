@@ -91,6 +91,7 @@ export default function Navbar() {
                           <div className="flex items-center gap-1 bg-muted/50 rounded-full px-2 py-0.5 text-xs cursor-help">
                             <span className="font-bold">{user.gems ?? 0}</span>
                             <Gem className="h-3 w-3 text-green-500" />
+                            <Info className="h-3 w-3 text-muted-foreground" />
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
