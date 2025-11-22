@@ -132,14 +132,14 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
                     {comment.profiles ? (
-                      <>
-                        <Link to={`/kullanici/${comment.profiles.id}`} className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-1 border border-border transition-all duration-200 hover:border-primary hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5">
+                      <div className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-1 border border-border transition-all duration-200 hover:border-primary hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5">
+                        <Link to={`/kullanici/${comment.profiles.id}`} className="flex items-center gap-2">
                           <ProfileAvatar profile={comment.profiles} className="h-6 w-6" />
                           <span className="font-semibold text-foreground">{comment.profiles?.name || "Anonim"}</span>
                         </Link>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <Button variant="ghost" size="icon" className="h-6 w-6 p-0">
                               <MoreHorizontal className="h-4 w-4" />
                               <span className="sr-only">Seçenekler</span>
                             </Button>
@@ -150,7 +150,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </>
+                      </div>
                     ) : (
                       <div className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-1 border border-border">
                         <ProfileAvatar profile={null} className="h-6 w-6" />
