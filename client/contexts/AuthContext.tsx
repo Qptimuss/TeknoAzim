@@ -11,6 +11,8 @@ interface AuthContextType {
   loading: boolean;
   logout: () => Promise<void>;
   updateUser: (newUserData: Partial<User>) => Promise<void>;
+  // setUser fonksiyonunu dışa aktarıyoruz
+  _internalSetUser: (user: User | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -161,6 +163,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     logout,
     updateUser,
+    // setUser fonksiyonunu dışa aktarıyoruz
+    _internalSetUser: setUser,
   };
 
   return (
