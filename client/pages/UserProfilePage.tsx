@@ -79,9 +79,8 @@ export default function UserProfilePage() {
             <div className="bg-card border border-border rounded-lg p-8">
               <div className="flex flex-col items-center mb-6 text-center">
                 <button
-                  onClick={() => userProfile.avatar_url && setIsViewerOpen(true)}
-                  disabled={!userProfile.avatar_url}
-                  className="disabled:cursor-default mb-4"
+                  onClick={() => setIsViewerOpen(true)}
+                  className="mb-4"
                 >
                   {userProfile.selected_frame === 'Nova' ? (
                     <NovaFrame>
@@ -180,14 +179,12 @@ export default function UserProfilePage() {
           </div>
         </div>
       </div>
-      {userProfile.avatar_url && (
-        <ImageViewerDialog
-          open={isViewerOpen}
-          onOpenChange={setIsViewerOpen}
-          imageUrl={userProfile.avatar_url}
-          imageAlt={userProfile.name || "Profil Fotoğrafı"}
-        />
-      )}
+      <ImageViewerDialog
+        open={isViewerOpen}
+        onOpenChange={setIsViewerOpen}
+        imageUrl={userProfile.avatar_url}
+        imageAlt={userProfile.name || "Profil Fotoğrafı"}
+      />
     </>
   );
 }

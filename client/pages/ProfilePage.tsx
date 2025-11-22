@@ -298,9 +298,7 @@ export default function ProfilePage() {
                 
                 <div className="flex items-center justify-center gap-2">
                   <button
-                    onClick={() => user.avatar_url && setIsViewerOpen(true)}
-                    disabled={!user.avatar_url}
-                    className="disabled:cursor-default"
+                    onClick={() => setIsViewerOpen(true)}
                   >
                     {user.selected_frame === 'Nova' ? (
                       <NovaFrame>
@@ -614,14 +612,12 @@ export default function ProfilePage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {user.avatar_url && (
-        <ImageViewerDialog
-          open={isViewerOpen}
-          onOpenChange={setIsViewerOpen}
-          imageUrl={user.avatar_url}
-          imageAlt={user.name || "Profil Fotoğrafı"}
-        />
-      )}
+      <ImageViewerDialog
+        open={isViewerOpen}
+        onOpenChange={setIsViewerOpen}
+        imageUrl={user.avatar_url}
+        imageAlt={user.name || "Profil Fotoğrafı"}
+      />
     </>
   );
 }
