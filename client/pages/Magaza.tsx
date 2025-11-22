@@ -8,50 +8,41 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { RARITIES, FRAMES } from "@/lib/store-items";
 import { supabase } from "@/integrations/supabase/client";
+import CrateOpeningDialog from "@/components/CrateOpeningDialog";
 
 const CRATE_COST = 10;
 
-// Helper function to select a random frame based on rarity
 const selectRandomFrame = () => {
   const rand = Math.random() * 100;
   let selectedRarityName: string;
 
-  if (rand < 50) { // 50% chance for Sıradan
-    selectedRarityName = RARITIES.SIRADAN.name;
-  } else if (rand < 80) { // 30% chance for Sıradışı
-    selectedRarityName = RARITIES.SIRADISI.name;
-  } else if (rand < 95) { // 15% chance for Ender
-    selectedRarityName = RARITIES.ENDER.name;
-  } else { // 5% chance for Efsanevi
-    selectedRarityName = RARITIES.EFSANEVI.name;
-  }
+  if (rand < 50) selectedRarityName = RARITIES.SIRADAN.name;
+  else if (rand < 80) selectedRarityName = RARITIES.SIRADISI.name;
+  else if (rand < 95) selectedRarityName = RARITIES.ENDER.name;
+  else selectedRarityName = RARITIES.EFSANEVI.name;
 
   const framesInRarity = FRAMES.filter(frame => frame.rarity === selectedRarityName);
-  
-  // Fallback to common if no frames for a given rarity exist, to prevent errors
   if (framesInRarity.length === 0) {
     const commonFrames = FRAMES.filter(frame => frame.rarity === RARITIES.SIRADAN.name);
     return commonFrames[Math.floor(Math.random() * commonFrames.length)];
   }
-
-  const randomFrameIndex = Math.floor(Math.random() * framesInRarity.length);
-  return framesInRarity[randomFrameIndex];
+  return framesInRarity[Math.floor(Math.random() * framesInRarity.length)];
 };
 
 export default function Magaza() {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
-  const [isOpening, setIsOpening] = useState(false);
+  
+  const [isCrateDialogOpen, setIsCrateDialogOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [wonFrame, setWonFrame] = useState<any | null>(null);
+  const [alreadyOwned, setAlreadyOwned] = useState(false);
 
   const handleOpenCrate = async () => {
     if (!user) {
       toast.error("Önce giriş yapmanız gerekiyor.", {
-        description: "Sandığı açmak ve diğer mağaza özelliklerini kullanmak için lütfen giriş yapın.",
-        action: {
-          label: "Giriş Yap",
-          onClick: () => navigate('/giris'),
-        },
+        action: { label: "Giriş Yap", onClick: () => navigate('/giris') },
       });
       return;
     }
@@ -63,57 +54,39 @@ export default function Magaza() {
       return;
     }
 
-    setIsOpening(true);
+    setIsCrateDialogOpen(true);
+    setIsProcessing(true);
+    setWonFrame(null);
+    setAlreadyOwned(false);
 
-    await toast.promise(
-      async () => {
-        // 1. Select a random frame
-        const wonFrame = selectRandomFrame();
+    try {
+      const frame = selectRandomFrame();
+      
+      const { data: currentProfile, error: fetchError } = await supabase
+        .from('profiles').select('gems, owned_frames').eq('id', user.id).single();
 
-        // 2. Get current user data to ensure atomicity
-        const { data: currentProfile, error: fetchError } = await supabase
-          .from('profiles')
-          .select('gems, owned_frames')
-          .eq('id', user.id)
-          .single();
+      if (fetchError || !currentProfile) throw new Error("Kullanıcı profili alınamadı.");
+      if (currentProfile.gems < CRATE_COST) throw new Error("Yetersiz bakiye.");
 
-        if (fetchError || !currentProfile) {
-          throw new Error("Kullanıcı profili alınamadı.");
-        }
+      const newGems = currentProfile.gems - CRATE_COST;
+      const currentFrames = currentProfile.owned_frames || [];
+      const isOwned = currentFrames.includes(frame.name);
+      const newFrames = isOwned ? currentFrames : [...currentFrames, frame.name];
 
-        if (currentProfile.gems < CRATE_COST) {
-          throw new Error("Yetersiz bakiye.");
-        }
+      await updateUser({ gems: newGems, owned_frames: newFrames });
 
-        // 3. Prepare update payload
-        const newGems = currentProfile.gems - CRATE_COST;
-        const currentFrames = currentProfile.owned_frames || [];
-        
-        const alreadyOwned = currentFrames.includes(wonFrame.name);
-        const newFrames = alreadyOwned ? currentFrames : [...currentFrames, wonFrame.name];
+      setWonFrame(frame);
+      setAlreadyOwned(isOwned);
+    } catch (error) {
+      toast.error("Bir hata oluştu", { description: error instanceof Error ? error.message : "Sandık açma işlemi başarısız." });
+      setIsCrateDialogOpen(false);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
-        // 4. Update the database and then the local state via updateUser
-        await updateUser({ gems: newGems, owned_frames: newFrames });
-
-        return { wonFrame, alreadyOwned };
-      },
-      {
-        loading: "Sandık açılıyor...",
-        success: ({ wonFrame, alreadyOwned }) => {
-          setIsOpening(false);
-          if (alreadyOwned) {
-            return `"${wonFrame.name}" (${wonFrame.rarity}) kazandın, ama zaten sende vardı!`;
-          }
-          return `Tebrikler! Yeni bir çerçeve kazandın: "${wonFrame.name}" (${wonFrame.rarity})!`;
-        },
-        error: (err) => {
-          setIsOpening(false);
-          // Refresh user data in case of error to sync gems
-          updateUser({});
-          return err.message || "Sandık açılırken bir hata oluştu.";
-        },
-      }
-    );
+  const handleCloseDialog = () => {
+    setIsCrateDialogOpen(false);
   };
 
   return (
@@ -150,7 +123,7 @@ export default function Magaza() {
               </CardDescription>
             </CardContent>
             <CardFooter>
-              <Button className="w-full" onClick={handleOpenCrate} disabled={isOpening}>
+              <Button className="w-full" onClick={handleOpenCrate} disabled={isProcessing}>
                 <div className="flex items-center justify-center gap-2">
                   <span>Sandığı Aç</span>
                   <div className="flex items-center gap-1 bg-background/20 rounded-full px-2 py-0.5">
@@ -164,6 +137,13 @@ export default function Magaza() {
         </div>
       </div>
       <CrateInfoDialog open={isInfoOpen} onOpenChange={setIsInfoOpen} />
+      <CrateOpeningDialog
+        open={isCrateDialogOpen}
+        onClose={handleCloseDialog}
+        isProcessing={isProcessing}
+        wonFrame={wonFrame}
+        alreadyOwned={alreadyOwned}
+      />
     </>
   );
 }
