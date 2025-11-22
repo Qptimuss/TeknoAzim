@@ -11,7 +11,7 @@ interface ImageViewerDialogProps {
 export default function ImageViewerDialog({ open, onOpenChange, imageUrl, imageAlt }: ImageViewerDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 bg-transparent border-none max-w-4xl w-auto h-auto flex items-center justify-center">
+      <DialogContent className="p-0 bg-transparent border-none max-w-fit w-auto h-auto">
         {imageUrl ? (
           <img
             src={imageUrl}
