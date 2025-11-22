@@ -11,7 +11,7 @@ interface AuthContextType {
   loading: boolean;
   logout: () => Promise<void>;
   updateUser: (newUserData: Partial<User>) => Promise<void>;
-  login: (supabaseUser: SupabaseUser) => Promise<void>;
+  // login: (supabaseUser: SupabaseUser) => Promise<void>; // Kaldırıldı
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -81,13 +81,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return profile;
   };
 
-  const login = async (supabaseUser: SupabaseUser) => {
-    let profile = await fetchUserProfile(supabaseUser);
-    if (profile) {
-      profile = await handleDailyReward(profile);
-    }
-    setUser(profile);
-  };
+  // login fonksiyonu kaldırıldı. Artık sadece listener'a güveniyoruz.
+  // const login = async (supabaseUser: SupabaseUser) => {
+  //   let profile = await fetchUserProfile(supabaseUser);
+  //   if (profile) {
+  //     profile = await handleDailyReward(profile);
+  //   }
+  //   setUser(profile);
+  // };
 
   useEffect(() => {
     const getSessionAndProfile = async () => {
@@ -159,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     logout,
     updateUser,
-    login,
+    // login, // Kaldırıldı
   };
 
   return (

@@ -17,7 +17,7 @@ export default function Giris() {
     password: "",
   });
   const navigate = useNavigate();
-  const { user, login } = useAuth(); // login fonksiyonunu geri alıyoruz
+  const { user } = useAuth(); // Sadece kullanıcı durumunu kontrol etmek için alıyoruz
 
   // Eğer kullanıcı zaten giriş yapmışsa, ana sayfaya yönlendir.
   if (user) {
@@ -52,11 +52,9 @@ export default function Giris() {
         toast.error("Giriş Hatası", { description: error.message });
       }
     } else if (data.user) {
-      // Başarılı giriş. AuthContext'teki login fonksiyonunu çağırarak profil verilerini yükle.
-      await login(data.user);
-      
+      // Başarılı giriş. Supabase listener'ı otomatik olarak AuthContext'i güncelleyecek.
       toast.success("Giriş başarılı!", { description: "Yönlendiriliyorsunuz..." });
-      navigate("/"); // Profil yüklendikten sonra yönlendir.
+      // Yönlendirme, user state'i güncellendiğinde bileşenin başındaki 'if (user)' bloğu tarafından yapılacaktır.
     }
   };
 
