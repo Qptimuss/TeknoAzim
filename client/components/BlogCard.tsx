@@ -112,10 +112,12 @@ export default function BlogCard({ post, showDelete = false, onDelete, hideProfi
                           <DropdownMenuItem asChild>
                             <Link to={`/kullanici/${post.profiles.id}`}>Kullanıcının profiline bak</Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={handleViewPhoto} disabled={!post.profiles.avatar_url}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            <span>Fotoğrafa Bak</span>
-                          </DropdownMenuItem>
+                          {post.profiles.avatar_url && (
+                            <DropdownMenuItem onClick={handleViewPhoto}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              <span>Fotoğrafa Bak</span>
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </>
