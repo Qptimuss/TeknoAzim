@@ -10,7 +10,7 @@ import { RARITIES, FRAMES } from "@/lib/store-items";
 import { supabase } from "@/integrations/supabase/client";
 import CrateOpeningDialog from "@/components/CrateOpeningDialog";
 
-const CRATE_COST = 5;
+const CRATE_COST = 10;
 
 const selectRandomFrame = () => {
   const rand = Math.random() * 100;
