@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext"; // useAuth'u import et
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Giris() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,7 +17,7 @@ export default function Giris() {
     password: "",
   });
   const navigate = useNavigate();
-  const { login } = useAuth(); // login fonksiyonunu al
+  const { login } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -49,8 +49,13 @@ export default function Giris() {
       // Başarılı giriş: AuthContext'i güncelle ve günlük ödülü kontrol et
       await login(data.user);
       toast.success("Giriş başarılı!", { description: "Yönlendiriliyorsunuz..." });
-      navigate("/"); // Ana sayfaya yönlendir
-      return; // Başarılı yönlendirmeden sonra hemen çık
+      
+      // Yönlendirmeyi 100ms geciktirerek React'e state'i güncellemesi için zaman tanıyoruz.
+      setTimeout(() => {
+        navigate("/"); 
+      }, 100);
+      
+      return;
     }
   };
 
