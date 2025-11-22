@@ -12,14 +12,14 @@
    * A different format will require also updating the theme in tailwind.config.ts.
   */
   :root {
-    --background: 0 0% 80%; /* Parlaklık %80 */
-    --foreground: 0 0% 11%; /* Yazı rengi siyaha yakın (yaklaşık #1c1c1c) */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
-    --card: 0 0% 80%; /* Parlaklık %80 */
-    --card-foreground: 0 0% 11%; /* Yazı rengi siyaha yakın */
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-    --popover: 0 0% 80%; /* Parlaklık %80 */
-    --popover-foreground: 0 0% 11%; /* Yazı rengi siyaha yakın */
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
     --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
@@ -116,5 +116,30 @@
   code {
     overflow-x: auto;
     white-space: pre;
+  }
+}
+
+@layer utilities {
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px) rotate(-2deg); }
+    75% { transform: translateX(5px) rotate(2deg); }
+  }
+  @keyframes open-crate {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+  @keyframes reveal-prize {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .animate-shake {
+    animation: shake 0.3s ease-in-out;
+  }
+  .animate-open-crate {
+    animation: open-crate 0.5s ease-in forwards;
+  }
+  .animate-reveal-prize {
+    animation: reveal-prize 0.5s ease-out forwards;
   }
 }

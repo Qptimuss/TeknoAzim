@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, User } from "@/contexts/AuthContext";
 import { getPostsByUserId, uploadAvatar, deleteBlogPost } from "@/lib/blog-store";
 import { BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
@@ -34,6 +34,8 @@ import ImageCropperDialog from "@/components/ImageCropperDialog";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { FRAMES } from "@/lib/store-items";
+import NovaFrame from "@/components/frames/NovaFrame";
+import ImageViewerDialog from "@/components/ImageViewerDialog";
 
 export default function ProfilePage() {
   const { user, updateUser, loading, logout } = useAuth();
@@ -43,6 +45,7 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [postToDelete, setPostToDelete] = useState<{id: string, imageUrl?: string | null} | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   // Inline editing states
   const [isEditingName, setIsEditingName] = useState(false);
@@ -92,15 +95,26 @@ export default function ProfilePage() {
 
   const handleFrameSelect = async (frameName: string) => {
     if (!user) return;
-    const newFrame = user.selected_frame === frameName ? null : frameName;
-    await toast.promise(updateUser({ selected_frame: newFrame }), {
-      loading: 'Çerçeve ayarlanıyor...',
-      success: 'Çerçeve güncellendi!',
+
+    let updateData: Partial<User>;
+    let successMessage: string;
+
+    if (user.selected_frame === frameName) {
+      const newGems = (user.gems || 0) + 5;
+      updateData = { selected_frame: null, gems: newGems };
+      successMessage = 'Çerçeve kaldırıldı ve 5 elmas geri kazanıldı!';
+    } else {
+      updateData = { selected_frame: frameName };
+      successMessage = 'Çerçeve güncellendi!';
+    }
+
+    await toast.promise(updateUser(updateData), {
+      loading: 'İşleniyor...',
+      success: successMessage,
       error: 'Hata oluştu.',
     });
   };
 
-  // --- Name Handlers ---
   const handleNameSave = async () => {
     if (!user) return;
     setIsEditingName(false);
@@ -124,7 +138,6 @@ export default function ProfilePage() {
     setNameValue(user?.name || "");
   };
 
-  // --- Description Handlers ---
   const handleDescriptionSave = async () => {
     if (!user) return;
     setIsEditingDescription(false);
@@ -148,7 +161,6 @@ export default function ProfilePage() {
     setDescriptionValue(user?.description || "");
   };
 
-  // --- Avatar Handlers ---
   const handleAvatarEditClick = () => {
     fileInputRef.current?.click();
   };
@@ -276,14 +288,31 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center mb-6 space-y-2 text-center">
                 
                 <div className="flex items-center justify-center gap-2">
-                  <div className={cn("p-1", selectedFrame?.className)}>
-                    <Avatar className="h-24 w-24">
-                      <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-                      <AvatarFallback>
-                        <UserIcon className="h-12 w-12 text-muted-foreground" />
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
+                  <button
+                    onClick={() => user.avatar_url && setIsViewerOpen(true)}
+                    disabled={!user.avatar_url}
+                    className="disabled:cursor-default"
+                  >
+                    {user.selected_frame === 'Nova' ? (
+                      <NovaFrame>
+                        <Avatar className="h-24 w-24">
+                          <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
+                          <AvatarFallback>
+                            <UserIcon className="h-12 w-12 text-muted-foreground" />
+                          </AvatarFallback>
+                        </Avatar>
+                      </NovaFrame>
+                    ) : (
+                      <div className={cn("p-1", selectedFrame?.className)}>
+                        <Avatar className="h-24 w-24">
+                          <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
+                          <AvatarFallback>
+                            <UserIcon className="h-12 w-12 text-muted-foreground" />
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                    )}
+                  </button>
                   <Button 
                     variant="ghost" 
                     size="icon" 
@@ -473,6 +502,7 @@ export default function ProfilePage() {
                     post={post} 
                     showDelete={true}
                     onDelete={handleDeleteRequest}
+                    hideProfileLink={true}
                   />
                 ))}
                 <CreateBlogCard />
@@ -497,9 +527,19 @@ export default function ProfilePage() {
                         onClick={() => isOwned && handleFrameSelect(frame.name)}
                         disabled={!isOwned}
                       >
-                        <div className={cn("w-24 h-24 flex items-center justify-center", frame.className)}>
-                          <ImageIcon className="h-10 w-10 text-muted-foreground" />
-                        </div>
+                        {frame.name === 'Nova' ? (
+                          <div className="w-24 h-24 flex items-center justify-center">
+                            <NovaFrame>
+                              <div className="w-20 h-20 flex items-center justify-center bg-background rounded-full">
+                                <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                              </div>
+                            </NovaFrame>
+                          </div>
+                        ) : (
+                          <div className={cn("w-24 h-24 flex items-center justify-center", frame.className)}>
+                            <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                          </div>
+                        )}
                         {!isOwned && <Lock className="absolute bottom-1 right-1 h-4 w-4 text-foreground bg-background rounded-full p-0.5" />}
                         {isSelected && <CheckCircle className="absolute top-1 right-1 h-5 w-5 text-primary bg-background rounded-full" />}
                       </Button>
@@ -564,6 +604,15 @@ export default function ProfilePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {user.avatar_url && (
+        <ImageViewerDialog
+          open={isViewerOpen}
+          onOpenChange={setIsViewerOpen}
+          imageUrl={user.avatar_url}
+          imageAlt={user.name || "Profil Fotoğrafı"}
+        />
+      )}
     </>
   );
 }

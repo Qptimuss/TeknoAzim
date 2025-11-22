@@ -168,7 +168,7 @@ export const awardBadge = async (userId: string, badgeName: string): Promise<Pro
 
   const newBadges = [...currentBadges, badgeName];
   const newExp = (profile.exp || 0) + EXP_ACTIONS.EARN_BADGE;
-  const newGems = (profile.gems || 0) + 10; // Updated to 10 gems
+  const newGems = (profile.gems || 0) + 30; // Updated to 30 gems
   const { level: newLevel } = calculateLevel(newExp);
 
   const { data: updatedProfile, error: updateError } = await supabase
@@ -184,7 +184,7 @@ export const awardBadge = async (userId: string, badgeName: string): Promise<Pro
   }
 
   toast.success("Yeni Rozet Kazandın!", {
-    description: `"${badgeName}" rozetini kazandın, ${EXP_ACTIONS.EARN_BADGE} EXP ve 10 Gem elde ettin!`,
+    description: `"${badgeName}" rozetini kazandın, ${EXP_ACTIONS.EARN_BADGE} EXP ve 30 Elmas elde ettin!`,
   });
 
   if (newLevel > (profile.level || 1)) {

@@ -28,12 +28,11 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      {/* ThemeProvider'ı sadece dark mode kullanacak şekilde ayarladık */}
-      <ThemeProvider attribute="class">
-        <Toaster />
-        <Sonner />
-        <AuthProvider>
+    <AuthProvider>
+      <ThemeProvider defaultTheme="dark">
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
           <BrowserRouter>
             <Routes>
               <Route element={<Layout />}>
@@ -64,9 +63,9 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
-        </AuthProvider>
+        </TooltipProvider>
       </ThemeProvider>
-    </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
