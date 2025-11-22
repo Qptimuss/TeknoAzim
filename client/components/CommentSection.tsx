@@ -161,12 +161,10 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                               <DropdownMenuItem asChild>
                                 <Link to={`/kullanici/${comment.profiles.id}`}>Kullanıcının profiline bak</Link>
                               </DropdownMenuItem>
-                              {comment.profiles?.avatar_url && (
-                                <DropdownMenuItem onClick={() => handleViewPhoto(comment)}>
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  <span>Fotoğrafa Bak</span>
-                                </DropdownMenuItem>
-                              )}
+                              <DropdownMenuItem onClick={() => handleViewPhoto(comment)} disabled={!comment.profiles.avatar_url}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                <span>Fotoğrafa Bak</span>
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -244,14 +242,12 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
           </AlertDialogContent>
         </AlertDialog>
       </div>
-      {comment.profiles?.avatar_url && (
-        <ImageViewerDialog
-          open={viewerState.open}
-          onOpenChange={(open) => setViewerState(s => ({ ...s, open }))}
-          imageUrl={viewerState.url}
-          imageAlt={viewerState.alt}
-        />
-      )}
+      <ImageViewerDialog
+        open={viewerState.open}
+        onOpenChange={(open) => setViewerState(s => ({ ...s, open }))}
+        imageUrl={viewerState.url}
+        imageAlt={viewerState.alt}
+      />
     </>
   );
 }
