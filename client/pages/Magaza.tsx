@@ -16,13 +16,15 @@ const selectRandomFrame = () => {
   const rand = Math.random() * 100;
   let selectedRarityName: string;
 
-  if (rand < 50) selectedRarityName = RARITIES.SIRADAN.name;
-  else if (rand < 80) selectedRarityName = RARITIES.SIRADISI.name;
-  else if (rand < 95) selectedRarityName = RARITIES.ENDER.name;
-  else selectedRarityName = RARITIES.EFSANEVI.name;
+  if (rand < 1) selectedRarityName = RARITIES.ÖZEL.name; // 1% chance for Özel
+  else if (rand < 6) selectedRarityName = RARITIES.EFSANEVI.name; // 5% chance for Efsanevi
+  else if (rand < 21) selectedRarityName = RARITIES.ENDER.name; // 15% chance for Ender
+  else if (rand < 51) selectedRarityName = RARITIES.SIRADISI.name; // 30% chance for Sıradışı
+  else selectedRarityName = RARITIES.SIRADAN.name; // 49% chance for Sıradan
 
   const framesInRarity = FRAMES.filter(frame => frame.rarity === selectedRarityName);
   if (framesInRarity.length === 0) {
+    // Fallback to common if for some reason no frames are found in the selected rarity
     const commonFrames = FRAMES.filter(frame => frame.rarity === RARITIES.SIRADAN.name);
     return commonFrames[Math.floor(Math.random() * commonFrames.length)];
   }
