@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Gift, ImageIcon, Loader2 } from "lucide-react";
+import { Gift, ImageIcon, Loader2, Gem } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RARITIES } from "@/lib/store-items";
+import NovaFrame from "@/components/frames/NovaFrame";
 
 interface WonFrame {
   name: string;
@@ -68,15 +69,30 @@ export default function CrateOpeningDialog({ open, onClose, isProcessing, wonFra
             </div>
           ) : wonFrame && animationState === "revealed" ? (
             <div className="flex flex-col items-center gap-4 animate-reveal-prize">
-              <div className={cn("w-32 h-32 flex items-center justify-center", wonFrame.className)}>
-                <ImageIcon className="h-16 w-16 text-muted-foreground" />
+              <div className="w-32 h-32 flex items-center justify-center">
+                {wonFrame.name === 'Nova' ? (
+                  <NovaFrame>
+                    <div className="w-28 h-28 flex items-center justify-center bg-background rounded-full">
+                      <ImageIcon className="h-16 w-16 text-muted-foreground" />
+                    </div>
+                  </NovaFrame>
+                ) : (
+                  <div className={cn("w-32 h-32 flex items-center justify-center", wonFrame.className)}>
+                    <ImageIcon className="h-16 w-16 text-muted-foreground" />
+                  </div>
+                )}
               </div>
               <h3 className="text-xl font-bold">{wonFrame.name}</h3>
               {rarityInfo && (
                 <p className={cn("font-semibold", rarityInfo.color)}>{rarityInfo.name}</p>
               )}
               {alreadyOwned && (
-                <p className="text-sm text-muted-foreground">(Bu çerçeveye zaten sahipsin)</p>
+                <div className="text-center mt-2 p-2 bg-muted rounded-md border border-border">
+                  <p className="text-sm text-muted-foreground">(Bu çerçeveye zaten sahipsin)</p>
+                  <p className="text-sm font-semibold text-green-500 flex items-center justify-center gap-1">
+                    +5 <Gem className="h-4 w-4" /> Geri Verildi!
+                  </p>
+                </div>
               )}
             </div>
           ) : (

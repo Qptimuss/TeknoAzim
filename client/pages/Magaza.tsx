@@ -70,10 +70,16 @@ export default function Magaza() {
       if (fetchError || !currentProfile) throw new Error("Kullanıcı profili alınamadı.");
       if (currentProfile.gems < CRATE_COST) throw new Error("Yetersiz bakiye.");
 
-      const newGems = currentProfile.gems - CRATE_COST;
+      let newGems = currentProfile.gems - CRATE_COST;
       const currentFrames = currentProfile.owned_frames || [];
       const isOwned = currentFrames.includes(frame.name);
-      const newFrames = isOwned ? currentFrames : [...currentFrames, frame.name];
+      let newFrames = currentFrames;
+
+      if (isOwned) {
+        newGems += 5; // 5 elmas iade et
+      } else {
+        newFrames = [...currentFrames, frame.name];
+      }
 
       await updateUser({ gems: newGems, owned_frames: newFrames });
 

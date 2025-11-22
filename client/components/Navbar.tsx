@@ -97,8 +97,8 @@ export default function Navbar() {
                         <TooltipContent>
                           <div className="text-center">
                             <p className="font-bold">Elmas Kazancı</p>
-                            <p>Her 24 saatte bir giriş: +5 Elmas</p>
-                            <p>Her yeni rozet: +10 Elmas</p>
+                            <p>Her 24 saatte bir giriş: +20 Elmas</p>
+                            <p>Her yeni rozet: +30 Elmas</p>
                           </div>
                         </TooltipContent>
                       </Tooltip>
