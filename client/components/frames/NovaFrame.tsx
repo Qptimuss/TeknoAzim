@@ -52,14 +52,20 @@ interface NovaFrameProps {
 }
 
 export default function NovaFrame({ children }: NovaFrameProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
   return (
-    <div className="relative w-full h-full">
+    <div ref={containerRef} className="relative w-full h-full">
       {/* The gradient background and shape from the original CSS */}
       <div className="absolute inset-0 p-1 bg-gradient-to-tr from-purple-500 via-indigo-700 to-fuchsia-500 rounded-full shadow-[0_0_20px_theme(colors.purple.400)] animate-pulse" />
       
       {/* The 3D canvas for the stars, layered on top */}
       <div className="absolute inset-[-10%] pointer-events-none">
-        <Canvas camera={{ position: [0, 0, 2], fov: 75 }}>
+        <Canvas 
+          camera={{ position: [0, 0, 2], fov: 75 }}
+          eventSource={containerRef} // Explicitly set the event source
+          className="pointer-events-none" // Ensure canvas itself doesn't capture events
+        >
           <ambientLight intensity={0.5} />
           <Stars />
         </Canvas>
