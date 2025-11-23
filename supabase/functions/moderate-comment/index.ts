@@ -31,8 +31,6 @@ const WHOLE_WORD_BANNED = new Set([
   "sülale", "sülaleni", "pezevenk", "yarak"
 ]);
 
-// Alt dize olarak eşleşmesi gereken yasaklı kelimeler (SUBSTRING_BANNED) kaldırıldı.
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -56,7 +54,7 @@ serve(async (req) => {
       });
     }
 
-    // 2. Açık anahtar kelime kontrolü (Sadece WHOLE_WORD_BANNED kontrolü kaldı)
+    // 2. Açık anahtar kelime kontrolü
     const lowerCaseContent = content.toLowerCase();
     let containsBannedWord = false;
 
@@ -96,6 +94,7 @@ serve(async (req) => {
         model: MODEL_ENGLISH, 
         inputs: content,
       });
+      // LABEL_1 veya 'toxic' içeren etiketleri kontrol et
       const englishToxicLabel = englishModerationResponse.flat().find(item => item.label.toLowerCase().includes('toxic') || item.label === 'LABEL_1');
       if (englishToxicLabel) {
         englishToxicScore = englishToxicLabel.score;
@@ -110,7 +109,8 @@ serve(async (req) => {
         model: MODEL_TURKISH, 
         inputs: content,
       });
-      const turkishToxicLabel = turkishModerationResponse.flat().find(item => item.label.toLowerCase() === 'toxic');
+      // LABEL_1 veya 'toxic' içeren etiketleri kontrol et
+      const turkishToxicLabel = turkishModerationResponse.flat().find(item => item.label.toLowerCase() === 'toxic' || item.label === 'LABEL_1');
       if (turkishToxicLabel) {
         turkishToxicScore = turkishToxicLabel.score;
       }
