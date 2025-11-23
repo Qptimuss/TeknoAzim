@@ -51,8 +51,6 @@ export default function CreateBlogPage() {
       const file = imageFile[0];
       const newUrl = URL.createObjectURL(file);
       setImagePreview(newUrl);
-
-      // Cleanup the object URL on component unmount or when file changes
       return () => URL.revokeObjectURL(newUrl);
     } else {
       setImagePreview(null);
@@ -68,12 +66,10 @@ export default function CreateBlogPage() {
     }
 
     try {
-      // Yeni gönderiyi eklemeden ÖNCE kullanıcının gönderi sayısını kontrol et
       const userPosts = await getPostsByUserId(user.id);
       const postCountBeforeCreating = userPosts.length;
 
       let imageUrl: string | undefined = undefined;
-      // Resim seçildiyse yükle
       if (values.imageFile && values.imageFile.length > 0) {
         toast.info("Resim yükleniyor...");
         const file = values.imageFile[0];
@@ -83,20 +79,14 @@ export default function CreateBlogPage() {
         }
       }
 
-      // Blog gönderisini veritabanına ekle
       await addBlogPost({ 
         title: values.title,
         content: values.content,
-        userId: user.id,
         imageUrl,
       });
 
-      // --- Oyunlaştırma Mantığı ---
-      
-      // 1. Blog yayınladığı için EXP ver.
       let latestProfileState = await addExp(user.id, EXP_ACTIONS.CREATE_POST);
       
-      // 2. Rozetleri kontrol et
       if (postCountBeforeCreating === 0) {
         const badgeUpdate = await awardBadge(user.id, "İlk Blog");
         if (badgeUpdate) latestProfileState = badgeUpdate;
@@ -112,7 +102,6 @@ export default function CreateBlogPage() {
         if (badgeUpdate) latestProfileState = badgeUpdate;
       }
 
-      // 4. Auth Context'i en güncel ve nihai profil durumuyla güncelle.
       if (latestProfileState) {
         updateUser(latestProfileState);
       }
@@ -120,7 +109,9 @@ export default function CreateBlogPage() {
       toast.success("Blog yazınız başarıyla oluşturuldu!");
       navigate("/bloglar");
     } catch (error) {
-      toast.error("Blog yazısı oluşturulurken bir hata oluştu.");
+      toast.error("Blog yazısı oluşturulamadı.", {
+        description: error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.",
+      });
       console.error(error);
     }
   }
@@ -149,7 +140,7 @@ export default function CreateBlogPage() {
             <FormField
               control={form.control}
               name="imageFile"
-              render={({ field }) => (
+              render={() => (
                 <FormItem>
                   <FormLabel>Kapak Resmi (İsteğe Bağlı, Maks 2MB)</FormLabel>
                   <FormControl>

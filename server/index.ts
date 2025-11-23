@@ -3,7 +3,16 @@ import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { requireAuth } from "./middleware/auth";
-import { handleDeleteUser } from "./routes/user";
+import { checkToxicity } from "./middleware/toxicity";
+import { handleDeleteUser, handleUpdateProfile } from "./routes/user";
+import { 
+  handleCreatePost, 
+  handleUpdatePost, 
+  handleAddComment,
+  handleDeletePost,
+  handleDeleteComment,
+  handleCastVote
+} from "./routes/blog";
 
 export function createServer() {
   const app = express();
@@ -21,7 +30,18 @@ export function createServer() {
 
   app.get("/api/demo", handleDemo);
 
-  // User routes
+  // Blog routes with toxicity checks
+  app.post("/api/blog/post", requireAuth, checkToxicity, handleCreatePost);
+  app.put("/api/blog/post/:id", requireAuth, checkToxicity, handleUpdatePost);
+  app.delete("/api/blog/post/:id", requireAuth, handleDeletePost);
+  
+  app.post("/api/blog/comment", requireAuth, checkToxicity, handleAddComment);
+  app.delete("/api/blog/comment/:id", requireAuth, handleDeleteComment);
+
+  app.post("/api/blog/vote", requireAuth, handleCastVote);
+
+  // User routes with toxicity checks
+  app.put("/api/user/profile", requireAuth, checkToxicity, handleUpdateProfile);
   app.delete("/api/user", requireAuth, handleDeleteUser);
 
   return app;

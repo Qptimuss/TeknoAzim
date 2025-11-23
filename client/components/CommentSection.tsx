@@ -71,7 +71,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
 
       const isFirstComment = count === 0;
 
-      await addComment({ postId, userId: user.id, content: values.content });
+      await addComment({ postId, content: values.content });
       
       let finalProfileState = null;
 
@@ -104,7 +104,9 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
       form.reset();
       onCommentsChange();
     } catch (error) {
-      toast.error("Yorum eklenirken bir hata oluştu.");
+      toast.error("Yorum eklenemedi.", {
+        description: error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.",
+      });
     }
   }
 
@@ -216,8 +218,8 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                Yorum Gönder
+              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Gönderiliyor..." : "Yorum Gönder"}
               </Button>
             </form>
           </Form>
