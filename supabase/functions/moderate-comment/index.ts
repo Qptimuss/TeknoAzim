@@ -8,7 +8,7 @@ const corsHeaders = {
 
 // Initialize Hugging Face Inference client
 const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
-const MODEL_TURKISH = 'cagrigungor/turkishtoxic-classifier'; // Yeni Türkçe model
+const MODEL_TURKISH = 'aliutku/bert-base-turkish-cased-toxicity-classification'; // Yeni Türkçe model
 const MODEL_ENGLISH = 'unitary/toxic-bert';
 
 // Toksisite eşiği: Bu değerin üzerindeki puanlar toksik kabul edilir.
