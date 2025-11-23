@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 // Using a more appropriate model for toxicity detection
-const HUGGING_FACE_API_URL = "https://api-inference.huggingface.co/models/unitary/toxic-bert";
+const HUGGING_FACE_API_URL = "https://router.huggingface.co/models/unitary/toxic-bert";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
