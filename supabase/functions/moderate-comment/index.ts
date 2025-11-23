@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const HUGGING_FACE_API_KEY = Deno.env.get("HUGGING_FACE_API_KEY");
-const MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/unitary/toxic-bert";
+// Eski, kullanımdan kaldırılmış model yerine yenisini kullanıyoruz.
+const MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/martin-ha/toxic-comment-model";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,6 +17,7 @@ serve(async (req) => {
 
   try {
     if (!HUGGING_FACE_API_KEY) {
+      console.error("HUGGING_FACE_API_KEY secret not found.");
       throw new Error("Hugging Face API anahtarı bulunamadı.");
     }
 
@@ -26,7 +28,9 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    console.log("Moderation function invoked with content:", content);
 
+    console.log("Calling Hugging Face API...");
     const response = await fetch(MODEL_ENDPOINT, {
       method: "POST",
       headers: {
@@ -38,8 +42,9 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error("Hugging Face API Error:", errorBody);
-      // If the model is loading, we can choose to approve the comment to avoid blocking users.
+      console.error("Hugging Face API Error Status:", response.status);
+      console.error("Hugging Face API Error Body:", errorBody);
+      
       if (response.status === 503) {
         console.warn("Model is loading, approving comment by default.");
         return new Response(JSON.stringify({ approved: true }), {
@@ -50,19 +55,19 @@ serve(async (req) => {
     }
 
     const results = await response.json();
+    console.log("Hugging Face API response:", JSON.stringify(results, null, 2));
     
-    // The model returns an array of label predictions for the input.
-    // We check if any of the predictions is 'toxic' with a high confidence score.
     const toxicPrediction = results[0].find((item: { label: string; score: number }) => item.label === 'toxic');
     
     const isToxic = toxicPrediction && toxicPrediction.score > 0.9;
+    console.log("Toxicity check result:", { isToxic });
 
     return new Response(JSON.stringify({ approved: !isToxic }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (error) {
-    console.error("Moderasyon fonksiyonunda hata:", error);
+    console.error("Caught an exception in moderation function:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
