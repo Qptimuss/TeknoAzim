@@ -27,6 +27,17 @@ const isSameDay = (d1: Date, d2: Date) => {
   );
 };
 
+// Define the keys that are safe for client-initiated updates via the /api/profile endpoint.
+// All gamification fields (exp, level, gems, badges, owned_frames, last_daily_reward_claimed_at) 
+// must be excluded as they are managed by secure server endpoints.
+const SAFE_PROFILE_UPDATE_KEYS: Array<keyof Profile> = [
+  'name',
+  'avatar_url',
+  'description',
+  'selected_title',
+  'selected_frame',
+];
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -144,18 +155,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUser = async (newUserData: Partial<User>) => {
     if (!user) return;
 
-    // Filter out sensitive gamification fields to prevent client manipulation
-    const safeUpdateData: Partial<Profile> = {
-      name: newUserData.name,
-      avatar_url: newUserData.avatar_url,
-      description: newUserData.description,
-      selected_title: newUserData.selected_title,
-      selected_frame: newUserData.selected_frame,
-      // Note: gems, exp, level, badges, last_daily_reward_claimed_at are explicitly excluded
-    };
-    
-    // Remove undefined values before sending to API
-    Object.keys(safeUpdateData).forEach(key => safeUpdateData[key as keyof typeof safeUpdateData] === undefined && delete safeUpdateData[key as keyof typeof safeUpdateData]);
+    const safeUpdateData: Partial<Profile> = {};
+
+    // Filter newUserData to only include safe keys
+    SAFE_PROFILE_UPDATE_KEYS.forEach(key => {
+      if (newUserData[key] !== undefined) {
+        safeUpdateData[key] = newUserData[key] as any;
+      }
+    });
 
     if (Object.keys(safeUpdateData).length === 0) {
         return;
