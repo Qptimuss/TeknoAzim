@@ -7,6 +7,7 @@ import {
 import { Profile } from "@shared/api";
 import { toast } from "sonner";
 import React from "react";
+import { getAuthHeaders } from "./api-utils";
 
 // --- ÜNVAN SİSTEMİ ---
 export const TITLES: { [key: number]: { name: string; icon: React.ElementType } } = {
@@ -64,132 +65,136 @@ export const EXP_ACTIONS = {
   EARN_BADGE: 50,
 };
 
-// Function to add experience points to a user
+// Function to add experience points to a user (NOW SECURE VIA SERVER)
 export const addExp = async (userId: string, amount: number): Promise<Profile | null> => {
-  const { data: profile, error: fetchError } = await supabase
+  const headers = await getAuthHeaders();
+  
+  // 1. Fetch current profile state to check for level up later
+  const { data: profileBefore, error: fetchError } = await supabase
     .from('profiles')
-    .select('exp, level')
+    .select('level')
     .eq('id', userId)
     .single();
 
-  if (fetchError || !profile) {
-    console.error("Error fetching profile for EXP update:", fetchError);
-    return null;
+  if (fetchError || !profileBefore) {
+    console.error("Error fetching profile before EXP addition:", fetchError);
+    // Continue, but skip level check
   }
+  
+  const response = await fetch('/api/gamification/exp', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      amount,
+      action: 'add',
+    }),
+  });
 
-  const newExp = (profile.exp || 0) + amount;
-  const { level: newLevel } = calculateLevel(newExp);
-
-  const { data: updatedProfile, error: updateError } = await supabase
-    .from('profiles')
-    .update({ exp: newExp, level: newLevel })
-    .eq('id', userId)
-    .select()
-    .single();
-
-  if (updateError) {
-    console.error("Error updating profile EXP:", updateError);
-    return null;
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to add EXP via server.");
   }
-
-  if (newLevel > (profile.level || 1)) {
-    toast.success(`Tebrikler! Seviye ${newLevel} oldun!`);
+  
+  const updatedProfile = await response.json();
+  
+  // Check for level up notification (client side)
+  if (profileBefore && updatedProfile.level > profileBefore.level) {
+    toast.success(`Tebrikler! Seviye ${updatedProfile.level} oldun!`);
   }
-
+  
   return updatedProfile as Profile;
 };
 
-// Function to remove experience points from a user
+// Function to remove experience points from a user (NOW SECURE VIA SERVER)
 export const removeExp = async (userId: string, amount: number): Promise<Profile | null> => {
-  const { data: profile, error: fetchError } = await supabase
+  const headers = await getAuthHeaders();
+  
+  // 1. Fetch current profile state to check for level drop later
+  const { data: profileBefore, error: fetchError } = await supabase
     .from('profiles')
-    .select('exp, level, selected_title')
+    .select('level, selected_title')
     .eq('id', userId)
     .single();
 
-  if (fetchError || !profile) {
-    console.error("Error fetching profile for EXP removal:", fetchError);
-    return null;
+  if (fetchError || !profileBefore) {
+    console.error("Error fetching profile before EXP removal:", fetchError);
+    // Continue, but skip level check
   }
 
-  const newExp = Math.max(0, (profile.exp || 0) - amount);
-  const { level: newLevel } = calculateLevel(newExp);
-  
-  const updatePayload: Partial<Profile> = { exp: newExp, level: newLevel };
+  const response = await fetch('/api/gamification/exp', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      amount,
+      action: 'remove',
+    }),
+  });
 
-  if (newLevel < profile.level) {
-    toast.warning(`Seviye ${profile.level}'den Seviye ${newLevel}'e düştün!`);
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to remove EXP via server.");
+  }
+  
+  const updatedProfile = await response.json();
+  
+  // Check for level down notification (client side)
+  if (profileBefore && updatedProfile.level < profileBefore.level) {
+    toast.warning(`Seviye ${profileBefore.level}'den Seviye ${updatedProfile.level}'e düştün!`);
     
-    // Check if the selected title is still unlocked
-    if (profile.selected_title) {
-      const titleEntry = Object.entries(TITLES).find(([, t]) => t.name === profile.selected_title);
-      if (titleEntry) {
-        const requiredLevel = parseInt(titleEntry[0]);
-        if (newLevel < requiredLevel) {
-          updatePayload.selected_title = null;
-          toast.info("Seviyen düştüğü için ünvanın kaldırıldı.");
-        }
-      }
+    // Check if the selected title was removed due to level drop
+    if (profileBefore.selected_title && updatedProfile.selected_title === null) {
+       toast.info("Seviyen düştüğü için ünvanın kaldırıldı.");
     }
   }
 
-  const { data: updatedProfile, error: updateError } = await supabase
-    .from('profiles')
-    .update(updatePayload)
-    .eq('id', userId)
-    .select()
-    .single();
-
-  if (updateError) {
-    console.error("Error updating profile after EXP removal:", updateError);
-    return null;
-  }
-
   return updatedProfile as Profile;
 };
 
-// Function to award a badge to a user
+// Function to award a badge to a user (NOW SECURE VIA SERVER)
 export const awardBadge = async (userId: string, badgeName: string): Promise<Profile | null> => {
-  const { data: profile, error: fetchError } = await supabase
+  const headers = await getAuthHeaders();
+  
+  // 1. Fetch current profile state to check for level up later
+  const { data: profileBefore, error: fetchError } = await supabase
     .from('profiles')
-    .select('badges, exp, level, gems')
+    .select('badges, level')
     .eq('id', userId)
     .single();
 
-  if (fetchError || !profile) {
-    console.error("Error fetching profile for badge award:", fetchError);
-    return null;
+  if (fetchError || !profileBefore) {
+    console.error("Error fetching profile before badge award:", fetchError);
+    // Continue, but skip checks
+  }
+  
+  // Client-side check to prevent unnecessary API call if already owned
+  if (profileBefore?.badges?.includes(badgeName)) {
+    return null; 
   }
 
-  const currentBadges = profile.badges || [];
-  if (currentBadges.includes(badgeName)) {
-    return null; // User already has the badge
+  const response = await fetch('/api/gamification/badge', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      badgeName,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to award badge via server.");
   }
-
-  const newBadges = [...currentBadges, badgeName];
-  const newExp = (profile.exp || 0) + EXP_ACTIONS.EARN_BADGE;
-  const newGems = (profile.gems || 0) + 10; // Updated to 10 gems
-  const { level: newLevel } = calculateLevel(newExp);
-
-  const { data: updatedProfile, error: updateError } = await supabase
-    .from('profiles')
-    .update({ badges: newBadges, exp: newExp, level: newLevel, gems: newGems })
-    .eq('id', userId)
-    .select()
-    .single();
-
-  if (updateError) {
-    console.error("Error awarding badge:", updateError);
-    return null;
-  }
-
+  
+  const updatedProfile = await response.json();
+  
+  // Client-side notification for badge and gem/exp gain
   toast.success("Yeni Rozet Kazandın!", {
     description: `"${badgeName}" rozetini kazandın, ${EXP_ACTIONS.EARN_BADGE} EXP ve 10 Gem elde ettin!`,
   });
-
-  if (newLevel > (profile.level || 1)) {
-    toast.success(`Tebrikler! Seviye ${newLevel} oldun!`);
+  
+  // Check for level up notification (client side)
+  if (profileBefore && updatedProfile.level > profileBefore.level) {
+    toast.success(`Tebrikler! Seviye ${updatedProfile.level} oldun!`);
   }
-
+  
   return updatedProfile as Profile;
 };

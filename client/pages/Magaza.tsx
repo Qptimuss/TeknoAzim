@@ -6,12 +6,14 @@ import CrateInfoDialog from "@/components/CrateInfoDialog";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { openCrate } from "@/lib/profile-store";
 
 const CRATE_COST = 10;
 
 export default function Magaza() {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
-  const { user, updateUser } = useAuth();
+  // Use mergeProfileState for secure updates
+  const { user, mergeProfileState } = useAuth(); 
   const navigate = useNavigate();
   const [isOpening, setIsOpening] = useState(false);
 
@@ -38,26 +40,23 @@ export default function Magaza() {
 
     await toast.promise(
       async () => {
-        // Simulate server delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Use the secure server API to open the crate
+        const { updatedProfile, itemWon } = await openCrate(CRATE_COST);
         
-        // Deduct gems
-        await updateUser({ gems: user.gems - CRATE_COST });
+        // Securely merge the updated profile state (gems, owned_frames) into the context
+        mergeProfileState(updatedProfile);
 
-        // TODO: Implement actual crate opening logic here
-        // For now, just show a success message
-        return { success: true };
+        return itemWon;
       },
       {
         loading: "Sandık açılıyor...",
-        success: () => {
+        success: (itemWon) => {
           setIsOpening(false);
-          // TODO: Replace with actual item won
-          return "Tebrikler! Sandık açıldı (Ödül sistemi yakında eklenecek).";
+          return `Tebrikler! Sandıktan "${itemWon}" kazandın.`;
         },
-        error: () => {
+        error: (e) => {
           setIsOpening(false);
-          return "Sandık açılırken bir hata oluştu.";
+          return e.message || "Sandık açılırken bir hata oluştu.";
         },
       }
     );
@@ -97,7 +96,7 @@ export default function Magaza() {
               </CardDescription>
             </CardContent>
             <CardFooter>
-              <Button className="w-full" onClick={handleOpenCrate} disabled={isOpening}>
+              <Button className="w-full" onClick={handleOpenCrate} disabled={isOpening || !user}>
                 <div className="flex items-center justify-center gap-2">
                   <span>Sandığı Aç</span>
                   <div className="flex items-center gap-1 bg-background/20 rounded-full px-2 py-0.5">

@@ -14,6 +14,12 @@ import {
 } from "./routes/blog";
 import { handleUpdateProfile } from "./routes/profile";
 import { handleDeleteUser } from "./routes/user";
+import { 
+  handleUpdateExp, 
+  handleAwardBadge, 
+  handleClaimDailyReward, 
+  handleOpenCrate 
+} from "./routes/gamification";
 
 export function createServer() {
   const app = express();
@@ -38,6 +44,12 @@ export function createServer() {
 
   // Profile
   app.put("/api/profile", requireAuth, handleUpdateProfile);
+
+  // Gamification (NEW SECURE ENDPOINTS)
+  app.post("/api/gamification/exp", requireAuth, handleUpdateExp);
+  app.post("/api/gamification/badge", requireAuth, handleAwardBadge);
+  app.post("/api/gamification/daily-reward", requireAuth, handleClaimDailyReward);
+  app.post("/api/gamification/open-crate", requireAuth, handleOpenCrate);
 
   // Posts
   app.post("/api/blog/post", requireAuth, handleCreatePost);
