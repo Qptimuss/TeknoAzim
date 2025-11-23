@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { User as SupabaseUser } from "@supabase/supabase-js";
+import { Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { Profile } from "@shared/api";
 import { toast } from "sonner";
 
@@ -11,8 +11,7 @@ interface AuthContextType {
   loading: boolean;
   logout: () => Promise<void>;
   updateUser: (newUserData: Partial<User>) => Promise<void>;
-  // setUser fonksiyonunu dışa aktarıyoruz
-  _internalSetUser: (user: User | null) => void;
+  login: (supabaseUser: SupabaseUser) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,95 +30,94 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
-    try {
-      const { data: profile, error } = await supabase
-        .from("profiles")
-        .select(
-          "id, name, avatar_url, description, level, xp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at"
-        )
-        .eq("id", supabaseUser.id)
-        .single();
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select(
+        "id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at"
+      )
+      .eq("id", supabaseUser.id)
+      .single();
 
-      if (error) {
-        console.error("AUTH ERROR: Error fetching profile:", error);
-        return null;
-      }
-
-      return {
-        ...profile,
-        email: supabaseUser.email,
-      } as User;
-    } catch (e) {
-      console.error("AUTH ERROR: Exception during profile fetch:", e);
+    if (error) {
+      console.error("Error fetching profile:", error);
       return null;
     }
+
+    return {
+      ...profile,
+      email: supabaseUser.email,
+    } as User;
   };
 
   const handleDailyReward = async (profile: User): Promise<User | null> => {
-    try {
-      const lastClaimed = profile.last_daily_reward_claimed_at
-        ? new Date(profile.last_daily_reward_claimed_at)
-        : null;
-      const today = new Date();
+    const lastClaimed = profile.last_daily_reward_claimed_at
+      ? new Date(profile.last_daily_reward_claimed_at)
+      : null;
+    const today = new Date();
 
-      if (!lastClaimed || !isSameDay(lastClaimed, today)) {
-        const newGems = (profile.gems || 0) + 5;
-        const { data: updatedProfile, error } = await supabase
-          .from("profiles")
-          .update({ gems: newGems, last_daily_reward_claimed_at: today.toISOString() })
-          .eq("id", profile.id)
-          .select(
-            "id, name, avatar_url, description, level, xp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at"
-          )
-          .single();
+    if (!lastClaimed || !isSameDay(lastClaimed, today)) {
+      const newGems = (profile.gems || 0) + 5;
+      const { data: updatedProfile, error } = await supabase
+        .from("profiles")
+        .update({ gems: newGems, last_daily_reward_claimed_at: today.toISOString() })
+        .eq("id", profile.id)
+        .select(
+          "id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at"
+        )
+        .single();
 
-        if (error) {
-          console.error("AUTH ERROR: Error claiming daily reward:", error);
-          return profile;
-        }
-
-        toast.success("Günlük Giriş Ödülü", {
-          description: "Hesabına 5 Gem eklendi!",
-        });
-
-        return { ...updatedProfile, email: profile.email } as User;
+      if (error) {
+        console.error("Error claiming daily reward:", error);
+        return profile;
       }
 
-      return profile;
-    } catch (e) {
-      console.error("AUTH ERROR: Exception during daily reward handling:", e);
-      return profile;
+      toast.success("Günlük Giriş Ödülü", {
+        description: "Hesabına 5 Gem eklendi!",
+      });
+
+      return { ...updatedProfile, email: profile.email } as User;
     }
+
+    return profile;
   };
 
-  // Core function to handle session and profile loading
-  const loadUserSession = async (session: { user: SupabaseUser } | null) => {
-    if (session?.user) {
-      let profile = await fetchUserProfile(session.user);
-      if (profile) {
-        profile = await handleDailyReward(profile);
-      }
-      setUser(profile);
-    } else {
-      setUser(null);
+  const login = async (supabaseUser: SupabaseUser) => {
+    let profile = await fetchUserProfile(supabaseUser);
+    if (profile) {
+      profile = await handleDailyReward(profile);
     }
-    setLoading(false);
+    setUser(profile);
   };
 
   useEffect(() => {
-    // 1. Initial load
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      loadUserSession(session);
-    });
+    const getSessionAndProfile = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user) {
+        let profile = await fetchUserProfile(session.user);
+        if (profile) {
+          profile = await handleDailyReward(profile);
+        }
+        setUser(profile);
+      }
+      setLoading(false);
+    };
 
-    // 2. Listener for real-time changes (login/logout/token refresh)
+    getSessionAndProfile();
+
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        // We set loading to true temporarily if the event is a sign-in/out
-        if (_event === 'SIGNED_IN' || _event === 'SIGNED_OUT') {
-            setLoading(true);
+        if (session?.user) {
+          let profile = await fetchUserProfile(session.user);
+          if (profile) {
+            profile = await handleDailyReward(profile);
+          }
+          setUser(profile);
+        } else {
+          setUser(null);
         }
-        loadUserSession(session);
+        setLoading(false);
       }
     );
 
@@ -136,7 +134,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUser = async (newUserData: Partial<User>) => {
     if (!user) return;
 
-    // 1. Update profile table
     const { error: updateError } = await supabase
       .from("profiles")
       .update(newUserData)
@@ -147,7 +144,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw updateError;
     }
 
-    // 2. Re-fetch and set the updated user data
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -163,13 +159,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     logout,
     updateUser,
-    // setUser fonksiyonunu dışa aktarıyoruz
-    _internalSetUser: setUser,
+    login,
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {/* Only render children when loading is complete */}
       {!loading && children}
     </AuthContext.Provider>
   );

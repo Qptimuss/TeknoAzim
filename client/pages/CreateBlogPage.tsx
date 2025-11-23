@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import { addBlogPost, uploadBlogImage, getPostsByUserId } from "@/lib/blog-store";
 import { useAuth } from "@/contexts/AuthContext";
-import { addXp, awardBadge, XP_ACTIONS } from "@/lib/gamification";
+import { addExp, awardBadge, EXP_ACTIONS } from "@/lib/gamification";
 
 const blogSchema = z.object({
   title: z.string().min(5, "Başlık en az 5 karakter olmalıdır."),
@@ -93,8 +93,8 @@ export default function CreateBlogPage() {
 
       // --- Oyunlaştırma Mantığı ---
       
-      // 1. Blog yayınladığı için XP ver.
-      let latestProfileState = await addXp(user.id, XP_ACTIONS.CREATE_POST);
+      // 1. Blog yayınladığı için EXP ver.
+      let latestProfileState = await addExp(user.id, EXP_ACTIONS.CREATE_POST);
       
       // 2. Rozetleri kontrol et
       if (postCountBeforeCreating === 0) {

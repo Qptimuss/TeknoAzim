@@ -23,25 +23,25 @@ export const TITLES: { [key: number]: { name: string; icon: React.ElementType } 
 };
 
 // --- SEVİYE ATLAMA EŞİKLERİ ---
-export const getXpForNextLevel = (level: number): number => {
+export const getExpForNextLevel = (level: number): number => {
   if (level <= 0) return 25;
   return level * 25;
 };
 
-// Toplam XP'ye göre hangi seviyede olunması gerektiğini hesaplar.
-export const calculateLevel = (xp: number): { level: number, xpForNextLevel: number, currentLevelXp: number } => {
+// Toplam EXP'ye göre hangi seviyede olunması gerektiğini hesaplar.
+export const calculateLevel = (exp: number): { level: number, expForNextLevel: number, currentLevelExp: number } => {
   let level = 1;
-  let cumulativeXp = 0;
+  let cumulativeExp = 0;
 
-  while (xp >= cumulativeXp + getXpForNextLevel(level)) {
-    cumulativeXp += getXpForNextLevel(level);
+  while (exp >= cumulativeExp + getExpForNextLevel(level)) {
+    cumulativeExp += getExpForNextLevel(level);
     level++;
   }
   
-  const xpForNextLevel = getXpForNextLevel(level);
-  const currentLevelXp = cumulativeXp;
+  const expForNextLevel = getExpForNextLevel(level);
+  const currentLevelExp = cumulativeExp;
 
-  return { level, xpForNextLevel, currentLevelXp };
+  return { level, expForNextLevel, currentLevelExp };
 };
 
 
@@ -56,8 +56,8 @@ export const ALL_BADGES = [
   { name: "Popüler Yazar", description: "Bir gönderin 10 beğeni alsın.", icon: Star },
 ];
 
-// --- XP KAZANIM MİKTARLARI ---
-export const XP_ACTIONS = {
+// --- EXP KAZANIM MİKTARLARI ---
+export const EXP_ACTIONS = {
   CREATE_POST: 25,
   CREATE_COMMENT: 10,
   RECEIVE_LIKE: 5,
@@ -65,30 +65,30 @@ export const XP_ACTIONS = {
 };
 
 // Function to add experience points to a user
-export const addXp = async (userId: string, amount: number): Promise<Profile | null> => {
+export const addExp = async (userId: string, amount: number): Promise<Profile | null> => {
   const { data: profile, error: fetchError } = await supabase
     .from('profiles')
-    .select('xp, level')
+    .select('exp, level')
     .eq('id', userId)
     .single();
 
   if (fetchError || !profile) {
-    console.error("Error fetching profile for XP update:", fetchError);
+    console.error("Error fetching profile for EXP update:", fetchError);
     return null;
   }
 
-  const newXp = (profile.xp || 0) + amount;
-  const { level: newLevel } = calculateLevel(newXp);
+  const newExp = (profile.exp || 0) + amount;
+  const { level: newLevel } = calculateLevel(newExp);
 
   const { data: updatedProfile, error: updateError } = await supabase
     .from('profiles')
-    .update({ xp: newXp, level: newLevel })
+    .update({ exp: newExp, level: newLevel })
     .eq('id', userId)
     .select()
     .single();
 
   if (updateError) {
-    console.error("Error updating profile XP:", updateError);
+    console.error("Error updating profile EXP:", updateError);
     return null;
   }
 
@@ -100,22 +100,22 @@ export const addXp = async (userId: string, amount: number): Promise<Profile | n
 };
 
 // Function to remove experience points from a user
-export const removeXp = async (userId: string, amount: number): Promise<Profile | null> => {
+export const removeExp = async (userId: string, amount: number): Promise<Profile | null> => {
   const { data: profile, error: fetchError } = await supabase
     .from('profiles')
-    .select('xp, level, selected_title')
+    .select('exp, level, selected_title')
     .eq('id', userId)
     .single();
 
   if (fetchError || !profile) {
-    console.error("Error fetching profile for XP removal:", fetchError);
+    console.error("Error fetching profile for EXP removal:", fetchError);
     return null;
   }
 
-  const newXp = Math.max(0, (profile.xp || 0) - amount);
-  const { level: newLevel } = calculateLevel(newXp);
+  const newExp = Math.max(0, (profile.exp || 0) - amount);
+  const { level: newLevel } = calculateLevel(newExp);
   
-  const updatePayload: Partial<Profile> = { xp: newXp, level: newLevel };
+  const updatePayload: Partial<Profile> = { exp: newExp, level: newLevel };
 
   if (newLevel < profile.level) {
     toast.warning(`Seviye ${profile.level}'den Seviye ${newLevel}'e düştün!`);
@@ -141,7 +141,7 @@ export const removeXp = async (userId: string, amount: number): Promise<Profile 
     .single();
 
   if (updateError) {
-    console.error("Error updating profile after XP removal:", updateError);
+    console.error("Error updating profile after EXP removal:", updateError);
     return null;
   }
 
@@ -152,7 +152,7 @@ export const removeXp = async (userId: string, amount: number): Promise<Profile 
 export const awardBadge = async (userId: string, badgeName: string): Promise<Profile | null> => {
   const { data: profile, error: fetchError } = await supabase
     .from('profiles')
-    .select('badges, xp, level, gems')
+    .select('badges, exp, level, gems')
     .eq('id', userId)
     .single();
 
@@ -167,13 +167,13 @@ export const awardBadge = async (userId: string, badgeName: string): Promise<Pro
   }
 
   const newBadges = [...currentBadges, badgeName];
-  const newXp = (profile.xp || 0) + XP_ACTIONS.EARN_BADGE;
+  const newExp = (profile.exp || 0) + EXP_ACTIONS.EARN_BADGE;
   const newGems = (profile.gems || 0) + 10; // Updated to 10 gems
-  const { level: newLevel } = calculateLevel(newXp);
+  const { level: newLevel } = calculateLevel(newExp);
 
   const { data: updatedProfile, error: updateError } = await supabase
     .from('profiles')
-    .update({ badges: newBadges, xp: newXp, level: newLevel, gems: newGems })
+    .update({ badges: newBadges, exp: newExp, level: newLevel, gems: newGems })
     .eq('id', userId)
     .select()
     .single();
@@ -184,7 +184,7 @@ export const awardBadge = async (userId: string, badgeName: string): Promise<Pro
   }
 
   toast.success("Yeni Rozet Kazandın!", {
-    description: `"${badgeName}" rozetini kazandın, ${XP_ACTIONS.EARN_BADGE} XP ve 10 Gem elde ettin!`,
+    description: `"${badgeName}" rozetini kazandın, ${EXP_ACTIONS.EARN_BADGE} EXP ve 10 Gem elde ettin!`,
   });
 
   if (newLevel > (profile.level || 1)) {

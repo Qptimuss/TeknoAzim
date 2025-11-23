@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 
 export default function Giris() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,14 +16,6 @@ export default function Giris() {
     password: "",
   });
   const navigate = useNavigate();
-  // setUser fonksiyonunu alıyoruz
-  const { user, _internalSetUser } = useAuth(); 
-
-  // NOT: Otomatik yönlendirme döngüsünü önlemek için bu kontrolü kaldırıyoruz.
-  // if (user) {
-  //   navigate("/");
-  //   return null;
-  // }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -36,7 +27,7 @@ export default function Giris() {
     setIsSubmitting(true);
     setShowResendLink(false);
     
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email: formData.email,
       password: formData.password,
     });
@@ -52,49 +43,9 @@ export default function Giris() {
       } else {
         toast.error("Giriş Hatası", { description: error.message });
       }
-    } else if (data.user) {
-      // Yarış durumunu çözmek için: Oturum açıldığında AuthContext'in user state'ini manuel olarak güncelliyoruz.
-      // Bu, getSession() çağrısının tamamlanmasını beklemeden yönlendirmeyi sağlar.
-      // Profil verilerini çekmek için bir fonksiyon çağrısı da ekleyebiliriz, ancak şimdilik sadece kullanıcı bilgilerini set ediyoruz.
-      // Email bilgisi zaten mevcut, diğer alanlar profil tablosundan gelir.
-      // Ancak, profil verileri olmadan yönlendirme yapmak istiyoruz.
-      // Bu nedenle, sadece temel kullanıcı bilgilerini set ediyoruz.
-      // Gerçek profil verileri, AuthContext'in listener'ı tarafından arka planda yüklenecek.
-      
-      // Ancak, bu yöntem de yeterli olmayabilir çünkü profil verileri olmadan ProtectedRoute çalışmayabilir.
-      // En iyi çözüm, profil verilerini de hemen çekip set etmek.
-      
-      try {
-        // 1. Profil verilerini hemen çek
-        const profileData = await supabase
-          .from("profiles")
-          .select(
-            "id, name, avatar_url, description, level, xp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at"
-          )
-          .eq("id", data.user.id)
-          .single();
-
-        if (profileData.error) {
-          console.error("AUTH ERROR: Immediate profile fetch failed:", profileData.error);
-          // Hata olsa bile, kullanıcı bilgileriyle devam edebiliriz.
-        }
-
-        // 2. AuthContext state'ini manuel olarak güncelle
-        const fullUser = {
-          ...(profileData.data || { id: data.user.id, name: null, avatar_url: null, description: null, level: 1, xp: 0, badges: [], selected_title: null, owned_frames: [], selected_frame: null, gems: 0, last_daily_reward_claimed_at: null }),
-          email: data.user.email,
-        };
-        _internalSetUser(fullUser);
-
-        // 3. Yönlendir
-        toast.success("Giriş başarılı!", { description: "Yönlendiriliyorsunuz..." });
-        navigate("/"); 
-      } catch (fetchError) {
-        console.error("AUTH ERROR: Exception during immediate profile fetch:", fetchError);
-        // Hata durumunda bile yönlendir
-        toast.success("Giriş başarılı!", { description: "Yönlendiriliyorsunuz..." });
-        navigate("/"); 
-      }
+    } else {
+      toast.success("Giriş başarılı!", { description: "Yönlendiriliyorsunuz..." });
+      navigate("/profil");
     }
   };
 
