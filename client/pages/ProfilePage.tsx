@@ -47,14 +47,17 @@ export default function ProfilePage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
 
+  // Inline editing states
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [nameValue, setNameValue] = useState("");
   const [descriptionValue, setDescriptionValue] = useState("");
   
+  // Cropping States
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [isCropperOpen, setIsCropperOpen] = useState(false);
 
+  // Account Deletion States
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
@@ -86,7 +89,7 @@ export default function ProfilePage() {
     await toast.promise(updateUser(updateData), {
       loading: 'Ünvan kaydediliyor...',
       success: 'Ünvan güncellendi.',
-      error: (err) => err.message || 'Hata oluştu.',
+      error: 'Hata oluştu.',
     });
   };
 
@@ -108,7 +111,7 @@ export default function ProfilePage() {
     await toast.promise(updateUser(updateData), {
       loading: 'İşleniyor...',
       success: successMessage,
-      error: (err) => err.message || 'Hata oluştu.',
+      error: 'Hata oluştu.',
     });
   };
 
@@ -125,7 +128,7 @@ export default function ProfilePage() {
       await toast.promise(updateUser({ name: nameValue }), {
         loading: 'İsim güncelleniyor...',
         success: 'İsim güncellendi!',
-        error: (err) => err.message || 'Hata oluştu.',
+        error: 'Hata oluştu.',
       });
     }
   };
@@ -148,7 +151,7 @@ export default function ProfilePage() {
       await toast.promise(updateUser({ description: descriptionValue }), {
         loading: 'Açıklama güncelleniyor...',
         success: 'Açıklama güncellendi!',
-        error: (err) => err.message || 'Hata oluştu.',
+        error: 'Hata oluştu.',
       });
     }
   };
@@ -191,7 +194,7 @@ export default function ProfilePage() {
       {
         loading: "Profil fotoğrafı yükleniyor...",
         success: "Profil fotoğrafı güncellendi!",
-        error: (err) => err.message || "Profil fotoğrafı güncellenirken bir hata oluştu.",
+        error: "Profil fotoğrafı güncellenirken bir hata oluştu.",
       }
     );
   };
@@ -204,7 +207,7 @@ export default function ProfilePage() {
     if (!postToDelete || !user) return;
     setIsDeleting(true);
     try {
-      await deleteBlogPost(postToDelete.id);
+      await deleteBlogPost(postToDelete.id, postToDelete.imageUrl);
       setUserPosts(prev => prev.filter(p => p.id !== postToDelete.id));
       
       const updatedProfile = await removeExp(user.id, EXP_ACTIONS.CREATE_POST);
@@ -498,7 +501,7 @@ export default function ProfilePage() {
                     key={post.id} 
                     post={post} 
                     showDelete={true}
-                    onDelete={() => handleDeleteRequest(post.id, post.image_url)}
+                    onDelete={handleDeleteRequest}
                     hideProfileLink={true}
                   />
                 ))}

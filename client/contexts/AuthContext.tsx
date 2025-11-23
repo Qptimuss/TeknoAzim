@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { Profile } from "@shared/api";
 import { toast } from "sonner";
-import { apiFetch } from "@/lib/api-client";
 
 export type User = Profile & { email?: string };
 
@@ -16,6 +15,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper to check if the last reward was claimed today
 const isSameDay = (d1: Date, d2: Date) => {
   return d1.getFullYear() === d2.getFullYear() &&
          d1.getMonth() === d2.getMonth() &&
@@ -59,13 +59,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (error) {
         console.error("Error claiming daily reward:", error);
-        return profile;
+        return profile; // Return original profile on error
       }
       
       toast.success("Günlük Giriş Ödülü", { description: "Hesabına 20 Elmas eklendi!" });
       return { ...updatedProfile, email: profile.email } as User;
     }
-    return profile;
+    return profile; // No reward needed, return original profile
   };
 
   useEffect(() => {
@@ -109,19 +109,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUser = async (newUserData: Partial<User>) => {
     if (!user) return;
 
-    try {
-      const updatedProfile = await apiFetch('/user/profile', {
-        method: 'PUT',
-        body: JSON.stringify(newUserData),
-      });
-      setUser({ ...updatedProfile, email: user.email });
-    } catch (error) {
-      console.error("Error updating profile via API:", error);
-      toast.error("Profil güncellenemedi", {
-        description: error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.",
-      });
-      // Re-throw the error so the calling component knows it failed
-      throw error;
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update(newUserData)
+      .eq('id', user.id);
+
+    if (updateError) {
+      console.error("Error updating profile:", updateError);
+      throw updateError;
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const updatedProfile = await fetchUserProfile(session.user);
+      setUser(updatedProfile);
     }
   };
 

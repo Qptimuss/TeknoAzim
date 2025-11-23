@@ -66,8 +66,8 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
     setUserAction(newUserAction);
     
     try {
-      const apiVoteType = newUserAction;
-      await castVote(postId, apiVoteType);
+      const apiVoteType = newUserAction === 'liked' ? 'like' : newUserAction === 'disliked' ? 'dislike' : null;
+      await castVote(postId, user.id, apiVoteType);
 
       if (isLiking) {
         const { likes: newLikes } = await getVoteCounts(postId);
@@ -96,6 +96,7 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
             if (badgeUpdate) profileAfterUpdate = badgeUpdate;
           }
 
+          // If the badge earner is the current user, update context
           if (profileAfterUpdate && post.user_id === user.id) {
             updateUser(profileAfterUpdate);
           }

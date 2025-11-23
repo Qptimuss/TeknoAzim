@@ -22,6 +22,8 @@ import { ArrowLeft } from "lucide-react";
 const blogSchema = z.object({
   title: z.string().min(5, "Başlık en az 5 karakter olmalıdır."),
   content: z.string().min(20, "İçerik en az 20 karakter olmalıdır."),
+  // We use a separate field for the existing image URL to display it, 
+  // and imageFile for new uploads.
   existingImageUrl: z.string().optional().nullable(),
   imageFile: z
     .instanceof(FileList)
@@ -51,6 +53,7 @@ export default function EditBlogPage() {
   const imageFileRef = form.register("imageFile");
   const { isSubmitting } = form.formState;
 
+  // 1. Fetch existing post data
   useEffect(() => {
     if (!id || authLoading) return;
 
@@ -63,6 +66,7 @@ export default function EditBlogPage() {
         return;
       }
 
+      // Check ownership
       if (user?.id !== post.user_id) {
         toast.error("Bu yazıyı düzenleme yetkiniz yok.");
         navigate(`/bloglar/${id}`);
@@ -86,6 +90,7 @@ export default function EditBlogPage() {
     let newImageUrl: string | null | undefined = values.existingImageUrl;
 
     try {
+      // 1. Handle new image upload
       if (values.imageFile && values.imageFile.length > 0) {
         toast.info("Yeni resim yükleniyor...");
         const file = values.imageFile[0];
@@ -93,6 +98,7 @@ export default function EditBlogPage() {
         newImageUrl = uploadedUrl;
       }
 
+      // 2. Update blog post
       await updateBlogPost(id, { 
         title: values.title,
         content: values.content,
@@ -102,23 +108,21 @@ export default function EditBlogPage() {
       toast.success("Blog yazınız başarıyla güncellendi!");
       navigate(`/bloglar/${id}`);
     } catch (error) {
-      toast.error("Blog yazısı güncellenemedi.", {
-        description: error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.",
-      });
+      toast.error("Blog yazısı güncellenirken bir hata oluştu.");
       console.error(error);
     }
   }
 
   return (
     <div className="container mx-auto px-5 py-12 max-w-3xl">
-      <Link to={`/bloglar/${id}`} className="text-foreground hover:underline flex items-center gap-2 mb-8">
+      <Link to={`/bloglar/${id}`} className="text-white hover:underline flex items-center gap-2 mb-8">
         <ArrowLeft size={20} />
         Geri Dön
       </Link>
-      <h1 className="text-foreground text-4xl md:text-5xl font-outfit font-bold mb-8">
+      <h1 className="text-white text-4xl md:text-5xl font-outfit font-bold mb-8">
         Blog Yazısını Düzenle
       </h1>
-      <div className="bg-card border border-border rounded-lg p-8">
+      <div className="bg-[#090a0c] border border-[#2a2d31] rounded-lg p-8">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -126,9 +130,9 @@ export default function EditBlogPage() {
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Başlık</FormLabel>
+                  <FormLabel className="text-white">Başlık</FormLabel>
                   <FormControl>
-                    <Input placeholder="Blog Başlığı" {...field} />
+                    <Input placeholder="Blog Başlığı" {...field} className="bg-[#151313] border-[#42484c] text-white" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -137,7 +141,7 @@ export default function EditBlogPage() {
             
             {form.watch('existingImageUrl') && (
                 <div className="space-y-2">
-                    <FormLabel>Mevcut Kapak Resmi</FormLabel>
+                    <FormLabel className="text-white">Mevcut Kapak Resmi</FormLabel>
                     <img src={form.watch('existingImageUrl')!} alt="Mevcut Resim" className="w-full h-40 object-cover rounded-md" />
                     <Button 
                         variant="destructive" 
@@ -155,13 +159,13 @@ export default function EditBlogPage() {
               name="imageFile"
               render={() => (
                 <FormItem>
-                  <FormLabel>Yeni Kapak Resmi (Maks 2MB)</FormLabel>
+                  <FormLabel className="text-white">Yeni Kapak Resmi (Maks 2MB)</FormLabel>
                   <FormControl>
                     <Input 
                       type="file" 
                       accept="image/*"
                       {...imageFileRef}
-                      className="file:text-foreground"
+                      className="bg-[#151313] border-[#42484c] text-white file:text-white"
                     />
                   </FormControl>
                   <FormMessage />
@@ -173,15 +177,15 @@ export default function EditBlogPage() {
               name="content"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>İçerik</FormLabel>
+                  <FormLabel className="text-white">İçerik</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Blog içeriğini buraya yazın..." {...field} className="min-h-[200px]" />
+                    <Textarea placeholder="Blog içeriğini buraya yazın..." {...field} className="bg-[#151313] border-[#42484c] text-white min-h-[200px]" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" size="lg" disabled={isSubmitting} className="w-full text-lg">
+            <Button type="submit" size="lg" disabled={isSubmitting} className="w-full bg-[#151313]/95 border border-[#42484c] hover:bg-[#151313] text-white text-lg">
               {isSubmitting ? "Güncelleniyor..." : "Güncelle"}
             </Button>
           </form>

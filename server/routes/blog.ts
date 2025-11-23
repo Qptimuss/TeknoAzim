@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { getSupabaseAdmin } from "../lib/supabase-admin.ts";
+import { supabaseAdmin } from "../lib/supabase-admin.ts";
 import { z } from "zod";
 
 // --- Schemas for validation ---
@@ -35,15 +35,15 @@ export const handleCreatePost: RequestHandler = async (req, res) => {
 
   try {
     const validatedData = newPostSchema.parse(req.body);
-    const supabaseAdmin = getSupabaseAdmin();
 
+    // Server-side insertion, ensuring user_id is set by the authenticated user
     const { data, error } = await supabaseAdmin
       .from("blog_posts")
       .insert({
         title: validatedData.title,
         content: validatedData.content,
         image_url: validatedData.imageUrl,
-        user_id: userId,
+        user_id: userId, // Enforce user ID from JWT, not client input
       })
       .select()
       .single();
@@ -71,8 +71,8 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
 
   try {
     const validatedData = updatePostSchema.parse(req.body);
-    const supabaseAdmin = getSupabaseAdmin();
 
+    // 1. Check ownership (using RLS bypass capability of supabaseAdmin)
     const { data: existingPost, error: fetchError } = await supabaseAdmin
       .from("blog_posts")
       .select("user_id")
@@ -87,6 +87,7 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
       return res.status(403).json({ error: "Forbidden: You do not own this post." });
     }
 
+    // 2. Perform update
     const { data, error } = await supabaseAdmin
       .from("blog_posts")
       .update({
@@ -120,10 +121,10 @@ export const handleDeletePost: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const supabaseAdmin = getSupabaseAdmin();
+    // 1. Check ownership
     const { data: existingPost, error: fetchError } = await supabaseAdmin
       .from("blog_posts")
-      .select("user_id, image_url")
+      .select("user_id")
       .eq("id", postId)
       .single();
 
@@ -135,23 +136,7 @@ export const handleDeletePost: RequestHandler = async (req, res) => {
       return res.status(403).json({ error: "Forbidden: You do not own this post." });
     }
 
-    if (existingPost.image_url) {
-      try {
-        const url = new URL(existingPost.image_url);
-        const imagePath = url.pathname.split('/blog_images/')[1];
-        if (imagePath) {
-          const { error: storageError } = await supabaseAdmin.storage
-            .from('blog_images')
-            .remove([imagePath]);
-          if (storageError) {
-            console.error("Error deleting blog image from storage:", storageError);
-          }
-        }
-      } catch (e) {
-        console.error("Could not parse image URL to delete from storage:", e);
-      }
-    }
-
+    // 2. Perform deletion
     const { error } = await supabaseAdmin
       .from('blog_posts')
       .delete()
@@ -176,8 +161,8 @@ export const handleAddComment: RequestHandler = async (req, res) => {
 
   try {
     const validatedData = newCommentSchema.parse(req.body);
-    const supabaseAdmin = getSupabaseAdmin();
 
+    // Server-side insertion, enforcing user_id from JWT
     const { data, error } = await supabaseAdmin
       .from('comments')
       .insert({
@@ -210,7 +195,7 @@ export const handleDeleteComment: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const supabaseAdmin = getSupabaseAdmin();
+    // 1. Check ownership
     const { data: existingComment, error: fetchError } = await supabaseAdmin
       .from("comments")
       .select("user_id")
@@ -225,6 +210,7 @@ export const handleDeleteComment: RequestHandler = async (req, res) => {
       return res.status(403).json({ error: "Forbidden: You do not own this comment." });
     }
 
+    // 2. Perform deletion
     const { error } = await supabaseAdmin
       .from('comments')
       .delete()
@@ -250,9 +236,9 @@ export const handleCastVote: RequestHandler = async (req, res) => {
   try {
     const validatedData = castVoteSchema.parse(req.body);
     const { postId, voteType } = validatedData;
-    const supabaseAdmin = getSupabaseAdmin();
 
     if (voteType === 'null') {
+      // Remove vote
       const { error } = await supabaseAdmin
         .from('post_votes')
         .delete()
@@ -260,6 +246,7 @@ export const handleCastVote: RequestHandler = async (req, res) => {
         .eq('user_id', userId);
       if (error) throw error;
     } else {
+      // Add or update vote
       const { error } = await supabaseAdmin
         .from('post_votes')
         .upsert({
