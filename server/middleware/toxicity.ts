@@ -42,11 +42,18 @@ export const checkToxicity: RequestHandler = async (req, res, next) => {
       });
 
       if (!response.ok) {
-        console.error('Toxicity check service failed:', await response.text());
-        // FAIL-CLOSED: If the service fails, block the request.
-        return res.status(503).json({ 
-          message: "İçerik denetleme servisi şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin." 
-        });
+        const errorText = await response.text();
+        console.error('Toxicity check service failed:', errorText);
+        
+        // FAIL-OPEN in development: If the service fails, allow the request
+        if (process.env.NODE_ENV === 'production') {
+          return res.status(503).json({ 
+            message: "İçerik denetleme servisi şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin." 
+          });
+        } else {
+          console.warn('Toxicity check failed in development, allowing request to proceed');
+          continue;
+        }
       }
 
       const result: ToxicityResponse = await response.json();
@@ -62,9 +69,14 @@ export const checkToxicity: RequestHandler = async (req, res, next) => {
 
   } catch (error) {
     console.error("Error in toxicity middleware:", error);
-    // FAIL-CLOSED: If any other error occurs, block the request.
-    return res.status(500).json({
-      message: "İçerik denetlenirken bir hata oluştu. Lütfen tekrar deneyin."
-    });
+    // FAIL-OPEN in development: If any other error occurs, allow the request
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(500).json({
+        message: "İçerik denetlenirken bir hata oluştu. Lütfen tekrar deneyin."
+      });
+    } else {
+      console.warn('Toxicity check error in development, allowing request to proceed');
+      next();
+    }
   }
 };

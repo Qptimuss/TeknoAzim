@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
-// Daha popüler ve her zaman aktif olan bir modele geçiyoruz.
-const HUGGING_FACE_API_URL = "https://api-inference.huggingface.co/models/savasy/bert-base-turkish-sentiment-cased";
+// Using a more appropriate model for toxicity detection
+const HUGGING_FACE_API_URL = "https://api-inference.huggingface.co/models/unitary/toxic-bert";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,7 +25,10 @@ serve(async (req) => {
     const HUGGING_FACE_API_KEY = Deno.env.get("HUGGING_FACE_API_KEY");
     if (!HUGGING_FACE_API_KEY) {
       console.error("HUGGING_FACE_API_KEY is not set in Supabase secrets.");
-      return new Response(JSON.stringify({ message: "Toxicity service is not configured." }), {
+      return new Response(JSON.stringify({ 
+        message: "Toxicity service is not configured properly.",
+        details: "HUGGING_FACE_API_KEY is missing"
+      }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -43,32 +46,71 @@ serve(async (req) => {
     if (!hfResponse.ok) {
       const errorBody = await hfResponse.text();
       console.error("Hugging Face API error:", errorBody);
-      return new Response(JSON.stringify({ message: "Failed to analyze content." }), {
-        status: 502,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      
+      // Return more detailed error in non-production environments
+      if (Deno.env.get("DENO_ENV") !== "production") {
+        return new Response(JSON.stringify({ 
+          message: "Failed to analyze content.", 
+          details: errorBody,
+          status: hfResponse.status
+        }), {
+          status: 502,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } else {
+        return new Response(JSON.stringify({ message: "Failed to analyze content." }), {
+          status: 502,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     const result = await hfResponse.json();
     
-    // Yeni modelin çıktısını işliyoruz. "negative" etiketinin skorunu alıyoruz.
+    // Process the toxicity scores from the model
+    let toxicityScore = 0;
     const labels = result[0];
-    const negativeLabel = labels.find((label: { label: string }) => label.label === 'negative');
-    const toxicityScore = negativeLabel ? negativeLabel.score : 0;
     
-    // Eğer negatiflik skoru %75'ten yüksekse, bunu toksik olarak kabul ediyoruz.
-    const isToxic = toxicityScore > 0.75;
-
-    return new Response(JSON.stringify({ isToxic, toxicityScore, message: "Content analyzed successfully." }), {
+    // The model returns multiple toxicity categories
+    const toxicityCategories = [
+      'toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate'
+    ];
+    
+    toxicityCategories.forEach(category => {
+      const label = labels.find((l: { label: string }) => l.label === category);
+      if (label) {
+        toxicityScore = Math.max(toxicityScore, label.score);
+      }
+    });
+    
+    const isToxic = toxicityScore > 0.7;
+    
+    return new Response(JSON.stringify({ 
+      isToxic, 
+      toxicityScore, 
+      message: "Content analyzed successfully.",
+      details: labels
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
 
   } catch (error) {
     console.error("Error in toxicity function:", error);
-    return new Response(JSON.stringify({ message: "An internal error occurred." }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    // Return more detailed error in non-production environments
+    if (Deno.env.get("DENO_ENV") !== "production") {
+      return new Response(JSON.stringify({ 
+        message: "An internal error occurred.", 
+        error: error instanceof Error ? error.message : String(error)
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } else {
+      return new Response(JSON.stringify({ message: "An internal error occurred." }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
   }
 });
