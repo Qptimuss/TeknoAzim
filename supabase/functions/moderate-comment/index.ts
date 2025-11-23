@@ -1,17 +1,17 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { HfInference } from 'https://esm.sh/@huggingface/inference';
+import { HfInference } from 'https://esm.sh/@huggingface/inference@2.8.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Hugging Face Inference client (yalnızca İngilizce için)
+// --- MODERATION CONFIGURATION ---
 const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
 const MODEL_ENGLISH = 'unitary/toxic-bert';
 
-// Türkçe modelin çalıştığı Space URL
-const TURKISH_SPACE_URL ="https://qptimus-merhaba.hf.space/api/predict/"; // burayı kendi Space URL’inle değiştir 
+// Türkçe modelin çalıştığı Space URL (Sondaki eğik çizgi kaldırıldı)
+const TURKISH_SPACE_URL = "https://qptimus-merhaba.hf.space/api/predict"; 
 
 const TOXICITY_THRESHOLD = 0.7; 
 const EXCEPTIONAL_PHRASE = "emailinizi falan girin üstten profilinizi oluşturun sonra buraya mesaj atin bakalım cidden calisiyo mu 😎";
@@ -28,22 +28,49 @@ const WHOLE_WORD_BANNED = new Set([
   "sülale", "sülaleni", "pezevenk", "yarak"
 ]);
 
-const hf = new HfInference(HF_ACCESS_TOKEN);
+// HF client'ı sadece token varsa başlat
+const hf = HF_ACCESS_TOKEN ? new HfInference(HF_ACCESS_TOKEN) : null;
 
 // Türkçe modeli Space üzerinden çağırmak için helper
 async function getTurkishScore(content: string): Promise<number> {
+  if (!TURKISH_SPACE_URL) return 0; // URL yoksa atla
+
+  const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+  };
+  
+  if (HF_ACCESS_TOKEN) {
+      headers['Authorization'] = `Bearer ${HF_ACCESS_TOKEN}`;
+  }
+
+  const body = JSON.stringify({ data: [content] }); 
+  
+  console.log(`[Turkish Moderation] Sending request to: ${TURKISH_SPACE_URL}`);
+  console.log(`[Turkish Moderation] Request body: ${body}`);
+
   try {
     const response = await fetch(TURKISH_SPACE_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: [content] })
+      headers: headers,
+      body: body,
     });
+    
+    console.log(`[Turkish Moderation] Response status: ${response.status}`);
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Turkish Moderation] API Error Response: ${errorText}`);
+        return 1.0; // API hatası durumunda toksik kabul et
+    }
+
     const result = await response.json();
+    console.log(`[Turkish Moderation] API Success Response Data: ${JSON.stringify(result)}`);
+
     // Space’in döndürdüğü yapı genellikle result.data[0]
     return result.data?.[0] ?? 0;
   } catch (err) {
-    console.error("Error calling Turkish Space:", err);
-    return 0; // Hata durumunda 0 döndür
+    console.error("[Turkish Moderation] Network/Fetch Error:", err);
+    return 1.0; // Ağ hatası durumunda toksik kabul et
   }
 }
 
@@ -86,15 +113,20 @@ serve(async (req) => {
 
     // İngilizce model
     let englishToxicScore = 0;
-    try {
-      const englishModerationResponse = await hf.textClassification({
-        model: MODEL_ENGLISH, 
-        inputs: content,
-      });
-      const englishToxicLabel = englishModerationResponse.flat().find(item => item.label.toLowerCase().includes('toxic') || item.label === 'LABEL_1');
-      if (englishToxicLabel) englishToxicScore = englishToxicLabel.score;
-    } catch (err) {
-      console.log("Error calling English model:", err);
+    if (hf) {
+        try {
+          const englishModerationResponse = await hf.textClassification({
+            model: MODEL_ENGLISH, 
+            inputs: content,
+          });
+          const englishToxicLabel = englishModerationResponse.flat().find(item => item.label.toLowerCase().includes('toxic') || item.label === 'LABEL_1');
+          if (englishToxicLabel) englishToxicScore = englishToxicLabel.score;
+        } catch (err) {
+          console.error("Error calling English model:", err);
+          englishToxicScore = 1.0; // API hatası durumunda toksik kabul et
+        }
+    } else {
+        console.warn("HUGGING_FACE_API_KEY is missing. Skipping English moderation.");
     }
 
     // Türkçe model (Space üzerinden)
