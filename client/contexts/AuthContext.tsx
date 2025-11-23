@@ -38,7 +38,7 @@ const SAFE_PROFILE_UPDATE_KEYS: Array<keyof Profile> = [
   'selected_frame',
 ];
 
-export function AuthProvider({ children, ...props }: { children: ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 

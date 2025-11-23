@@ -7,15 +7,32 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { openCrate } from "@/lib/profile-store";
+import CrateOpeningDialog from "@/components/CrateOpeningDialog";
+import { FRAMES, RARITIES } from "@/lib/store-items";
 
 const CRATE_COST = 10;
 
+// Helper to find the frame object based on the name returned from the server
+const getFrameDetails = (frameName: string) => {
+  const frame = FRAMES.find(f => f.name === frameName);
+  if (!frame) return null;
+  const rarity = RARITIES[Object.keys(RARITIES).find(key => RARITIES[key as keyof typeof RARITIES].name === frame.rarity) as keyof typeof RARITIES];
+  return {
+    ...frame,
+    rarity: rarity.name,
+    className: frame.className,
+  };
+};
+
 export default function Magaza() {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
-  // Use mergeProfileState for secure updates
   const { user, mergeProfileState } = useAuth(); 
   const navigate = useNavigate();
-  const [isOpening, setIsOpening] = useState(false);
+  
+  const [isCrateDialogOpen, setIsCrateDialogOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [wonFrame, setWonFrame] = useState<any | null>(null);
+  const [alreadyOwned, setAlreadyOwned] = useState(false);
 
   const handleOpenCrate = async () => {
     if (!user) {
@@ -36,30 +53,42 @@ export default function Magaza() {
       return;
     }
 
-    setIsOpening(true);
+    setIsCrateDialogOpen(true);
+    setIsProcessing(true);
+    setWonFrame(null);
+    setAlreadyOwned(false);
 
-    await toast.promise(
-      async () => {
-        // Use the secure server API to open the crate
-        const { updatedProfile, itemWon } = await openCrate(CRATE_COST);
-        
-        // Securely merge the updated profile state (gems, owned_frames) into the context
-        mergeProfileState(updatedProfile);
-
-        return itemWon;
-      },
-      {
-        loading: "Sandık açılıyor...",
-        success: (itemWon) => {
-          setIsOpening(false);
-          return `Tebrikler! Sandıktan "${itemWon}" kazandın.`;
-        },
-        error: (e) => {
-          setIsOpening(false);
-          return e.message || "Sandık açılırken bir hata oluştu.";
-        },
+    try {
+      // Use the secure server API to open the crate
+      const { updatedProfile, itemWon } = await openCrate(CRATE_COST);
+      
+      // Check if the item won was a frame or a gem refund
+      const isGemRefund = itemWon.includes("Gem");
+      
+      if (isGemRefund) {
+        setWonFrame(getFrameDetails(updatedProfile.selected_frame || 'Nova')); // Mock frame for display if refund
+        setAlreadyOwned(true);
+      } else {
+        const frameDetails = getFrameDetails(itemWon);
+        setWonFrame(frameDetails);
+        setAlreadyOwned(user.owned_frames?.includes(itemWon) ?? false);
       }
-    );
+
+      // Securely merge the updated profile state (gems, owned_frames) into the context
+      mergeProfileState(updatedProfile);
+
+    } catch (e) {
+      setIsCrateDialogOpen(false);
+      toast.error("Sandık açılırken bir hata oluştu.", {
+        description: e instanceof Error ? e.message : "Lütfen tekrar deneyin.",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setIsCrateDialogOpen(false);
   };
 
   return (
@@ -96,7 +125,7 @@ export default function Magaza() {
               </CardDescription>
             </CardContent>
             <CardFooter>
-              <Button className="w-full" onClick={handleOpenCrate} disabled={isOpening || !user}>
+              <Button className="w-full" onClick={handleOpenCrate} disabled={isProcessing || !user}>
                 <div className="flex items-center justify-center gap-2">
                   <span>Sandığı Aç</span>
                   <div className="flex items-center gap-1 bg-background/20 rounded-full px-2 py-0.5">
@@ -110,6 +139,13 @@ export default function Magaza() {
         </div>
       </div>
       <CrateInfoDialog open={isInfoOpen} onOpenChange={setIsInfoOpen} />
+      <CrateOpeningDialog
+        open={isCrateDialogOpen}
+        onClose={handleCloseDialog}
+        isProcessing={isProcessing}
+        wonFrame={wonFrame}
+        alreadyOwned={alreadyOwned}
+      />
     </>
   );
 }

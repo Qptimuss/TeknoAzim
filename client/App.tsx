@@ -23,6 +23,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./components/ThemeProvider";
 import Magaza from "./pages/Magaza";
+import EditBlogPage from "./pages/EditBlogPage"; // Added missing import
 
 const queryClient = new QueryClient();
 
@@ -30,7 +31,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       {/* ThemeProvider'ı sadece dark mode kullanacak şekilde ayarladık */}
-      <ThemeProvider attribute="class">
+      <ThemeProvider attribute="class" defaultTheme="dark">
         <Toaster />
         <Sonner />
         <AuthProvider>
@@ -51,6 +52,7 @@ const App = () => (
                 <Route element={<ProtectedRoute />}>
                   <Route path="/blog-olustur" element={<CreateBlogPage />} />
                   <Route path="/profil" element={<ProfilePage />} />
+                  <Route path="/bloglar/:id/duzenle" element={<EditBlogPage />} />
                 </Route>
               </Route>
               
