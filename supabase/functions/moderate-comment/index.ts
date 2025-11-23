@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const HUGGING_FACE_API_KEY = Deno.env.get("HUGGING_FACE_API_KEY");
-// Eski, kullanımdan kaldırılmış model yerine yenisini kullanıyoruz.
-const MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/martin-ha/toxic-comment-model";
+// Sorunu çözmek için farklı bir toksik yorum modeli deniyoruz.
+const MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/s-nlp/roberta_toxicity_classifier";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,7 +30,8 @@ serve(async (req) => {
     }
     console.log("Moderation function invoked with content:", content);
 
-    console.log("Calling Hugging Face API...");
+    // Hangi adrese istek attığımızı loglayarak teyit edelim.
+    console.log(`Calling Hugging Face API at endpoint: ${MODEL_ENDPOINT}`);
     const response = await fetch(MODEL_ENDPOINT, {
       method: "POST",
       headers: {
@@ -57,10 +58,11 @@ serve(async (req) => {
     const results = await response.json();
     console.log("Hugging Face API response:", JSON.stringify(results, null, 2));
     
-    const toxicPrediction = results[0].find((item: { label: string; score: number }) => item.label === 'toxic');
+    // Bu modelin çıktısı 'toxic' ve 'nontoxic' olabilir.
+    const toxicPrediction = results[0].find((item: { label: string; score: number }) => item.label.toLowerCase() === 'toxic');
     
-    const isToxic = toxicPrediction && toxicPrediction.score > 0.9;
-    console.log("Toxicity check result:", { isToxic });
+    const isToxic = toxicPrediction && toxicPrediction.score > 0.8;
+    console.log("Toxicity check result:", { isToxic, score: toxicPrediction?.score });
 
     return new Response(JSON.stringify({ approved: !isToxic }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
