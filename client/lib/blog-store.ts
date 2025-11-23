@@ -49,7 +49,8 @@ export const uploadBlogImage = async (file: File, userId: string): Promise<strin
 // Upload a user avatar to Supabase Storage
 export const uploadAvatar = async (file: File, userId: string): Promise<string | null> => {
   // Avatars are stored in a specific path, overwriting the previous one for the user
-  const filePath = `avatars/${userId}.jpeg`; // Use jpeg extension for consistency after cropping
+  // Path is now just the user ID + extension, relative to the 'avatars' bucket root.
+  const filePath = `${userId}.jpeg`; // Simplified path
 
   // Use upsert to replace the existing avatar
   const { error: uploadError } = await supabase.storage
