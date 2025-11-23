@@ -31,15 +31,7 @@ const WHOLE_WORD_BANNED = new Set([
   "sülale", "sülaleni", "pezevenk", "yarak"
 ]);
 
-// Alt dize olarak eşleşmesi gereken yasaklı kelimeler (includes kullanılarak)
-const SUBSTRING_BANNED = new Set([
-  "amk", "aq", "oç", "sikerim", "siktir git", "ananı", "babana", "yavşak", "gavat", "siktir lan", "götveren", "orosbu", "piçin", "ananın", "lan",
-  "anan", "anne", "annen",
-  "domal", "sik", "yarrak", "göt",
-  "siktir", 
-  "amcık",
-  "bacını", "karını", "çocuğunu"
-]);
+// Alt dize olarak eşleşmesi gereken yasaklı kelimeler (SUBSTRING_BANNED) kaldırıldı.
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -64,7 +56,7 @@ serve(async (req) => {
       });
     }
 
-    // 2. Açık anahtar kelime kontrolü
+    // 2. Açık anahtar kelime kontrolü (Sadece WHOLE_WORD_BANNED kontrolü kaldı)
     const lowerCaseContent = content.toLowerCase();
     let containsBannedWord = false;
 
@@ -74,17 +66,6 @@ serve(async (req) => {
       if (spammyWordRegex.test(lowerCaseContent)) {
         containsBannedWord = true;
         break;
-      }
-    }
-
-    // Alt dize eşleşmesi kontrolü
-    if (!containsBannedWord) {
-      for (const word of SUBSTRING_BANNED) {
-        const spammySubstringRegex = new RegExp(createSpammyRegex(word), 'i');
-        if (spammySubstringRegex.test(lowerCaseContent)) {
-          containsBannedWord = true;
-          break;
-        }
       }
     }
 
