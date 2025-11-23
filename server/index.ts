@@ -4,6 +4,14 @@ import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { requireAuth } from "./middleware/auth";
 import { handleDeleteUser } from "./routes/user";
+import { 
+  handleCreatePost, 
+  handleUpdatePost, 
+  handleDeletePost, 
+  handleAddComment, 
+  handleDeleteComment, 
+  handleCastVote 
+} from "./routes/blog";
 
 export function createServer() {
   const app = express();
@@ -23,6 +31,18 @@ export function createServer() {
 
   // User routes
   app.delete("/api/user", requireAuth, handleDeleteUser);
+
+  // Blog Post Routes (Requires Auth for CUD operations)
+  app.post("/api/blog/post", requireAuth, handleCreatePost);
+  app.put("/api/blog/post/:id", requireAuth, handleUpdatePost);
+  app.delete("/api/blog/post/:id", requireAuth, handleDeletePost);
+
+  // Comment Routes (Requires Auth)
+  app.post("/api/blog/comment", requireAuth, handleAddComment);
+  app.delete("/api/blog/comment/:id", requireAuth, handleDeleteComment);
+
+  // Vote Routes (Requires Auth)
+  app.post("/api/blog/vote", requireAuth, handleCastVote);
 
   return app;
 }

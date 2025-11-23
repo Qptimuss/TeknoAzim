@@ -71,6 +71,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
 
       const isFirstComment = count === 0;
 
+      // Use the updated addComment which calls the server API for moderation
       await addComment({ postId, userId: user.id, content: values.content });
       
       let finalProfileState = null;
@@ -104,7 +105,12 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
       form.reset();
       onCommentsChange();
     } catch (error) {
-      toast.error("Yorum eklenirken bir hata oluştu.");
+      // Check for specific moderation error message from the server
+      if (error instanceof Error && error.message.includes("Yorumunuz, yapay zeka tarafından uygunsuz içerik barındırdığı için reddedildi.")) {
+        toast.error("Yorum Reddedildi", { description: "Yorumunuz uygunsuz içerik barındırdığı için yayınlanmadı. Lütfen içeriği düzenleyiniz." });
+      } else {
+        toast.error("Yorum eklenirken bir hata oluştu.", { description: error instanceof Error ? error.message : "Bilinmeyen bir hata." });
+      }
     }
   }
 
