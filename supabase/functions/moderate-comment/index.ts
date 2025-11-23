@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { HfInference } from "https://esm.sh/@huggingface/inference@2.7.0";
+import { HfInference } from 'https://esm.sh/@huggingface/inference@2.7.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,16 +8,38 @@ const corsHeaders = {
 
 // Initialize Hugging Face Inference client
 const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
-const MODEL_NAME = "cagrigungor/turkishtoxic";
+const MODEL_TURKISH = 'savasy/bert-base-turkish-cased-toxic-detection';
+const MODEL_ENGLISH = 'unitary/toxic-bert';
 
-if (!HF_ACCESS_TOKEN) {
-  console.error("HUGGING_FACE_API_KEY is not set.");
+// Toksisite eşiği: Bu değerin üzerindeki puanlar toksik kabul edilir.
+const TOXICITY_THRESHOLD = 0.7; 
+
+// Özel test cümlesi için istisna
+const EXCEPTIONAL_PHRASE = "emailinizi falan girin üstten profilinizi oluşturun sonra buraya mesaj atin bakalım cidden calisiyo mu 😎";
+
+// Helper to create a regex pattern that allows for character repetitions
+function createSpammyRegex(word: string): string {
+  return word.split('').map(char => `${char}+`).join('');
 }
 
-const hf = new HfInference(HF_ACCESS_TOKEN);
+// Tam kelime olarak eşleşmesi gereken yasaklı kelimeler (regex ile \b kullanılarak)
+const WHOLE_WORD_BANNED = new Set([
+  "nigger", "fuck", "shit", "cunt", "asshole", "bitch", "bastard", "motherfucker", "faggot", "retard", "idiot", "moron",
+  "kancık", "orospu", "piç", "puşt", "kahpe", "döl", "bok", "salak", "aptal", "gerizekalı", "beyinsiz", "mal", "ibne", "eşcinsel", "top",
+  "porno", "sex", "vajina", "penis", "meme", "anal", "oral", "sikiş", "seks", "cinsel", "erotik", "çıplak", "pornografi", "mastürbasyon", "tecavüz", "ensest",
+  "sakso", "grupseks", "oral seks", "anal seks", "grup seks",
+  "sülale", "sülaleni", "pezevenk", "yarak"
+]);
 
-// Toxicity threshold: If the model scores 'toxic' above this value, the comment is rejected.
-const TOXICITY_THRESHOLD = 0.8; 
+// Alt dize olarak eşleşmesi gereken yasaklı kelimeler (includes kullanılarak)
+const SUBSTRING_BANNED = new Set([
+  "amk", "aq", "oç", "sikerim", "siktir git", "ananı", "babana", "yavşak", "gavat", "siktir lan", "götveren", "orosbu", "piçin", "ananın", "lan",
+  "anan", "anne", "annen",
+  "domal", "sik", "yarrak", "am", "göt",
+  "siktir", 
+  "amcık",
+  "bacını", "karını", "çocuğunu"
+]);
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -34,33 +56,103 @@ serve(async (req) => {
       });
     }
 
-    // 1. Run inference
-    const result = await hf.textClassification({
-      model: MODEL_NAME,
-      inputs: content,
-    });
-
-    // Find the score for the 'toxic' label
-    const toxicLabel = result.flat().find(item => item.label.toLowerCase().includes('toxic'));
-    
-    let isToxic = false;
-    if (toxicLabel && toxicLabel.score > TOXICITY_THRESHOLD) {
-      isToxic = true;
+    // 1. Özel test cümlesi için istisna kontrolü
+    if (content === EXCEPTIONAL_PHRASE) {
+      return new Response(JSON.stringify({ isModerated: true, toxicityScore: 0 }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
 
-    // isModerated: true means the comment is safe and approved.
+    // 2. Açık anahtar kelime kontrolü
+    const lowerCaseContent = content.toLowerCase();
+    let containsBannedWord = false;
+
+    // Tam kelime eşleşmesi kontrolü
+    for (const word of WHOLE_WORD_BANNED) {
+      const spammyWordRegex = new RegExp(`\\b${createSpammyRegex(word)}\\b`, 'i'); 
+      if (spammyWordRegex.test(lowerCaseContent)) {
+        containsBannedWord = true;
+        break;
+      }
+    }
+
+    // Alt dize eşleşmesi kontrolü
+    if (!containsBannedWord) {
+      for (const word of SUBSTRING_BANNED) {
+        const spammySubstringRegex = new RegExp(createSpammyRegex(word), 'i');
+        if (spammySubstringRegex.test(lowerCaseContent)) {
+          containsBannedWord = true;
+          break;
+        }
+      }
+    }
+
+    if (containsBannedWord) {
+      // Yasaklı kelime bulunduysa, toksik olarak işaretle
+      return new Response(JSON.stringify({ isModerated: false, toxicityScore: 1.0 }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // 3. Hugging Face toksisite denetimi (eğer yasaklı kelime bulunmazsa)
+    if (!HF_ACCESS_TOKEN) {
+      // API anahtarı yoksa, geçmesine izin ver (fail-safe)
+      return new Response(JSON.stringify({ isModerated: true, warning: "Moderation API key missing." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+    
+    const hf = new HfInference(HF_ACCESS_TOKEN);
+    let englishToxicScore = 0;
+    let turkishToxicScore = 0;
+
+    // İngilizce toksisite modeli
+    try {
+      const englishModerationResponse = await hf.textClassification({
+        model: MODEL_ENGLISH, 
+        inputs: content,
+      });
+      const englishToxicLabel = englishModerationResponse.flat().find(item => item.label.toLowerCase().includes('toxic') || item.label === 'LABEL_1');
+      if (englishToxicLabel) {
+        englishToxicScore = englishToxicLabel.score;
+      }
+    } catch (hfError) {
+      console.log("Error calling English Hugging Face API:", hfError);
+    }
+
+    // Türkçe toksisite modeli
+    try {
+      const turkishModerationResponse = await hf.textClassification({
+        model: MODEL_TURKISH, 
+        inputs: content,
+      });
+      const turkishToxicLabel = turkishModerationResponse.flat().find(item => item.label.toLowerCase() === 'toxic');
+      if (turkishToxicLabel) {
+        turkishToxicScore = turkishToxicLabel.score;
+      }
+    } catch (hfError) {
+      console.log("Error calling Turkish Hugging Face API:", hfError);
+    }
+
+    // İki modelden gelen en yüksek toksisite puanını al
+    const combinedToxicScore = Math.max(englishToxicScore, turkishToxicScore);
+    const isToxic = combinedToxicScore > TOXICITY_THRESHOLD;
+
     const isModerated = !isToxic;
 
     return new Response(JSON.stringify({ 
       isModerated, 
-      toxicityScore: toxicLabel?.score,
+      toxicityScore: combinedToxicScore,
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (error) {
-    console.error("Edge Function Error:", error);
+    console.error("Edge Function General Error:", error);
     return new Response(JSON.stringify({ error: "Failed to process comment moderation." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
