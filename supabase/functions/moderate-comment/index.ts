@@ -12,7 +12,8 @@ const MODEL_TURKISH = 'cagrigungor/turkishtoxic'; // Türkçe model
 const MODEL_ENGLISH = 'unitary/toxic-bert';
 
 // Toksisite eşiği: Bu değerin üzerindeki puanlar toksik kabul edilir.
-const TOXICITY_THRESHOLD = 0.7; 
+// 0.7'den 0.6'ya düşürülerek hassasiyet artırıldı.
+const TOXICITY_THRESHOLD = 0.6; 
 
 // Özel test cümlesi için istisna
 const EXCEPTIONAL_PHRASE = "emailinizi falan girin üstten profilinizi oluşturun sonra buraya mesaj atin bakalım cidden calisiyo mu 😎";
@@ -59,6 +60,7 @@ serve(async (req) => {
         model: MODEL_ENGLISH, 
         inputs: content,
       });
+      // 'toxic' veya 'LABEL_1' etiketini arar
       const englishToxicLabel = englishModerationResponse.flat().find(item => item.label.toLowerCase().includes('toxic') || item.label === 'LABEL_1');
       if (englishToxicLabel) {
         englishToxicScore = englishToxicLabel.score;
@@ -73,6 +75,7 @@ serve(async (req) => {
         model: MODEL_TURKISH, 
         inputs: content,
       });
+      // 'toxic' etiketini arar
       const turkishToxicLabel = turkishModerationResponse.flat().find(item => item.label.toLowerCase() === 'toxic');
       if (turkishToxicLabel) {
         turkishToxicScore = turkishToxicLabel.score;
