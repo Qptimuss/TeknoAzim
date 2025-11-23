@@ -11,7 +11,7 @@ const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
 const MODEL_ENGLISH = 'unitary/toxic-bert';
 
 // Türkçe modelin çalıştığı Space URL
-const TURKISH_SPACE_URL = "https://Qptimus-merhaba.hf.space/api/predict/"; // burayı kendi Space URL’inle değiştir
+const TURKISH_SPACE_URL = "https://qptimus-merhaba.hf.space/api/predict/"; // burayı kendi Space URL’inle değiştir
 
 const TOXICITY_THRESHOLD = 0.7; 
 const EXCEPTIONAL_PHRASE = "emailinizi falan girin üstten profilinizi oluşturun sonra buraya mesaj atin bakalım cidden calisiyo mu 😎";
