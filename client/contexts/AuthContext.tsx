@@ -38,7 +38,7 @@ const SAFE_PROFILE_UPDATE_KEYS: Array<keyof Profile> = [
   'selected_frame',
 ];
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children, ...props }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -160,7 +160,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Filter newUserData to only include safe keys
     SAFE_PROFILE_UPDATE_KEYS.forEach(key => {
       if (newUserData[key] !== undefined) {
-        safeUpdateData[key] = newUserData[key] as any;
+        // FIX: Use type assertion on the target object to allow dynamic assignment
+        (safeUpdateData as any)[key] = newUserData[key];
       }
     });
 
