@@ -8,15 +8,38 @@ const corsHeaders = {
 
 // Initialize Hugging Face Inference client
 const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
-const MODEL_TURKISH = 'cagrigungor/turkishtoxic'; // Türkçe model
+const MODEL_TURKISH = 'cagrigungor/turkishtoxic'; // Yeni Türkçe model
 const MODEL_ENGLISH = 'unitary/toxic-bert';
 
 // Toksisite eşiği: Bu değerin üzerindeki puanlar toksik kabul edilir.
-// 0.7'den 0.6'ya düşürülerek hassasiyet artırıldı.
-const TOXICITY_THRESHOLD = 0.6; 
+const TOXICITY_THRESHOLD = 0.7; 
 
 // Özel test cümlesi için istisna
 const EXCEPTIONAL_PHRASE = "emailinizi falan girin üstten profilinizi oluşturun sonra buraya mesaj atin bakalım cidden calisiyo mu 😎";
+
+// Helper to create a regex pattern that allows for character repetitions
+function createSpammyRegex(word: string): string {
+  return word.split('').map(char => `${char}+`).join('');
+}
+
+// Tam kelime olarak eşleşmesi gereken yasaklı kelimeler (regex ile \b kullanılarak)
+const WHOLE_WORD_BANNED = new Set([
+  "nigger", "fuck", "shit", "cunt", "asshole", "bitch", "bastard", "motherfucker", "faggot", "retard", "idiot", "moron",
+  "kancık", "orospu", "piç", "puşt", "kahpe", "döl", "bok", "salak", "aptal", "gerizekalı", "beyinsiz", "mal", "ibne", "eşcinsel", "top",
+  "porno", "sex", "vajina", "penis", "meme", "anal", "oral", "sikiş", "seks", "cinsel", "erotik", "çıplak", "pornografi", "mastürbasyon", "tecavüz", "ensest",
+  "sakso", "grupseks", "oral seks", "anal seks", "grup seks",
+  "sülale", "sülaleni", "pezevenk", "yarak"
+]);
+
+// Alt dize olarak eşleşmesi gereken yasaklı kelimeler (includes kullanılarak)
+const SUBSTRING_BANNED = new Set([
+  "amk", "aq", "oç", "sikerim", "siktir git", "ananı", "babana", "yavşak", "gavat", "siktir lan", "götveren", "orosbu", "piçin", "ananın", "lan",
+  "anan", "anne", "annen",
+  "domal", "sik", "yarrak", "göt",
+  "siktir", 
+  "amcık",
+  "bacını", "karını", "çocuğunu"
+]);
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -41,7 +64,39 @@ serve(async (req) => {
       });
     }
 
-    // 2. Hugging Face toksisite denetimi
+    // 2. Açık anahtar kelime kontrolü
+    const lowerCaseContent = content.toLowerCase();
+    let containsBannedWord = false;
+
+    // Tam kelime eşleşmesi kontrolü
+    for (const word of WHOLE_WORD_BANNED) {
+      const spammyWordRegex = new RegExp(`\\b${createSpammyRegex(word)}\\b`, 'i'); 
+      if (spammyWordRegex.test(lowerCaseContent)) {
+        containsBannedWord = true;
+        break;
+      }
+    }
+
+    // Alt dize eşleşmesi kontrolü
+    if (!containsBannedWord) {
+      for (const word of SUBSTRING_BANNED) {
+        const spammySubstringRegex = new RegExp(createSpammyRegex(word), 'i');
+        if (spammySubstringRegex.test(lowerCaseContent)) {
+          containsBannedWord = true;
+          break;
+        }
+      }
+    }
+
+    if (containsBannedWord) {
+      // Yasaklı kelime bulunduysa, toksik olarak işaretle
+      return new Response(JSON.stringify({ isModerated: false, toxicityScore: 1.0 }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // 3. Hugging Face toksisite denetimi (eğer yasaklı kelime bulunmazsa)
     if (!HF_ACCESS_TOKEN) {
       // API anahtarı yoksa, geçmesine izin ver (fail-safe)
       return new Response(JSON.stringify({ isModerated: true, warning: "Moderation API key missing." }), {
@@ -60,7 +115,6 @@ serve(async (req) => {
         model: MODEL_ENGLISH, 
         inputs: content,
       });
-      // 'toxic' veya 'LABEL_1' etiketini arar
       const englishToxicLabel = englishModerationResponse.flat().find(item => item.label.toLowerCase().includes('toxic') || item.label === 'LABEL_1');
       if (englishToxicLabel) {
         englishToxicScore = englishToxicLabel.score;
@@ -75,7 +129,6 @@ serve(async (req) => {
         model: MODEL_TURKISH, 
         inputs: content,
       });
-      // 'toxic' etiketini arar
       const turkishToxicLabel = turkishModerationResponse.flat().find(item => item.label.toLowerCase() === 'toxic');
       if (turkishToxicLabel) {
         turkishToxicScore = turkishToxicLabel.score;
