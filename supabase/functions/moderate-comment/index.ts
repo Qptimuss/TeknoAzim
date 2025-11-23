@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { HfInference } from 'https://esm.sh/@huggingface/inference@2.8.0';
+import { HfInference } from 'https://esm.sh/@huggingface/inference'; // Versiyon numarası kaldırıldı
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,10 +31,9 @@ const WHOLE_WORD_BANNED = new Set([
   "sülale", "sülaleni", "pezevenk", "yarak"
 ]);
 
-// Hugging Face istemcisini yeni uç nokta ile başlatıyoruz.
-const hf = new HfInference(HF_ACCESS_TOKEN, {
-  endpoint: "https://router.huggingface.co",
-});
+// Hugging Face istemcisini sadece token ile başlatıyoruz.
+// Kütüphanenin en son sürümü varsayılan olarak router.huggingface.co adresini kullanmalıdır.
+const hf = new HfInference(HF_ACCESS_TOKEN);
 
 
 serve(async (req) => {
