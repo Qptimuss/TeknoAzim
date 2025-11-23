@@ -31,6 +31,12 @@ const WHOLE_WORD_BANNED = new Set([
   "sülale", "sülaleni", "pezevenk", "yarak"
 ]);
 
+// Hugging Face istemcisini yeni uç nokta ile başlatıyoruz.
+const hf = new HfInference(HF_ACCESS_TOKEN, {
+  endpoint: "https://router.huggingface.co",
+});
+
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -84,7 +90,8 @@ serve(async (req) => {
       });
     }
     
-    const hf = new HfInference(HF_ACCESS_TOKEN);
+    // hf artık global olarak tanımlı
+
     let englishToxicScore = 0;
     let turkishToxicScore = 0;
 
