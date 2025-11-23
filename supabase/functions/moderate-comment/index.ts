@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { HfInference } from 'https://esm.sh/@huggingface/inference@2.7.0';
+import { HfInference } from 'https://esm.sh/@huggingface/inference@2.8.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,7 +39,7 @@ const hf = new HfInference(HF_ACCESS_TOKEN, {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
