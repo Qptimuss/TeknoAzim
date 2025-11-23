@@ -29,10 +29,7 @@ const WHOLE_WORD_BANNED = new Set([
 ]);
 
 // HF client'ı sadece token varsa başlat
-const hf = HF_ACCESS_TOKEN ? new HfInference({ 
-    accessToken: HF_ACCESS_TOKEN,
-    endpointUrl: 'https://router.huggingface.co/models', // Yeni router URL'si
-}) : null;
+const hf = HF_ACCESS_TOKEN ? new HfInference(HF_ACCESS_TOKEN) : null;
 
 // Türkçe modeli Space üzerinden çağırmak için helper
 async function getTurkishScore(content: string): Promise<number> {
