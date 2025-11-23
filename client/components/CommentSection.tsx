@@ -47,6 +47,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
   const { user, updateUser } = useAuth();
   const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
   const [viewerState, setViewerState] = useState<{ open: boolean; url: string; alt: string }>({ open: false, url: '', alt: '' });
+  const [isModerating, setIsModerating] = useState(false);
 
   const form = useForm<z.infer<typeof commentSchema>>({
     resolver: zodResolver(commentSchema),
@@ -59,7 +60,24 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
       return;
     }
     
+    setIsModerating(true);
     try {
+      // Step 1: Moderate content
+      const { data: moderationResult, error: moderationError } = await supabase.functions.invoke('moderate-comment', {
+        body: { content: values.content },
+      });
+
+      if (moderationError || !moderationResult) {
+        throw new Error(moderationError?.message || "Moderasyon sırasında bir hata oluştu.");
+      }
+
+      if (!moderationResult.approved) {
+        toast.error("Yorumunuz uygunsuz içerik nedeniyle reddedildi.");
+        setIsModerating(false);
+        return;
+      }
+
+      // Step 2: If approved, proceed to add the comment
       const { count, error: countError } = await supabase
         .from('comments')
         .select('*', { count: 'exact', head: true })
@@ -104,7 +122,11 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
       form.reset();
       onCommentsChange();
     } catch (error) {
-      toast.error("Yorum eklenirken bir hata oluştu.");
+      toast.error("Yorum eklenirken bir hata oluştu.", {
+        description: error instanceof Error ? error.message : "Lütfen tekrar deneyin."
+      });
+    } finally {
+      setIsModerating(false);
     }
   }
 
@@ -216,8 +238,8 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                Yorum Gönder
+              <Button type="submit" className="w-full" disabled={isModerating}>
+                {isModerating ? "Yorum denetleniyor..." : "Yorum Gönder"}
               </Button>
             </form>
           </Form>
