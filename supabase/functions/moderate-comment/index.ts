@@ -10,8 +10,8 @@ const corsHeaders = {
 const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
 const MODEL_ENGLISH = 'unitary/toxic-bert';
 
-// TURKISH_SPACE_URL'i en yaygın Gradio API yoluna geri çeviriyoruz.
-const TURKISH_SPACE_URL = "https://qptimus-merhaba.hf.space/api/predict"; 
+// DÜZELTİLDİ: Gradio'nun yeni ve doğru API yoluna geçildi: /run/<fonksiyon_adı>
+const TURKISH_SPACE_URL = "https://qptimus-merhaba.hf.space/run/analyze_toxicity"; 
 
 const TOXICITY_THRESHOLD = 0.7; 
 const EXCEPTIONAL_PHRASE = "emailinizi falan girin üstten profilinizi oluşturun sonra buraya mesaj atin bakalım cidden calisiyo mu 😎";
@@ -43,9 +43,9 @@ async function getTurkishScore(content: string): Promise<number> {
       headers['Authorization'] = `Bearer ${HF_ACCESS_TOKEN}`;
   }
 
-  // GÜNCELLENDİ: fn_index = 0 yapısı korundu, Gradio'nun en yaygın API gövde formatı.
+  // GÜNCELLENDİ: Yeni Gradio API'ı için body formatı basitleştirildi.
   const body = JSON.stringify({ 
-        fn_index: 0, // app.py'daki ilk fonksiyona (analyze_toxicity) işaret eder.
+        // Yeni yolda fn_index gerekli değil, sadece 'data' dizisi yeterli.
         data: [content] 
     }); 
   
@@ -64,17 +64,14 @@ async function getTurkishScore(content: string): Promise<number> {
     if (!response.ok) {
         const errorText = await response.text();
         console.error(`[Turkish Moderation] API Error Response: ${errorText}`);
-        // Hata durumunda (örneğin 404), hata kodunu döndür. 
-        // 404 hatasını alıyorsanız, toksik kabul etmeyin, sadece hatayı loglayın.
-        // Ancak bir skor döndürmesi gerektiği için geçici olarak 0 döndürelim.
+        // Hata devam ederse (yine 404/405), 0 döndür.
         return 0; 
     }
 
     const result = await response.json();
     console.log(`[Turkish Moderation] API Success Response Data: ${JSON.stringify(result)}`);
 
-    // Gradio'nun /api/predict çıktısı genellikle result.data[0] içinde skor barındırır.
-    // Başarılı bir istekte Gradio, "data" alanı içinde bir dizi döndürür.
+    // Yeni Gradio API'ı 'data' dizisi içinde sonuçları döndürür.
     if (result && result.data && Array.isArray(result.data) && typeof result.data[0] === 'number') {
       return result.data[0];
     }
