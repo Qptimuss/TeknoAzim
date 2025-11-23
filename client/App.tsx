@@ -12,7 +12,8 @@ import Bloglar from "./pages/Bloglar";
 import Kaydol from "./pages/Kaydol";
 import Giris from "./pages/Giris";
 import Layout from "./components/Layout";
-import Hakkimizda from "./pages/Hakkimizda"; // Updated import
+import Hakkimizda from "./pages/Hakkimizda";
+import Duyurular from "./pages/Duyurular"; // New import
 import CreateBlogPage from "./pages/CreateBlogPage";
 import BlogPostPage from "./pages/BlogPostPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -42,10 +43,10 @@ const App = () => (
                 <Route path="/bloglar" element={<Bloglar />} />
                 <Route path="/bloglar/:id" element={<BlogPostPage />} />
                 <Route path="/kullanici/:userId" element={<UserProfilePage />} />
-                <Route path="/duyurular" element={<Hakkimizda />} /> {/* Placeholder yerine Hakkimizda kullanıldı */}
+                <Route path="/duyurular" element={<Duyurular />} /> {/* Updated route */}
                 <Route path="/hakkimizda" element={<Hakkimizda />} />
-                <Route path="/gizlilik-politikasi" element={<Hakkimizda />} /> {/* Placeholder yerine Hakkimizda kullanıldı */}
-                <Route path="/kullanim-kosullari" element={<Hakkimizda />} /> {/* Placeholder yerine Hakkimizda kullanıldı */}
+                <Route path="/gizlilik-politikasi" element={<Hakkimizda />} />
+                <Route path="/kullanim-kosullari" element={<Hakkimizda />} />
                 <Route path="/magaza" element={<Magaza />} />
 
                 {/* Protected Routes */}
