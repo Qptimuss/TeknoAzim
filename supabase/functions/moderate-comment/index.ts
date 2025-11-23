@@ -35,7 +35,7 @@ const WHOLE_WORD_BANNED = new Set([
 const SUBSTRING_BANNED = new Set([
   "amk", "aq", "oç", "sikerim", "siktir git", "ananı", "babana", "yavşak", "gavat", "siktir lan", "götveren", "orosbu", "piçin", "ananın", "lan",
   "anan", "anne", "annen",
-  "domal", "sik", "yarrak", "am", "göt",
+  "domal", "sik", "yarrak", "göt",
   "siktir", 
   "amcık",
   "bacını", "karını", "çocuğunu"
