@@ -12,7 +12,7 @@ import Bloglar from "./pages/Bloglar";
 import Kaydol from "./pages/Kaydol";
 import Giris from "./pages/Giris";
 import Layout from "./components/Layout";
-import Placeholder from "./pages/Placeholder";
+import Hakkimizda from "./pages/Hakkimizda"; // Updated import
 import CreateBlogPage from "./pages/CreateBlogPage";
 import BlogPostPage from "./pages/BlogPostPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -23,7 +23,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./components/ThemeProvider";
 import Magaza from "./pages/Magaza";
-import EditBlogPage from "./pages/EditBlogPage"; // Added missing import
+import EditBlogPage from "./pages/EditBlogPage";
 
 const queryClient = new QueryClient();
 
@@ -42,10 +42,10 @@ const App = () => (
                 <Route path="/bloglar" element={<Bloglar />} />
                 <Route path="/bloglar/:id" element={<BlogPostPage />} />
                 <Route path="/kullanici/:userId" element={<UserProfilePage />} />
-                <Route path="/duyurular" element={<Placeholder title="Duyurular" />} />
-                <Route path="/hakkimizda" element={<Placeholder title="Hakkımızda" />} />
-                <Route path="/gizlilik-politikasi" element={<Placeholder title="Gizlilik Politikası" />} />
-                <Route path="/kullanim-kosullari" element={<Placeholder title="Kullanım Koşulları" />} />
+                <Route path="/duyurular" element={<Hakkimizda />} /> {/* Placeholder yerine Hakkimizda kullanıldı */}
+                <Route path="/hakkimizda" element={<Hakkimizda />} />
+                <Route path="/gizlilik-politikasi" element={<Hakkimizda />} /> {/* Placeholder yerine Hakkimizda kullanıldı */}
+                <Route path="/kullanim-kosullari" element={<Hakkimizda />} /> {/* Placeholder yerine Hakkimizda kullanıldı */}
                 <Route path="/magaza" element={<Magaza />} />
 
                 {/* Protected Routes */}
