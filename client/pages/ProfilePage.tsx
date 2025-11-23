@@ -189,7 +189,11 @@ export default function ProfilePage() {
     await toast.promise(
       async () => {
         const uploadedUrl = await uploadAvatar(croppedFile, user.id);
-        if (uploadedUrl) await updateUser({ avatar_url: uploadedUrl });
+        if (uploadedUrl) {
+          // Önbelleği atlatmak için URL'ye zaman damgası ekle
+          const cacheBustingUrl = `${uploadedUrl}?v=${Date.now()}`;
+          await updateUser({ avatar_url: cacheBustingUrl });
+        }
       },
       {
         loading: "Profil fotoğrafı yükleniyor...",
