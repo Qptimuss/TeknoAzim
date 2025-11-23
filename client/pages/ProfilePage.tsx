@@ -185,7 +185,9 @@ export default function ProfilePage() {
     setImageToCrop(null);
     if (!user) return;
 
-    const croppedFile = new File([croppedBlob], "avatar.jpeg", { type: "image/jpeg" });
+    // Dosya adını userId.jpeg olarak ayarlıyoruz, bu RLS kuralıyla eşleşmeli.
+    const croppedFile = new File([croppedBlob], `${user.id}.jpeg`, { type: "image/jpeg" });
+    
     await toast.promise(
       async () => {
         const uploadedUrl = await uploadAvatar(croppedFile, user.id);
@@ -198,7 +200,10 @@ export default function ProfilePage() {
       {
         loading: "Profil fotoğrafı yükleniyor...",
         success: "Profil fotoğrafı güncellendi!",
-        error: "Profil fotoğrafı güncellenirken bir hata oluştu.",
+        error: (e) => {
+          console.error("Avatar update failed:", e);
+          return e.message || "Profil fotoğrafı güncellenirken bir hata oluştu.";
+        },
       }
     );
   };
