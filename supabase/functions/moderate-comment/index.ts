@@ -65,7 +65,7 @@ async function getTurkishScore(content: string): Promise<number> {
     if (!response.ok) {
         const errorText = await response.text();
         console.error(`[Turkish Moderation] API Error Response: ${errorText}`);
-        return 1.0; // API hatası durumunda toksik kabul et
+        return 0; // API hatası durumunda toksik kabul et
     }
 
     const result = await response.json();
