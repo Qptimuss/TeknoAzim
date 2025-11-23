@@ -50,11 +50,14 @@ export const handleUpdateExp: RequestHandler = async (req, res) => {
     const supabaseAdmin = getSupabaseAdmin();
 
     // 1. Fetch current profile data
-    const { data: profile, error: fetchError } = await supabaseAdmin
+    const { data: profileData, error: fetchError } = await supabaseAdmin
       .from('profiles')
       .select('exp, level, selected_title')
       .eq('id', userId)
       .single();
+
+    type ExpProfile = Pick<Database['public']['Tables']['profiles']['Row'], 'exp' | 'level' | 'selected_title'>;
+    const profile = profileData as ExpProfile | null;
 
     if (fetchError || !profile) {
       return res.status(404).json({ error: "Profile not found." });
@@ -79,10 +82,6 @@ export const handleUpdateExp: RequestHandler = async (req, res) => {
     // If level drops and selected title is no longer valid, remove it.
     if (newLevel < profile.level && profile.selected_title) {
         // Simple check: If the title level requirement is higher than the new level, remove it.
-        // Since we don't have TITLES constant here, we rely on the client to enforce selection rules, 
-        // but we must ensure the title is removed if the level drops significantly.
-        // For simplicity, we only remove the title if the level drops.
-        // A more robust solution would require TITLES definition here.
         // For now, we rely on the client to handle the title selection logic based on the new level.
         // However, to prevent invalid state, we check if the level dropped.
         if (newLevel < profile.level) {
@@ -125,11 +124,14 @@ export const handleAwardBadge: RequestHandler = async (req, res) => {
     const supabaseAdmin = getSupabaseAdmin();
     
     // 1. Fetch current profile data
-    const { data: profile, error: fetchError } = await supabaseAdmin
+    const { data: profileData, error: fetchError } = await supabaseAdmin
       .from('profiles')
       .select('badges, exp, level, gems')
       .eq('id', userId)
       .single();
+
+    type BadgeProfile = Pick<Database['public']['Tables']['profiles']['Row'], 'badges' | 'exp' | 'level' | 'gems'>;
+    const profile = profileData as BadgeProfile | null;
 
     if (fetchError || !profile) {
       return res.status(404).json({ error: "Profile not found." });
@@ -186,11 +188,14 @@ export const handleClaimDailyReward: RequestHandler = async (req, res) => {
     const supabaseAdmin = getSupabaseAdmin();
 
     // 1. Fetch current profile data
-    const { data: profile, error: fetchError } = await supabaseAdmin
+    const { data: profileData, error: fetchError } = await supabaseAdmin
       .from('profiles')
       .select('gems, last_daily_reward_claimed_at')
       .eq('id', userId)
       .single();
+
+    type DailyRewardProfile = Pick<Database['public']['Tables']['profiles']['Row'], 'gems' | 'last_daily_reward_claimed_at'>;
+    const profile = profileData as DailyRewardProfile | null;
 
     if (fetchError || !profile) {
       return res.status(404).json({ error: "Profile not found." });
@@ -256,11 +261,14 @@ export const handleOpenCrate: RequestHandler = async (req, res) => {
     const supabaseAdmin = getSupabaseAdmin();
 
     // 1. Fetch current profile data
-    const { data: profile, error: fetchError } = await supabaseAdmin
+    const { data: profileData, error: fetchError } = await supabaseAdmin
       .from('profiles')
       .select('gems, owned_frames')
       .eq('id', userId)
       .single();
+
+    type CrateProfile = Pick<Database['public']['Tables']['profiles']['Row'], 'gems' | 'owned_frames'>;
+    const profile = profileData as CrateProfile | null;
 
     if (fetchError || !profile) {
       return res.status(404).json({ error: "Profile not found." });
