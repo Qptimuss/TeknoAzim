@@ -10,7 +10,7 @@ import { addComment, deleteComment } from "@/lib/blog-store";
 import { CommentWithAuthor } from "@shared/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { MoreHorizontal, Trash2, Eye, Clock } from "lucide-react";
+import { MoreHorizontal, Trash2, Eye } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +32,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import ImageViewerDialog from "./ImageViewerDialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 const commentSchema = z.object({
   content: z.string().min(3, "Yorum en az 3 karakter olmalıdır."),
@@ -59,55 +58,53 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
       toast.error("Yorum yapmak için giriş yapmalısınız.");
       return;
     }
-
-    const submissionToast = toast.loading("Yorumunuz gönderiliyor ve denetleniyor...");
-
+    
     try {
-      // Step 1: Insert the comment into the database first.
-      // It will be invisible to others by default (is_moderated = false).
-      const newComment = await addComment({ postId, userId: user.id, content: values.content });
-
-      if (!newComment) {
-        throw new Error("Yorum veritabanına kaydedilemedi.");
-      }
-
-      // Step 2: After successful insertion, invoke the moderation Edge Function.
-      // This happens in the background. The user doesn't need to wait for it.
-      const { error: functionError } = await supabase.functions.invoke('moderate-comment', {
-        body: { commentId: newComment.id, content: values.content },
-      });
-
-      if (functionError) {
-        // Log the error, but don't block the user. The comment is in the DB.
-        console.error("Moderation function invocation failed:", functionError);
-      }
-      
-      // Step 3: Handle gamification based on the *potential* for the comment to be approved.
       const { count, error: countError } = await supabase
         .from('comments')
         .select('*', { count: 'exact', head: true })
         .eq('post_id', postId);
 
-      if (countError) console.error("Error checking comment count:", countError);
-
-      const isFirstComment = count === 1; // It's 1 because we just inserted it.
-      if (isFirstComment) {
-        const updatedProfile = await awardBadge(user.id, "İlk Yorumcu");
-        if (updatedProfile) updateUser(updatedProfile);
+      if (countError) {
+        console.error("Error checking comment count:", countError);
       }
 
-      toast.success("Yorumunuz gönderildi!", {
-        id: submissionToast,
-        description: "Onaylandıktan sonra herkese görünecektir.",
-      });
-      form.reset();
-      onCommentsChange(); // Refresh the comment list to show the user's new (pending) comment.
+      const isFirstComment = count === 0;
 
+      await addComment({ postId, userId: user.id, content: values.content });
+      
+      let finalProfileState = null;
+
+      if (isFirstComment) {
+        const badgeUpdate = await awardBadge(user.id, "İlk Yorumcu");
+        if (badgeUpdate) {
+          finalProfileState = badgeUpdate;
+        }
+      }
+
+      const { count: firstCommentCount, error: firstCommentError } = await supabase
+        .from('first_commenters')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (firstCommentError) {
+        console.error("Error checking first comment count:", firstCommentError);
+      } else if (firstCommentCount === 3) {
+        const badgeUpdate = await awardBadge(user.id, "Hızlı Parmaklar");
+        if (badgeUpdate) {
+          finalProfileState = badgeUpdate;
+        }
+      }
+
+      if (finalProfileState) {
+        updateUser(finalProfileState);
+      }
+
+      toast.success("Yorumunuz eklendi!");
+      form.reset();
+      onCommentsChange();
     } catch (error) {
-      toast.error("Yorum eklenirken bir hata oluştu.", {
-        id: submissionToast,
-        description: error instanceof Error ? error.message : "Lütfen tekrar deneyin."
-      });
+      toast.error("Yorum eklenirken bir hata oluştu.");
     }
   }
 
@@ -138,7 +135,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
     <>
       <div className="mt-12">
         <Separator className="bg-border mb-8" />
-        <h2 className="text-foreground text-3xl font-outfit font-bold mb-6">Yorumlar ({comments.filter(c => c.is_moderated).length})</h2>
+        <h2 className="text-foreground text-3xl font-outfit font-bold mb-6">Yorumlar ({comments.length})</h2>
         
         <div className="space-y-6 mb-8">
           {comments.length > 0 ? (
@@ -195,19 +192,6 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                     </div>
                   </div>
                   <p className="text-foreground whitespace-pre-wrap pt-2">{comment.content}</p>
-                  {user && user.id === comment.user_id && !comment.is_moderated && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="flex items-center gap-1 text-xs text-yellow-500 mt-2">
-                          <Clock className="h-3 w-3" />
-                          <span>Onay bekleniyor</span>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Bu yorum henüz denetlenmediği için sadece sana görünür.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
                 </div>
               </div>
             ))
@@ -232,8 +216,8 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Gönderiliyor..." : "Yorum Gönder"}
+              <Button type="submit" className="w-full">
+                Yorum Gönder
               </Button>
             </form>
           </Form>

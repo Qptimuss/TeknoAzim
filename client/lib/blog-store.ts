@@ -117,7 +117,6 @@ export const getCommentsForPost = async (postId: string): Promise<CommentWithAut
             content,
             created_at,
             user_id,
-            is_moderated,
             profiles ( id, name, avatar_url, description, selected_title )
         `)
         .eq('post_id', postId)
@@ -194,9 +193,7 @@ export const addComment = async (commentData: NewComment) => {
             content: commentData.content,
             post_id: commentData.postId,
             user_id: commentData.userId,
-        })
-        .select()
-        .single();
+        });
 
     if (error) {
         console.error('Error adding comment:', error);
