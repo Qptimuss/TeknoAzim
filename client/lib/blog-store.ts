@@ -61,7 +61,8 @@ export const uploadAvatar = async (file: File, userId: string): Promise<string |
 
   if (uploadError) {
     console.error('Error uploading avatar:', uploadError);
-    throw uploadError;
+    // Hata mesajını daha açıklayıcı hale getiriyoruz
+    throw new Error(`Avatar yüklenirken Supabase hatası: ${uploadError.message}`);
   }
 
   const { data: { publicUrl } } = supabase.storage
