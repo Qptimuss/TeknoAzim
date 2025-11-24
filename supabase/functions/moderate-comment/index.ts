@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { HfInference } from 'https://esm.sh/@huggingface/inference';
+// Gradio istemcisi başarısız olduğu için kaldırıldı.
+// import { client } from "https://esm.sh/@gradio/client"; 
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,8 +12,8 @@ const corsHeaders = {
 const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
 const MODEL_ENGLISH = 'unitary/toxic-bert';
 
-// DÜZELTİLDİ: Gradio'nun yeni ve doğru API yoluna geçildi: /run/<fonksiyon_adı>
-const TURKISH_SPACE_URL = "https://qptimus-merhaba.hf.space/run/analyze_toxicity"; 
+// SON DÜZELTME: Gradio V4'ün en son ve generic API yolu denendi.
+const TURKISH_SPACE_URL = "https://qptimus-merhaba.hf.space/api/v1/predict"; 
 
 const TOXICITY_THRESHOLD = 0.7; 
 const EXCEPTIONAL_PHRASE = "emailinizi falan girin üstten profilinizi oluşturun sonra buraya mesaj atin bakalım cidden calisiyo mu 😎";
@@ -43,9 +45,9 @@ async function getTurkishScore(content: string): Promise<number> {
       headers['Authorization'] = `Bearer ${HF_ACCESS_TOKEN}`;
   }
 
-  // GÜNCELLENDİ: Yeni Gradio API'ı için body formatı basitleştirildi.
+  // GÜNCELLENDİ: Gradio V4'ün beklediği JSON formatı. fn_index = 0, analyze_toxicity fonksiyonunu temsil eder.
   const body = JSON.stringify({ 
-        // Yeni yolda fn_index gerekli değil, sadece 'data' dizisi yeterli.
+        fn_index: 0, 
         data: [content] 
     }); 
   
@@ -64,20 +66,19 @@ async function getTurkishScore(content: string): Promise<number> {
     if (!response.ok) {
         const errorText = await response.text();
         console.error(`[Turkish Moderation] API Error Response: ${errorText}`);
-        // Hata devam ederse (yine 404/405), 0 döndür.
-        return 0; 
+        return 0; // Hata durumunda 0 döndür
     }
 
     const result = await response.json();
     console.log(`[Turkish Moderation] API Success Response Data: ${JSON.stringify(result)}`);
 
-    // Yeni Gradio API'ı 'data' dizisi içinde sonuçları döndürür.
+    // Gelen sonucun doğru skor yapısını kontrol et
     if (result && result.data && Array.isArray(result.data) && typeof result.data[0] === 'number') {
       return result.data[0];
     }
 
     // Beklenmeyen yapı
-    console.error("[Turkish Moderation] Unexpected Gradio response structure.");
+    console.error("[Turkish Moderation] Unexpected Gradio response structure or missing score.");
     return 0; 
   } catch (err) {
     console.error("[Turkish Moderation] Network/Fetch Error:", err);
