@@ -10,8 +10,9 @@ const corsHeaders = {
 const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
 
 // --- MODERATION CONFIGURATION ---
-// Sadece çok dilli modeli kullanıyoruz
-const MODEL_MULTILINGUAL = 'JungleLee/bert-toxic-comment-classification';
+// SADECE BU SABİTİ DEĞİŞTİREREK İSTEDİĞİNİZ MODELİ KULLANABİLİRSİNİZ.
+// Şu anki model: unitary/multilingual-toxic-xlm-roberta
+const HF_MODEL = 'unitary/multilingual-toxic-xlm-roberta';
 
 // Toksisite eşiği: Bu değerin üzerindeki puanlar toksik kabul edilir.
 const TOXICITY_THRESHOLD = 0.7; 
@@ -26,7 +27,11 @@ function createSpammyRegex(word: string): string {
 
 // Tam kelime olarak eşleşmesi gereken yasaklı kelimeler (regex ile \b kullanılarak)
 const WHOLE_WORD_BANNED = new Set([
-  
+  "nigger", "fuck", "shit", "cunt", "asshole", "bitch", "bastard", "motherfucker", "faggot", "retard", "idiot", "moron",
+  "kancık", "orospu", "piç", "puşt", "kahpe", "döl", "bok", "salak", "aptal", "gerizekalı", "beyinsiz", "mal", "ibne", "eşcinsel", "top",
+  "porno", "sex", "vajina", "penis", "meme", "anal", "oral", "sikiş", "seks", "cinsel", "erotik", "çıplak", "pornografi", "mastürbasyon", "tecavüz", "ensest",
+  "sakso", "grupseks", "oral seks", "anal seks", "grup seks",
+  "sülale", "sülaleni", "pezevenk", "yarak"
 ]);
 
 // Hugging Face istemcisini sadece token ile başlatıyoruz.
@@ -88,10 +93,9 @@ serve(async (req) => {
     
     let toxicScore = 0;
 
-    // Çok dilli toksisite modeli
     try {
       const moderationResponse = await hf.textClassification({
-        model: MODEL_MULTILINGUAL, 
+        model: HF_MODEL, // Tek model sabiti kullanılıyor
         inputs: content,
       });
       
@@ -101,9 +105,9 @@ serve(async (req) => {
         toxicScore = toxicLabel.score;
       }
     } catch (hfError) {
-      console.log("Error calling Multilingual Hugging Face API:", hfError);
-      // API hatası durumunda, güvenlik için toksik kabul et
-      toxicScore = 0; 
+      console.log("Error calling Hugging Face API:", hfError);
+      // API hatası durumunda, güvenlik için toksik kabul et (Fail-Toxic)
+      toxicScore = 1.0; 
     }
 
     const isToxic = toxicScore > TOXICITY_THRESHOLD;
