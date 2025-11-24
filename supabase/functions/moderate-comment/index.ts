@@ -52,6 +52,10 @@ async function getTurkishScore(content: string): Promise<number> {
     const encoder = new TextEncoder();
     const bodyBytes = encoder.encode(body);
 
+    // Try setting explicit Content-Length and connection headers to avoid proxy truncation issues
+    headers['Content-Length'] = String(bodyBytes.length);
+    headers['Connection'] = 'close';
+
     // Log useful diagnostics for Content-Length problems
     console.log(`[Turkish Moderation] Sending request to: ${TURKISH_SPACE_URL}`);
     console.log(`[Turkish Moderation] Body string length: ${body.length}, bytes: ${bodyBytes.length}`);
