@@ -103,7 +103,7 @@ serve(async (req) => {
     } catch (hfError) {
       console.log("Error calling Multilingual Hugging Face API:", hfError);
       // API hatası durumunda, güvenlik için toksik kabul et
-      toxicScore = 1.0; 
+      toxicScore = 0; 
     }
 
     const isToxic = toxicScore > TOXICITY_THRESHOLD;
