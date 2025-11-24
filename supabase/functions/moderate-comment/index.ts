@@ -13,7 +13,7 @@ const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
 const MODEL_ENGLISH = 'unitary/toxic-bert';
 
 // SON DÜZELTME: Gradio V4'ün en son ve generic API yolu denendi.
-const TURKISH_SPACE_URL = "https://qptimus-merhaba.hf.space/api/v1/predict"; 
+const TURKISH_SPACE_URL = "https://qptimus-merhaba.hf.space/api/predict"; 
 
 const TOXICITY_THRESHOLD = 0.7; 
 const EXCEPTIONAL_PHRASE = "emailinizi falan girin üstten profilinizi oluşturun sonra buraya mesaj atin bakalım cidden calisiyo mu 😎";
