@@ -11,7 +11,7 @@ const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
 
 // --- MODERATION CONFIGURATION ---
 // Sadece çok dilli modeli kullanıyoruz
-const MODEL_MULTILINGUAL = 'martin-ha/toxic-comment-model';
+const MODEL_MULTILINGUAL = 'JungleLee/bert-toxic-comment-classification';
 
 // Toksisite eşiği: Bu değerin üzerindeki puanlar toksik kabul edilir.
 const TOXICITY_THRESHOLD = 0.7; 
