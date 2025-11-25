@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import Cropper, { Area, Crop } from 'react-easy-crop';
+import Cropper, { Area, Point } from 'react-easy-crop';
 import {
   Dialog,
   DialogContent,
@@ -36,7 +36,8 @@ export const EditProfileDialog = ({
 
   // State for image cropping
   const [imgSrc, setImgSrc] = useState('');
-  const [crop, setCrop] = useState<Crop>({ x: 0, y: 0 }); // Initialize crop
+  // Crop state should be of type Point (x, y) for the center of the crop area
+  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 }); 
   const [zoom, setZoom] = useState(1); // Add zoom state
   const [rotation, setRotation] = useState(0); // Add rotation state
   const [croppedImageBlob, setCroppedImageBlob] = useState<Blob | null>(null);
@@ -160,7 +161,6 @@ export const EditProfileDialog = ({
                 onZoomChange={setZoom}
                 onRotationChange={setRotation}
                 onCropComplete={onCropAreaChange}
-                cropShape="round"
               />
             </div>
             <div className="flex gap-2">

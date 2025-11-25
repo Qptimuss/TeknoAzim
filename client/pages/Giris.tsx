@@ -35,13 +35,13 @@ export default function Giris() {
     setIsSubmitting(false);
 
     if (error) {
-      if (error.message === "Invalid login credentials") {
-        toast.error("Giriş Hatası", { description: "Geçersiz e-posta veya şifre." });
-      } else if (error.message === 'Email not confirmed') {
+      if (error.message === 'Email not confirmed') {
         toast.error("Giriş Hatası", { description: "Giriş yapmadan önce lütfen e-postanızı doğrulayın." });
         setShowResendLink(true);
       } else {
-        toast.error("Giriş Hatası", { description: error.message });
+        // Standardized error message for all other login failures (Invalid credentials, user not found, rate limits, etc.)
+        toast.error("Giriş Hatası", { description: "Geçersiz e-posta veya şifre." });
+        setShowResendLink(false);
       }
     } else {
       toast.success("Giriş başarılı!", { description: "Yönlendiriliyorsunuz..." });
