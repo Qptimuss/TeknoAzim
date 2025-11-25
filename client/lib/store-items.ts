@@ -26,7 +26,12 @@ export const FRAMES = [
   { name: 'Galaktik Halka', rarity: RARITIES.ENDER.name, className: 'border-2 border-indigo-500 rounded-full shadow-[0_0_15px_theme(colors.indigo.400)] animate-pulse' },
 
   // Efsanevi
-  { name: 'Alevli Çember', rarity: RARITIES.EFSANEVI.name, className: 'border-4 border-transparent rounded-full bg-clip-border bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 animate-spin [animation-duration:3s]' },
+  { 
+    name: 'Alevli Çember', 
+    rarity: RARITIES.EFSANEVI.name, 
+    // Yeni, daha havalı sınıflar: dönme ve parlama efekti
+    className: 'p-1 rounded-full bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 animate-fire-spin animate-fire-glow [animation-duration:3s] [animation-timing-function:linear] [animation-iteration-count:infinite]' 
+  },
 
   // Özel
   { name: 'Nova', rarity: RARITIES.ÖZEL.name, className: '' },
