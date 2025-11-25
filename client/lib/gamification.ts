@@ -7,6 +7,7 @@ import { Profile } from "@shared/api";
 import { toast } from "sonner";
 import React from "react";
 import { getAuthHeaders } from "./api-utils";
+import { supabase } from "@/integrations/supabase/client"; // Supabase import edildi
 
 // --- ÜNVAN SİSTEMİ ---
 export const TITLES: { [key: number]: { name: string; icon: React.ElementType } } = {
