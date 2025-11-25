@@ -221,7 +221,7 @@ export const handleClaimDailyReward: RequestHandler = async (req, res) => {
     }
 
     // --- Server-side fixed reward ---
-    const DAILY_REWARD_GEMS = 5;
+    const DAILY_REWARD_GEMS = 20;
     // --------------------------------
 
     const newGems = (profile.gems || 0) + DAILY_REWARD_GEMS;
