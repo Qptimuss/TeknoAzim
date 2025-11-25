@@ -31,7 +31,7 @@ export function createServer() {
 
   // User routes
   app.delete("/api/user", requireAuth, handleDeleteUser);
-  app.put("/api/user/profile", requireAuth, handleUpdateProfile); // NEW ROUTE
+  app.put("/api/profile", requireAuth, handleUpdateProfile); // Corrected route
 
   // Blog Post Routes (Requires Auth for CUD operations)
   app.post("/api/blog/post", requireAuth, handleCreatePost);

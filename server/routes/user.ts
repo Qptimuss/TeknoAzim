@@ -1,81 +1,35 @@
 import { RequestHandler } from "express";
 import { getSupabaseAdmin } from "../lib/supabase-admin";
 import { z } from "zod";
+import { Database } from "../lib/database.types";
 
-// Extend the Express Request type to include the user property
-declare global {
-  namespace Express {
-    interface Request {
-      userId?: string;
-    }
-  }
-}
+// --- Profil Güncelleme Mantığı ---
 
 const updateProfileSchema = z.object({
-  name: z.string().min(2).optional(),
-  description: z.string().max(200).optional().nullable(),
+  name: z.string().min(2, "İsim en az 2 karakter olmalıdır.").optional(),
+  avatar_url: z.string().url("Geçerli bir URL olmalıdır.").nullable().optional(),
+  description: z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").nullable().optional(),
+  selected_title: z.string().nullable().optional(),
+  selected_frame: z.string().nullable().optional(),
 });
 
-// Helper function to call the Edge Function for moderation
-async function moderateContent(content: string): Promise<{ isModerated: boolean }> {
-  const supabaseAdmin = getSupabaseAdmin();
-  
-  // Invoke the Edge Function (using the existing comment moderation function)
-  const { data, error } = await supabaseAdmin.functions.invoke('moderate-comment', {
-    body: { content },
-  });
-
-  if (error) {
-    console.error("Error invoking moderation function:", error);
-    return { isModerated: true }; 
-  }
-
-  return data as { isModerated: boolean };
-}
-
-// PUT /api/user/profile
 export const handleUpdateProfile: RequestHandler = async (req, res) => {
   const userId = req.userId;
-  if (!userId) {
-    return res.status(401).json({ error: "User ID missing." });
-  }
+  if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = updateProfileSchema.parse(req.body);
+    const validatedData = updateProfileSchema.partial().parse(req.body);
     const supabaseAdmin = getSupabaseAdmin();
-    
-    const updatePayload: { name?: string, description?: string | null } = {};
 
-    // Moderation for Name
-    if (validatedData.name !== undefined) {
-      const { isModerated } = await moderateContent(validatedData.name);
-      if (!isModerated) {
-        return res.status(403).json({ error: "Kullanıcı adı uygunsuz içerik barındırdığı için reddedildi." });
-      }
-      updatePayload.name = validatedData.name;
-    }
-
-    // Moderation for Description
-    if (validatedData.description !== undefined) {
-      if (validatedData.description !== null) {
-        const { isModerated } = await moderateContent(validatedData.description);
-        if (!isModerated) {
-          return res.status(403).json({ error: "Profil açıklaması uygunsuz içerik barındırdığı için reddedildi." });
-        }
-      }
-      updatePayload.description = validatedData.description;
-    }
-
-    if (Object.keys(updatePayload).length === 0) {
+    if (Object.keys(validatedData).length === 0) {
         return res.status(400).json({ error: "No valid fields provided for update." });
     }
 
-    // Update the profile table
     const { data, error } = await supabaseAdmin
-      .from('profiles')
-      .update(updatePayload)
-      .eq('id', userId)
-      .select('id, name, description')
+      .from("profiles")
+      .update(validatedData)
+      .eq('id', userId) 
+      .select('id, name, avatar_url, description, selected_title, selected_frame')
       .single();
 
     if (error) {
@@ -93,6 +47,9 @@ export const handleUpdateProfile: RequestHandler = async (req, res) => {
   }
 };
 
+
+// --- Kullanıcı Silme Mantığı ---
+
 export const handleDeleteUser: RequestHandler = async (req, res) => {
   const userId = req.userId;
   if (!userId) {
@@ -104,14 +61,13 @@ export const handleDeleteUser: RequestHandler = async (req, res) => {
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (error) {
-      console.error("Supabase delete user error:", error);
+      console.error(`Error deleting user ${userId}:`, error);
       return res.status(500).json({ error: "Failed to delete user account." });
     }
 
-    // On successful deletion, Supabase's CASCADE constraint will handle the profile.
     res.status(204).send();
   } catch (e) {
-    console.error("Error deleting user:", e);
-    res.status(500).json({ error: "Internal server error." });
+    console.error("Server error during user deletion:", e);
+    res.status(500).json({ error: "Internal server error during account deletion." });
   }
 };
