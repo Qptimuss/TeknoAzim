@@ -165,7 +165,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                                 <span className="sr-only">Seçenekler</span>
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent>
+                            <DropdownMenuContent> {/* onClick={(e) => e.stopPropagation()} kaldırıldı */}
                               <DropdownMenuItem asChild>
                                 <Link to={`/kullanici/${comment.profiles.id}`}>Kullanıcının profiline bak</Link>
                               </DropdownMenuItem>
@@ -218,7 +218,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                   <FormItem>
                     <FormLabel>Yorum Ekle</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Yorumunuzu buraya yazın..." {...field} />
+                      <Textarea placeholder="Yorumunuzu buraya yazın..." {...field} className="min-h-[100px]" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
