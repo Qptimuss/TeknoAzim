@@ -28,8 +28,9 @@ const WHOLE_WORD_BANNED = new Set([
   "porno", "sex", "vajina", "penis", "meme", "anal", "oral", "sikiş", "seks", "cinsel", "erotik", "çıplak", "pornografi", "mastürbasyon", "tecavüz", "ensest",
   "sakso", "grupseks", "oral seks", "anal seks", "grup seks",
   "sülale", "sülaleni", "pezevenk", "yarak",
-  // Yeni eklenen yaygın argolar
-  "amk", "siktir", "anan", "sik", "yarrak", "göt", "oç", "amcık", "am", "sikiş" // "sikiş" eklendi
+  // Yaygın argolar ve varyasyonları
+  "amk", "siktir", "anan", "sik", "yarrak", "göt", "oç", "amcık", "am", 
+  "sikişmek", "sikişiyor", "sikiş", // Sikiş varyasyonları
 ]);
 
 // Hugging Face istemcisini sadece token ile başlatıyoruz.
@@ -57,6 +58,7 @@ serve(async (req) => {
 
     // Tam kelime eşleşmesi kontrolü
     for (const word of WHOLE_WORD_BANNED) {
+      // Kelime sınırlarını kullanarak tam kelime veya varyasyonlarını kontrol et
       const spammyWordRegex = new RegExp(`\\b${createSpammyRegex(word)}\\b`, 'i'); 
       if (spammyWordRegex.test(lowerCaseContent)) {
         containsBannedWord = true;
