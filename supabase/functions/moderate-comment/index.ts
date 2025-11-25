@@ -29,8 +29,8 @@ const WHOLE_WORD_BANNED = new Set([
   "sakso", "grupseks", "oral seks", "anal seks", "grup seks",
   "sülale", "sülaleni", "pezevenk", "yarak",
   // Yaygın argolar ve varyasyonları
-  "amk", "siktir", "anan", "sik", "yarrak", "göt", "oç", "amcık", "am", 
-  "sikişmek", "sikişiyor", "sikiş", // Sikiş varyasyonları
+  "amk", "siktir", "anan", "sik", "yarrak", "göt", "oç", "amcık", "am", "sikiş"
+  "sikişmek", "sikişiyor" // Sikiş varyasyonları
 ]);
 
 // Hugging Face istemcisini sadece token ile başlatıyoruz.
