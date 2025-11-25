@@ -29,8 +29,8 @@ export const FRAMES = [
   { 
     name: 'Alevli Çember', 
     rarity: RARITIES.EFSANEVI.name, 
-    // Yeni, daha havalı sınıflar: dönme ve parlama efekti
-    className: 'p-1 rounded-full bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 animate-fire-spin animate-fire-glow [animation-duration:3s] [animation-timing-function:linear] [animation-iteration-count:infinite]' 
+    // p-2 ile kalınlık artırıldı ve shadow-xl ile gölge yoğunlaştırıldı.
+    className: 'p-2 rounded-full bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 animate-fire-spin animate-fire-glow [animation-duration:3s] [animation-timing-function:linear] [animation-iteration-count:infinite] shadow-xl shadow-orange-500/50' 
   },
 
   // Özel
