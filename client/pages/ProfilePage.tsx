@@ -139,11 +139,13 @@ export default function ProfilePage() {
     
     setIsSavingName(true);
     try {
+      // updateProfile returns the updated profile data (subset)
       const updatedData = await updateProfile({ name: nameValue });
-      await updateUser(updatedData);
+      // updateUser merges this data into the AuthContext state
+      await updateUser(updatedData); 
       toast.success('İsim güncellendi!');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Hata oluştu.";
+      const errorMessage = error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.";
       toast.error("İsim Güncelleme Hatası", { description: errorMessage });
       setNameValue(user.name || ""); // Revert local state on error
     } finally {
@@ -174,11 +176,13 @@ export default function ProfilePage() {
     
     setIsSavingDescription(true);
     try {
+      // updateProfile returns the updated profile data (subset)
       const updatedData = await updateProfile({ description: descriptionValue });
+      // updateUser merges this data into the AuthContext state
       await updateUser(updatedData);
       toast.success('Açıklama güncellendi!');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Hata oluştu.";
+      const errorMessage = error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.";
       toast.error("Açıklama Güncelleme Hatası", { description: errorMessage });
       setDescriptionValue(user.description || ""); // Revert local state on error
     } finally {
@@ -225,7 +229,9 @@ export default function ProfilePage() {
         if (uploadedUrl) {
           // Önbelleği atlatmak için URL'ye zaman damgası ekle
           const cacheBustingUrl = `${uploadedUrl}?v=${Date.now()}`;
-          await updateUser({ avatar_url: cacheBustingUrl });
+          // updateProfile'ı çağırarak avatar_url'yi güvenli bir şekilde güncelliyoruz.
+          const updatedFields = await updateProfile({ avatar_url: cacheBustingUrl });
+          await updateUser(updatedFields);
         }
       },
       {
@@ -243,8 +249,13 @@ export default function ProfilePage() {
     if (!user) return;
     setIsDeletingAvatar(true);
     try {
-      await deleteAvatar(user.id);
-      await updateUser({ avatar_url: null });
+      // 1. Storage'dan sil
+      await deleteAvatar(user.avatar_url || "");
+      
+      // 2. DB'de avatar_url'yi null yap
+      const updatedFields = await updateProfile({ avatar_url: null });
+      await updateUser(updatedFields);
+
       toast.success("Profil fotoğrafı başarıyla silindi.");
     } catch (error) {
       toast.error("Profil fotoğrafı silinirken bir hata oluştu.");
