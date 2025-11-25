@@ -12,6 +12,10 @@ interface ProfileAvatarProps {
 }
 
 const ProfileAvatar = ({ profile, className }: ProfileAvatarProps) => {
+  const initials = profile?.name
+    ? profile.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+    : undefined;
+
   if (!profile) {
     return (
       <Avatar className={className}>
@@ -28,7 +32,7 @@ const ProfileAvatar = ({ profile, className }: ProfileAvatarProps) => {
     <Avatar className={className}>
       <AvatarImage src={profile.avatar_url || undefined} alt={profile.name || ''} />
       <AvatarFallback>
-        <UserIcon className="h-4/6 w-4/6" />
+        {initials || <UserIcon className="h-4/6 w-4/6" />}
       </AvatarFallback>
     </Avatar>
   );
