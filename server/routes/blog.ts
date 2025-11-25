@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { supabaseAdmin } from "../lib/supabase-admin.ts";
+import { getSupabaseAdmin } from "../lib/supabase-admin";
 import { z } from "zod";
 
 // --- Schemas for validation ---
@@ -26,6 +26,25 @@ const castVoteSchema = z.object({
   voteType: z.enum(['like', 'dislike', 'null']),
 });
 
+// Helper function to call the Edge Function for moderation
+async function moderateContent(content: string): Promise<{ isModerated: boolean }> {
+  const supabaseAdmin = getSupabaseAdmin();
+  
+  // Invoke the Edge Function
+  const { data, error } = await supabaseAdmin.functions.invoke('moderate-comment', {
+    body: { content },
+  });
+
+  if (error) {
+    console.error("Error invoking moderation function:", error);
+    // If the moderation service fails, we default to allowing the content (isModerated: true)
+    return { isModerated: true }; 
+  }
+
+  // The Edge Function returns { isModerated: boolean, ... }
+  return data as { isModerated: boolean };
+}
+
 // --- Handlers ---
 
 // POST /api/blog/post
@@ -35,6 +54,18 @@ export const handleCreatePost: RequestHandler = async (req, res) => {
 
   try {
     const validatedData = newPostSchema.parse(req.body);
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // --- Moderation Step for Title and Content ---
+    const { isModerated: titleModerated } = await moderateContent(validatedData.title);
+    if (!titleModerated) {
+      return res.status(403).json({ error: "Blog başlığı uygunsuz içerik barındırdığı için reddedildi." });
+    }
+    
+    const { isModerated: contentModerated } = await moderateContent(validatedData.content);
+    if (!contentModerated) {
+      return res.status(403).json({ error: "Blog içeriği uygunsuz içerik barındırdığı için reddedildi." });
+    }
 
     // Server-side insertion, ensuring user_id is set by the authenticated user
     const { data, error } = await supabaseAdmin
@@ -71,6 +102,18 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
 
   try {
     const validatedData = updatePostSchema.parse(req.body);
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // --- Moderation Step for Title and Content ---
+    const { isModerated: titleModerated } = await moderateContent(validatedData.title);
+    if (!titleModerated) {
+      return res.status(403).json({ error: "Blog başlığı uygunsuz içerik barındırdığı için reddedildi." });
+    }
+    
+    const { isModerated: contentModerated } = await moderateContent(validatedData.content);
+    if (!contentModerated) {
+      return res.status(403).json({ error: "Blog içeriği uygunsuz içerik barındırdığı için reddedildi." });
+    }
 
     // 1. Check ownership (using RLS bypass capability of supabaseAdmin)
     const { data: existingPost, error: fetchError } = await supabaseAdmin
@@ -121,6 +164,7 @@ export const handleDeletePost: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     // 1. Check ownership
     const { data: existingPost, error: fetchError } = await supabaseAdmin
       .from("blog_posts")
@@ -161,6 +205,15 @@ export const handleAddComment: RequestHandler = async (req, res) => {
 
   try {
     const validatedData = newCommentSchema.parse(req.body);
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // --- Moderation Step ---
+    const { isModerated } = await moderateContent(validatedData.content);
+    
+    if (!isModerated) {
+      // If the comment is toxic, reject it immediately.
+      return res.status(403).json({ error: "Yorumunuz, yapay zeka tarafından uygunsuz içerik barındırdığı için reddedildi." });
+    }
 
     // Server-side insertion, enforcing user_id from JWT
     const { data, error } = await supabaseAdmin
@@ -169,6 +222,7 @@ export const handleAddComment: RequestHandler = async (req, res) => {
         content: validatedData.content,
         post_id: validatedData.postId,
         user_id: userId,
+        is_moderated: isModerated, // Should be true if it passed moderation
       })
       .select()
       .single();
@@ -195,6 +249,7 @@ export const handleDeleteComment: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     // 1. Check ownership
     const { data: existingComment, error: fetchError } = await supabaseAdmin
       .from("comments")
@@ -236,6 +291,7 @@ export const handleCastVote: RequestHandler = async (req, res) => {
   try {
     const validatedData = castVoteSchema.parse(req.body);
     const { postId, voteType } = validatedData;
+    const supabaseAdmin = getSupabaseAdmin();
 
     if (voteType === 'null') {
       // Remove vote

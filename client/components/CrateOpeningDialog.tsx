@@ -18,9 +18,10 @@ interface CrateOpeningDialogProps {
   isProcessing: boolean;
   wonFrame: WonFrame | null;
   alreadyOwned: boolean;
+  refundAmount: number;
 }
 
-export default function CrateOpeningDialog({ open, onClose, isProcessing, wonFrame, alreadyOwned }: CrateOpeningDialogProps) {
+export default function CrateOpeningDialog({ open, onClose, isProcessing, wonFrame, alreadyOwned, refundAmount }: CrateOpeningDialogProps) {
   const [clickCount, setClickCount] = useState(0);
   const [animationState, setAnimationState] = useState<"idle" | "shaking" | "opening" | "revealed">("idle");
 
@@ -56,12 +57,25 @@ export default function CrateOpeningDialog({ open, onClose, isProcessing, wonFra
   const rarityInfo = wonFrame ? Object.values(RARITIES).find(r => r.name === wonFrame.rarity) : null;
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] text-center">
-        <DialogHeader>
+    <Dialog open={open}>
+      <DialogContent 
+        className="sm:max-w-[425px] text-center"
+        hideCloseButton
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
+        <DialogHeader className="items-center">
           <DialogTitle className="text-center text-2xl font-outfit">Sandık Açılıyor</DialogTitle>
         </DialogHeader>
-        <div className="min-h-[300px] flex flex-col items-center justify-center p-6">
+        
+        {/* Tıklama alanını tüm içeriğe genişletmek için bu div'i kullanıyoruz */}
+        <div 
+          className={cn(
+            "min-h-[300px] flex flex-col items-center justify-center p-6",
+            !isProcessing && animationState !== "revealed" && "cursor-pointer"
+          )}
+          onClick={handleCrateClick}
+        >
           {isProcessing ? (
             <div className="flex flex-col items-center gap-4">
               <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -90,24 +104,22 @@ export default function CrateOpeningDialog({ open, onClose, isProcessing, wonFra
                 <div className="text-center mt-2 p-2 bg-muted rounded-md border border-border">
                   <p className="text-sm text-muted-foreground">(Bu çerçeveye zaten sahipsin)</p>
                   <p className="text-sm font-semibold text-green-500 flex items-center justify-center gap-1">
-                    +5 <Gem className="h-4 w-4" /> Geri Verildi!
+                    +{refundAmount} <Gem className="h-4 w-4" /> Geri Verildi!
                   </p>
                 </div>
               )}
             </div>
           ) : (
             <div className="flex flex-col items-center gap-4">
-              <button
-                onClick={handleCrateClick}
-                disabled={animationState !== "idle"}
+              <div
                 className={cn(
-                  "cursor-pointer transition-transform duration-200 hover:scale-110",
+                  "transition-transform duration-200",
                   animationState === "shaking" && "animate-shake",
                   animationState === "opening" && "animate-open-crate"
                 )}
               >
                 <Gift className="h-32 w-32 text-primary" />
-              </button>
+              </div>
               <p className="text-muted-foreground">
                 {clickCount < 3 ? `Sandığı açmak için tıkla! (${clickCount}/3)` : "Açılıyor..."}
               </p>
@@ -115,8 +127,8 @@ export default function CrateOpeningDialog({ open, onClose, isProcessing, wonFra
           )}
         </div>
         {animationState === "revealed" && (
-          <DialogFooter>
-            <Button onClick={onClose} className="w-full">Kapat</Button>
+          <DialogFooter className="sm:justify-center">
+            <Button onClick={onClose} className="w-full sm:w-auto">Kapat</Button>
           </DialogFooter>
         )}
       </DialogContent>

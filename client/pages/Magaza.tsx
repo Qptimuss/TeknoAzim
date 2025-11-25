@@ -12,6 +12,15 @@ import CrateOpeningDialog from "@/components/CrateOpeningDialog";
 
 const CRATE_COST = 10;
 
+// Nadirlik seviyelerine göre iade miktarları
+const REFUND_AMOUNTS: { [key: string]: number } = {
+  [RARITIES.SIRADAN.name]: 5,
+  [RARITIES.SIRADISI.name]: 10,
+  [RARITIES.ENDER.name]: 15,
+  [RARITIES.EFSANEVI.name]: 25,
+  [RARITIES.ÖZEL.name]: 100,
+};
+
 const selectRandomFrame = () => {
   const rand = Math.random() * 100;
   let selectedRarityName: string;
@@ -40,6 +49,7 @@ export default function Magaza() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [wonFrame, setWonFrame] = useState<any | null>(null);
   const [alreadyOwned, setAlreadyOwned] = useState(false);
+  const [refundAmount, setRefundAmount] = useState(0); // Yeni iade miktarı state'i
 
   const handleOpenCrate = async () => {
     if (!user) {
@@ -60,6 +70,7 @@ export default function Magaza() {
     setIsProcessing(true);
     setWonFrame(null);
     setAlreadyOwned(false);
+    setRefundAmount(0);
 
     try {
       const frame = selectRandomFrame();
@@ -74,9 +85,11 @@ export default function Magaza() {
       const currentFrames = currentProfile.owned_frames || [];
       const isOwned = currentFrames.includes(frame.name);
       let newFrames = currentFrames;
+      let refund = 0;
 
       if (isOwned) {
-        newGems += 5; // 5 elmas iade et
+        refund = REFUND_AMOUNTS[frame.rarity] || 5; // Nadirliğe göre iade miktarını al
+        newGems += refund;
       } else {
         newFrames = [...currentFrames, frame.name];
       }
@@ -85,6 +98,7 @@ export default function Magaza() {
 
       setWonFrame(frame);
       setAlreadyOwned(isOwned);
+      setRefundAmount(refund);
     } catch (error) {
       toast.error("Bir hata oluştu", { description: error instanceof Error ? error.message : "Sandık açma işlemi başarısız." });
       setIsCrateDialogOpen(false);
@@ -104,8 +118,31 @@ export default function Magaza() {
           <h1 className="text-foreground text-4xl md:text-5xl font-outfit font-bold">
             Mağaza
           </h1>
+          <div className="mt-4 p-4 bg-muted rounded-lg border border-border">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-2">
+              <Gem className="h-5 w-5 text-green-500" />
+              Nasıl Elmas Kazanırım?
+            </h2>
+            <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+              <li>Her 24 saatte bir giriş yaptığında: <span className="font-bold text-foreground">+20 Elmas</span></li>
+              <li>Her yeni rozet kazandığında: <span className="font-bold text-foreground">+30 Elmas</span></li>
+              <li className="flex items-center">
+                Zaten sahip olduğun bir çerçeve sandıktan çıktığında: 
+                <span className="font-bold text-foreground ml-1">Nadirliğe göre Elmas iadesi</span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6 p-0 ml-2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setIsInfoOpen(true)}
+                >
+                  <Info className="h-4 w-4" />
+                  <span className="sr-only">Görmek için tıkla</span>
+                </Button>
+              </li>
+            </ul>
+          </div>
           {!user && (
-            <p className="text-sm text-muted-foreground mt-2 bg-muted p-3 rounded-lg border border-border inline-block">
+            <p className="text-sm text-muted-foreground mt-4 bg-muted p-3 rounded-lg border border-border inline-block">
               Mağazayı kullanabilmek için giriş yapmanız gerekmektedir.
             </p>
           )}
@@ -144,13 +181,19 @@ export default function Magaza() {
           </Card>
         </div>
       </div>
-      <CrateInfoDialog open={isInfoOpen} onOpenChange={setIsInfoOpen} />
+      <CrateInfoDialog 
+        open={isInfoOpen} 
+        onOpenChange={setIsInfoOpen} 
+        userAvatarUrl={user?.avatar_url}
+        userName={user?.name}
+      />
       <CrateOpeningDialog
         open={isCrateDialogOpen}
         onClose={handleCloseDialog}
         isProcessing={isProcessing}
         wonFrame={wonFrame}
         alreadyOwned={alreadyOwned}
+        refundAmount={refundAmount}
       />
     </>
   );
