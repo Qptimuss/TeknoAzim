@@ -10,10 +10,7 @@ const corsHeaders = {
 const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
 
 // --- MODERATION CONFIGURATION ---
-// YENİ MODEL: JungleLee/bert-toxic-comment-classification (Çoklu etiket çıktısı verir)
 const HF_MODEL = 'unitary/toxic-bert';
-
-// Toksisite eşiği: Bu değerin üzerindeki puanlar toksik kabul edilir.
 const TOXICITY_THRESHOLD = 0.7; 
 
 // Helper to create a regex pattern that allows for character repetitions
@@ -29,8 +26,14 @@ const WHOLE_WORD_BANNED = new Set([
   "sakso", "grupseks", "oral seks", "anal seks", "grup seks",
   "sülale", "sülaleni", "pezevenk", "yarak",
   // Yaygın argolar ve varyasyonları
-  "amk", "siktir", "anan", "sik", "yarrak", "göt", "oç", "amcık", "am", "sikiş"
-  "sikişmek", "sikişiyor" // Sikiş varyasyonları
+  "amk", "siktir", "anan", "sik", "yarrak", "göt", "oç", "amcık", "am", 
+  "sikişmek", "sikişiyor", 
+]);
+
+// Kelime sınırı olmadan, metnin herhangi bir yerinde geçiyorsa engellenecek kelimeler
+// Bu liste, çok hassas kelimeler için kullanılır.
+const PARTIAL_WORD_BANNED = new Set([
+    "sikiş", // Sadece bu kelimeyi kelime sınırı olmadan kontrol ediyoruz
 ]);
 
 // Hugging Face istemcisini sadece token ile başlatıyoruz.
@@ -56,7 +59,7 @@ serve(async (req) => {
     const lowerCaseContent = content.toLowerCase();
     let containsBannedWord = false;
 
-    // Tam kelime eşleşmesi kontrolü
+    // A. Tam kelime eşleşmesi kontrolü (daha güvenli)
     for (const word of WHOLE_WORD_BANNED) {
       // Kelime sınırlarını kullanarak tam kelime veya varyasyonlarını kontrol et
       const spammyWordRegex = new RegExp(`\\b${createSpammyRegex(word)}\\b`, 'i'); 
@@ -64,6 +67,18 @@ serve(async (req) => {
         containsBannedWord = true;
         break;
       }
+    }
+    
+    // B. Kısmi kelime eşleşmesi kontrolü (daha agresif)
+    if (!containsBannedWord) {
+        for (const word of PARTIAL_WORD_BANNED) {
+            // Kelime sınırları olmadan, sadece içerip içermediğini kontrol et
+            const spammyWordRegex = new RegExp(createSpammyRegex(word), 'i'); 
+            if (spammyWordRegex.test(lowerCaseContent)) {
+                containsBannedWord = true;
+                break;
+            }
+        }
     }
 
     if (containsBannedWord) {
