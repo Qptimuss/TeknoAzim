@@ -174,29 +174,42 @@ export const updateProfile = async (updateData: Partial<Pick<Profile, 'name' | '
   });
 };
 
-export const uploadAvatar = async (file: File, userId: string): Promise<string | null> => {
-  const filePath = `avatars/${userId}.jpeg`;
+export const uploadAvatar = async (file: File, userId: string): Promise<string> => {
+  const fileExt = file.name.split('.').pop();
+  const filePath = `avatars/${userId}.${fileExt}`;
 
-  // Upsert to overwrite existing avatar for the user
   const { error } = await supabase.storage.from('images').upload(filePath, file, {
     cacheControl: '3600',
     upsert: true,
   });
 
   if (error) {
-    console.error('Error uploading avatar:', error);
-    throw new Error('Avatar could not be uploaded.');
+    console.error('Supabase Storage Error:', error);
+    // Kullanıcıya daha açıklayıcı bir hata mesajı göster
+    throw new Error(`Avatar yüklenemedi: ${error.message}`);
   }
 
   const { data } = supabase.storage.from('images').getPublicUrl(filePath);
-  return data.publicUrl;
+  
+  // Tarayıcı önbelleğini atlatmak için URL'ye bir zaman damgası ekle
+  return `${data.publicUrl}?t=${new Date().getTime()}`;
 };
 
-export const deleteAvatar = async (userId: string): Promise<void> => {
-  const filePath = `avatars/${userId}.jpeg`;
-  const { error } = await supabase.storage.from('images').remove([filePath]);
-  if (error) {
-    console.error('Error deleting avatar:', error);
-    throw new Error('Avatar could not be deleted.');
+export const deleteAvatar = async (avatarUrl: string): Promise<void> => {
+  try {
+    const url = new URL(avatarUrl);
+    // Zaman damgasını ve diğer parametreleri temizle
+    const path = url.pathname.split('/images/')[1];
+    if (!path) {
+      console.error("Could not determine file path from URL.");
+      return;
+    }
+    const { error } = await supabase.storage.from('images').remove([path]);
+    if (error) {
+      console.error('Error deleting avatar:', error);
+      throw new Error('Avatar could not be deleted.');
+    }
+  } catch (e) {
+    console.error("Error processing avatar URL for deletion:", e);
   }
 };
