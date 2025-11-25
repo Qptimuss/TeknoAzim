@@ -37,41 +37,6 @@ import { FRAMES } from "@/lib/store-items";
 import NovaFrame from "@/components/frames/NovaFrame";
 import ImageViewerDialog from "@/components/ImageViewerDialog";
 
-// Deterministic color palette for avatar fallback
-const AVATAR_COLORS = [
-  "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500", 
-  "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500",
-  "bg-orange-500", "bg-cyan-500" // Added more colors to match ProfileAvatar.tsx
-];
-
-// Helper to get initials (first two characters)
-const getInitials = (name: string | null | undefined): string | undefined => {
-  if (!name) return undefined;
-  
-  const parts = name.trim().split(/\s+/);
-  
-  if (parts.length > 1) {
-    // If multiple words, take the first letter of the first two words
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  
-  // If one word, take the first two letters
-  return name.substring(0, 2).toUpperCase();
-};
-
-// Helper to select a deterministic color based on the user's name
-const getDeterministicColor = (name: string | null | undefined): string => {
-  if (!name) return "bg-gray-500";
-  
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % AVATAR_COLORS.length;
-  return AVATAR_COLORS[index];
-};
-
-
 export default function ProfilePage() {
   const { user, updateUser, loading, logout } = useAuth();
   const navigate = useNavigate();
@@ -342,19 +307,14 @@ export default function ProfilePage() {
   const selectedFrame = FRAMES.find(f => f.name === user.selected_frame);
 
   // Avatar bileşenini yeniden kullanmak için bir helper
-  const AvatarPreview = ({ sizeClass = "h-20 w-20" }: { sizeClass?: string }) => {
-    const initials = getInitials(user.name);
-    const fallbackColor = getDeterministicColor(user.name);
-
-    return (
-      <Avatar className={sizeClass}>
-        <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-        <AvatarFallback className={cn(fallbackColor, "text-white text-2xl font-extrabold")}>
-          {initials || <UserIcon className="h-4/6 w-4/6" />}
-        </AvatarFallback>
-      </Avatar>
-    );
-  };
+  const AvatarPreview = ({ sizeClass = "h-20 w-20" }: { sizeClass?: string }) => (
+    <Avatar className={sizeClass}>
+      <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
+      <AvatarFallback>
+        <UserIcon className="h-4/6 w-4/6" />
+      </AvatarFallback>
+    </Avatar>
+  );
 
   return (
     <>
