@@ -11,10 +11,42 @@ interface ProfileAvatarProps {
   className?: string; // This will be for the size, e.g., "h-8 w-8"
 }
 
+// Deterministic color palette for avatar fallback
+const AVATAR_COLORS = [
+  "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500", 
+  "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500"
+];
+
+// Helper to get initials (first two characters)
+const getInitials = (name: string | null | undefined): string | undefined => {
+  if (!name) return undefined;
+  
+  const parts = name.trim().split(/\s+/);
+  
+  if (parts.length > 1) {
+    // If multiple words, take the first letter of the first two words
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  
+  // If one word, take the first two letters
+  return name.substring(0, 2).toUpperCase();
+};
+
+// Helper to select a deterministic color based on the user's name
+const getDeterministicColor = (name: string | null | undefined): string => {
+  if (!name) return "bg-gray-500";
+  
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[index];
+};
+
 const ProfileAvatar = ({ profile, className }: ProfileAvatarProps) => {
-  const initials = profile?.name
-    ? profile.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
-    : undefined;
+  const initials = getInitials(profile?.name);
+  const fallbackColor = getDeterministicColor(profile?.name);
 
   if (!profile) {
     return (
@@ -31,7 +63,7 @@ const ProfileAvatar = ({ profile, className }: ProfileAvatarProps) => {
   const avatarComponent = (
     <Avatar className={className}>
       <AvatarImage src={profile.avatar_url || undefined} alt={profile.name || ''} />
-      <AvatarFallback>
+      <AvatarFallback className={cn(fallbackColor, "text-white font-bold")}>
         {initials || <UserIcon className="h-4/6 w-4/6" />}
       </AvatarFallback>
     </Avatar>
