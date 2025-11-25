@@ -307,14 +307,20 @@ export default function ProfilePage() {
   const selectedFrame = FRAMES.find(f => f.name === user.selected_frame);
 
   // Avatar bileşenini yeniden kullanmak için bir helper
-  const AvatarPreview = ({ sizeClass = "h-20 w-20" }: { sizeClass?: string }) => (
-    <Avatar className={sizeClass}>
-      <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-      <AvatarFallback>
-        <UserIcon className="h-4/6 w-4/6" />
-      </AvatarFallback>
-    </Avatar>
-  );
+  const AvatarPreview = ({ sizeClass = "h-20 w-20" }: { sizeClass?: string }) => {
+    const initials = user.name
+      ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+      : undefined;
+
+    return (
+      <Avatar className={sizeClass}>
+        <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
+        <AvatarFallback>
+          {initials || <UserIcon className="h-4/6 w-4/6" />}
+        </AvatarFallback>
+      </Avatar>
+    );
+  };
 
   return (
     <>
