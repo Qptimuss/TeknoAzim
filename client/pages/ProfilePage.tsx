@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth, User } from "@/contexts/AuthContext";
-import { getPostsByUserId, uploadAvatar, deleteBlogPost, updateProfile } from "@/lib/blog-store";
+import { getPostsByUserId, uploadAvatar, deleteBlogPost, updateProfile, deleteAvatar } from "@/lib/blog-store";
 import { BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, CheckCircle, Pencil, Check, X, Lock, ImageIcon } from "lucide-react";
+import { User as UserIcon, CheckCircle, Pencil, Check, X, Lock, Trash2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { calculateLevel, ALL_BADGES, TITLES, removeExp, EXP_ACTIONS } from "@/lib/gamification";
@@ -60,6 +60,11 @@ export default function ProfilePage() {
   // Account Deletion States
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  // Avatar Deletion States
+  const [showDeleteAvatarDialog, setShowDeleteAvatarDialog] = useState(false);
+  const [isDeletingAvatar, setIsDeletingAvatar] = useState(false);
+
 
   useEffect(() => {
     return () => {
@@ -209,6 +214,22 @@ export default function ProfilePage() {
     );
   };
 
+  const handleDeleteAvatar = async () => {
+    if (!user) return;
+    setIsDeletingAvatar(true);
+    try {
+      await deleteAvatar(user.id);
+      await updateUser({ avatar_url: null });
+      toast.success("Profil fotoğrafı başarıyla silindi.");
+    } catch (error) {
+      toast.error("Profil fotoğrafı silinirken bir hata oluştu.");
+      console.error(error);
+    } finally {
+      setIsDeletingAvatar(false);
+      setShowDeleteAvatarDialog(false);
+    }
+  };
+
   const handleDeleteRequest = (postId: string, imageUrl?: string | null) => {
     setPostToDelete({ id: postId, imageUrl });
   };
@@ -323,14 +344,28 @@ export default function ProfilePage() {
                       </div>
                     )}
                   </button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6" 
-                    onClick={handleAvatarEditClick}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
+                  <div className="flex flex-col gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6" 
+                      onClick={handleAvatarEditClick}
+                      title="Fotoğrafı Değiştir"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    {user.avatar_url && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 text-red-500 hover:bg-red-500/10" 
+                        onClick={() => setShowDeleteAvatarDialog(true)}
+                        title="Fotoğrafı Sil"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <Input type="file" accept="image/png, image/jpeg, image/gif" ref={fileInputRef} onChange={(e) => handleFileChange(e.target.files)} className="hidden" />
 
@@ -608,6 +643,27 @@ export default function ProfilePage() {
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               {isDeletingAccount ? "Siliniyor..." : "Evet, Hesabımı Sil"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showDeleteAvatarDialog} onOpenChange={setShowDeleteAvatarDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Profil Fotoğrafını Sil</AlertDialogTitle>
+            <AlertDialogDescription>
+              Mevcut profil fotoğrafınızı kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingAvatar}>İptal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAvatar}
+              disabled={isDeletingAvatar}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isDeletingAvatar ? "Siliniyor..." : "Sil"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

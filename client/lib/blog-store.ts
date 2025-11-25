@@ -102,6 +102,33 @@ export const uploadAvatar = async (file: File, userId: string): Promise<string |
   return `${publicUrl}?t=${new Date().getTime()}`;
 };
 
+// Delete the user's avatar from storage and update profile URL
+export const deleteAvatar = async (userId: string) => {
+  const filePath = `avatars/${userId}/avatar.jpeg`;
+
+  // 1. Delete the file from storage
+  const { error: storageError } = await supabase.storage
+    .from('blog_images')
+    .remove([filePath]);
+
+  if (storageError && storageError.message !== 'The resource was not found') {
+    // 'The resource was not found' hatasını görmezden geliyoruz, çünkü dosya zaten silinmiş olabilir.
+    console.error('Error deleting avatar from storage:', storageError);
+    throw storageError;
+  }
+
+  // 2. Update the profile table to set avatar_url to null
+  const { error: profileUpdateError } = await supabase
+    .from('profiles')
+    .update({ avatar_url: null })
+    .eq('id', userId);
+
+  if (profileUpdateError) {
+    console.error('Error updating profile avatar_url:', profileUpdateError);
+    throw profileUpdateError;
+  }
+};
+
 
 // Fetch all blog posts with their authors
 export const getBlogPosts = async (): Promise<BlogPostWithAuthor[]> => {
