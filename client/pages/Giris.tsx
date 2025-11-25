@@ -35,6 +35,8 @@ export default function Giris() {
     setIsSubmitting(false);
 
     if (error) {
+      console.error("Supabase Login Error:", error); // Hata detayını konsola yazdır
+      
       if (error.message === 'Email not confirmed') {
         toast.error("Giriş Hatası", { description: "Giriş yapmadan önce lütfen e-postanızı doğrulayın." });
         setShowResendLink(true);
