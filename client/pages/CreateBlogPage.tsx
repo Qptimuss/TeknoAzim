@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { addBlogPost, uploadBlogImage, getPostsByUserId } from "@/lib/blog-store";
 import { useAuth } from "@/contexts/AuthContext";
 import { addExp, awardBadge, EXP_ACTIONS } from "@/lib/gamification";
+import { Loader2 } from "lucide-react"; // Import Loader2
 
 const blogSchema = z.object({
   title: z.string().min(5, "Başlık en az 5 karakter olmalıdır."),
@@ -26,8 +27,8 @@ const blogSchema = z.object({
     .instanceof(FileList)
     .optional()
     .refine(
-      (files) => !files || files.length === 0 || files[0].size <= 2 * 1024 * 1024, // 2MB
-      `Resim boyutu 2MB'den küçük olmalıdır.`
+      (files) => !files || files.length === 0 || files[0].size <= 4 * 1024 * 1024, // 4MB
+      `Resim boyutu 4MB'den küçük olmalıdır.`
     ),
 });
 
@@ -120,7 +121,13 @@ export default function CreateBlogPage() {
       toast.success("Blog yazınız başarıyla oluşturuldu!");
       navigate("/bloglar");
     } catch (error) {
-      toast.error("Blog yazısı oluşturulurken bir hata oluştu.");
+      const errorMessage = error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.";
+      
+      if (errorMessage.includes("uygunsuz içerik barındırdığı için reddedildi")) {
+        toast.error("İçerik Reddedildi", { description: errorMessage });
+      } else {
+        toast.error("Blog yazısı oluşturulurken bir hata oluştu.", { description: errorMessage });
+      }
       console.error(error);
     }
   }
@@ -151,7 +158,7 @@ export default function CreateBlogPage() {
               name="imageFile"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Kapak Resmi (İsteğe Bağlı, Maks 2MB)</FormLabel>
+                  <FormLabel>Kapak Resmi (İsteğe Bağlı, Maks 4MB)</FormLabel>
                   <FormControl>
                     <Input 
                       type="file" 
@@ -189,7 +196,14 @@ export default function CreateBlogPage() {
               )}
             />
             <Button type="submit" size="lg" disabled={form.formState.isSubmitting} className="w-full text-lg">
-              {form.formState.isSubmitting ? "Yayınlanıyor..." : "Yayınla"}
+              {form.formState.isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Yayınlanıyor...
+                </>
+              ) : (
+                "Yayınla"
+              )}
             </Button>
           </form>
         </Form>

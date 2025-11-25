@@ -108,7 +108,7 @@ export default function BlogCard({ post, showDelete = false, onDelete, hideProfi
                             <span className="sr-only">Seçenekler</span>
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenuContent> {/* onClick={(e) => e.stopPropagation()} kaldırıldı */}
                           <DropdownMenuItem asChild>
                             <Link to={`/kullanici/${post.profiles.id}`}>Kullanıcının profiline bak</Link>
                           </DropdownMenuItem>

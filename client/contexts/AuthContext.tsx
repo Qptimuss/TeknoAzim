@@ -11,9 +11,9 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   logout: () => Promise<void>;
-  updateUser: (newUserData: Partial<User>) => Promise<void>;
+  updateUser: (data: Partial<User>) => void;
+  saveProfileDetails: (newUserData: Partial<User>) => Promise<void>;
   login: (supabaseUser: SupabaseUser) => Promise<void>;
-  mergeProfileState: (data: Partial<User>) => void; 
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,8 +28,6 @@ const isSameDay = (d1: Date, d2: Date) => {
 };
 
 // Define the keys that are safe for client-initiated updates via the /api/profile endpoint.
-// All gamification fields (exp, level, gems, badges, owned_frames, last_daily_reward_claimed_at) 
-// must be excluded as they are managed by secure server endpoints.
 const SAFE_PROFILE_UPDATE_KEYS: Array<keyof Profile> = [
   'name',
   'avatar_url',
@@ -62,8 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } as User;
   };
 
-  // Function to merge state after a secure server call returns the updated profile
-  const mergeProfileState = (data: Partial<User>) => {
+  // This function is for merging state that has already been updated on the server
+  const updateUser = (data: Partial<User>) => {
     setUser(prevUser => {
       if (!prevUser) return null;
       return {
@@ -84,11 +82,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const updatedProfile = await claimDailyReward();
         toast.success("Günlük Giriş Ödülü", {
-          description: "Hesabına 5 Gem eklendi!",
+          description: "Hesabına 20 Gem eklendi!",
         });
         return { ...updatedProfile, email: profile.email } as User;
       } catch (e) {
-        // If claiming failed (e.g., already claimed or server error), return original profile
         if (e instanceof Error && e.message.includes("Daily reward already claimed today.")) {
              // This case should ideally not happen if isSameDay check passes, but good to handle.
         } else {
@@ -151,29 +148,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
-  // SECURE UPDATE USER: Only allows updating non-gamification fields via the secure server API.
-  const updateUser = async (newUserData: Partial<User>) => {
+  // This function is for client-initiated updates of profile details (name, description, etc.)
+  const saveProfileDetails = async (newUserData: Partial<User>) => {
     if (!user) return;
 
     const safeUpdateData: Partial<Profile> = {};
+    let hasSafeFields = false;
 
-    // Filter newUserData to only include safe keys
     SAFE_PROFILE_UPDATE_KEYS.forEach(key => {
-      if (newUserData[key] !== undefined) {
-        // FIX: Use type assertion on the target object to allow dynamic assignment
-        (safeUpdateData as any)[key] = newUserData[key];
+      if (newUserData.hasOwnProperty(key)) {
+        (safeUpdateData as any)[key] = (newUserData as any)[key];
+        hasSafeFields = true;
       }
     });
 
-    if (Object.keys(safeUpdateData).length === 0) {
-        return;
+    if (!hasSafeFields) {
+      console.warn("saveProfileDetails called with no updatable fields.");
+      return;
     }
 
-    // Use the secure server API for profile updates
-    const updatedFields = await updateProfileDetails(safeUpdateData);
-
-    // Merge the updated fields back into the current user state
-    mergeProfileState(updatedFields);
+    try {
+      const updatedFields = await updateProfileDetails(safeUpdateData);
+      updateUser(updatedFields); // Use the state merger to update context
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
+    }
   };
 
   const value = {
@@ -181,8 +180,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     logout,
     updateUser,
+    saveProfileDetails,
     login,
-    mergeProfileState,
   };
 
   return (

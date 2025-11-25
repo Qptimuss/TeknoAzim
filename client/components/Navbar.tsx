@@ -19,13 +19,17 @@ export default function Navbar() {
     navigate("/");
   };
 
-  const mainNavLinks = [
-    { to: "/", label: "Ana Sayfa" },
+  // Ana Sayfa bağlantısını sadece kullanıcı giriş yapmamışsa gösteriyoruz.
+  const baseNavLinks = [
     { to: "/bloglar", label: "Bloglar" },
     { to: "/duyurular", label: "Duyurular" },
     { to: "/hakkimizda", label: "Hakkımızda" },
     { to: "/magaza", label: "Mağaza" },
   ];
+
+  const mainNavLinks = user 
+    ? baseNavLinks 
+    : [{ to: "/", label: "Ana Sayfa" }, ...baseNavLinks];
 
   const guestLinks = [
     { to: "/kaydol", label: "Kaydol" },
@@ -93,9 +97,9 @@ export default function Navbar() {
                       </TooltipTrigger>
                       <TooltipContent>
                         <div className="text-center">
-                          <p className="font-bold">Gem Kazancı</p>
-                          <p>Her 24 saatte bir giriş: +5 Gem</p>
-                          <p>Her yeni rozet: +10 Gem</p>
+                          <p className="font-bold">Elmas Kazancı</p>
+                          <p>Her 24 saatte bir giriş: +20 Elmas</p>
+                          <p>Her yeni rozet: +30 Elmas</p>
                         </div>
                       </TooltipContent>
                     </Tooltip>

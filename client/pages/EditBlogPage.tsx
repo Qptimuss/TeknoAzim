@@ -29,8 +29,8 @@ const blogSchema = z.object({
     .instanceof(FileList)
     .optional()
     .refine(
-      (files) => !files || files.length === 0 || files[0].size <= 2 * 1024 * 1024, // 2MB
-      `Resim boyutu 2MB'den küçük olmalıdır.`
+      (files) => !files || files.length === 0 || files[0].size <= 4 * 1024 * 1024, // 4MB
+      `Resim boyutu 4MB'den küçük olmalıdır.`
     ),
 });
 
@@ -108,7 +108,13 @@ export default function EditBlogPage() {
       toast.success("Blog yazınız başarıyla güncellendi!");
       navigate(`/bloglar/${id}`);
     } catch (error) {
-      toast.error("Blog yazısı güncellenirken bir hata oluştu.");
+      const errorMessage = error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.";
+      
+      if (errorMessage.includes("uygunsuz içerik barındırdığı için reddedildi")) {
+        toast.error("İçerik Reddedildi", { description: errorMessage });
+      } else {
+        toast.error("Blog yazısı güncellenirken bir hata oluştu.", { description: errorMessage });
+      }
       console.error(error);
     }
   }
@@ -159,7 +165,7 @@ export default function EditBlogPage() {
               name="imageFile"
               render={() => (
                 <FormItem>
-                  <FormLabel className="text-white">Yeni Kapak Resmi (Maks 2MB)</FormLabel>
+                  <FormLabel className="text-white">Yeni Kapak Resmi (Maks 4MB)</FormLabel>
                   <FormControl>
                     <Input 
                       type="file" 

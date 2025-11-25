@@ -1,5 +1,5 @@
 import { 
-  Award, BookOpen, MessageSquare, ThumbsUp, FilePlus2, Zap, Star,
+  Award, BookOpen, MessageSquare, ThumbsUp, FilePlus2, Zap, Star, Heart, // Heart eklendi
   PenSquare, TrendingUp, Users, Lightbulb, Sparkles, MessageSquareQuote,
   GraduationCap, PenTool, Rocket
 } from "lucide-react";
@@ -53,7 +53,8 @@ export const ALL_BADGES = [
   { name: "Topluluk İnşacısı", description: "5 blog yazısı yayınla.", icon: Award },
   { name: "İlk Yorumcu", description: "Bir gönderiye ilk yorumu yap.", icon: MessageSquare },
   { name: "Hızlı Parmaklar", description: "Üç farklı gönderiye ilk yorumu yap.", icon: Zap },
-  { name: "Beğeni Mıknatısı", description: "Bir gönderin 5 beğeni alsın.", icon: ThumbsUp },
+  { name: "Beğeni Başlangıcı", description: "Bir gönderin 2 beğeni alsın.", icon: ThumbsUp },
+  { name: "Beğeni Mıknatısı", description: "Bir gönderin 5 beğeni alsın.", icon: Heart }, // ThumbsUp -> Heart olarak değiştirildi
   { name: "Popüler Yazar", description: "Bir gönderin 10 beğeni alsın.", icon: Star },
 ];
 
@@ -186,9 +187,8 @@ export const awardBadge = async (userId: string, badgeName: string): Promise<Pro
   const updatedProfile = await response.json();
   
   // Client-side notification for badge and gem/exp gain
-  // Note: We hardcode the notification values here, assuming they match the server's hardcoded values (50 EXP, 10 Gem)
   toast.success("Yeni Rozet Kazandın!", {
-    description: `"${badgeName}" rozetini kazandın, 50 EXP ve 10 Gem elde ettin!`,
+    description: `"${badgeName}" rozetini kazandın, 50 EXP ve 30 Gem elde ettin!`,
   });
   
   // Check for level up notification (client side)
