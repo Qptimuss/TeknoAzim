@@ -19,13 +19,17 @@ export default function Navbar() {
     navigate("/");
   };
 
-  const mainNavLinks = [
-    { to: "/", label: "Ana Sayfa" },
+  // Ana Sayfa bağlantısını sadece kullanıcı giriş yapmamışsa gösteriyoruz.
+  const baseNavLinks = [
     { to: "/bloglar", label: "Bloglar" },
     { to: "/duyurular", label: "Duyurular" },
     { to: "/hakkimizda", label: "Hakkımızda" },
     { to: "/magaza", label: "Mağaza" },
   ];
+
+  const mainNavLinks = user 
+    ? baseNavLinks 
+    : [{ to: "/", label: "Ana Sayfa" }, ...baseNavLinks];
 
   const guestLinks = [
     { to: "/kaydol", label: "Kaydol" },

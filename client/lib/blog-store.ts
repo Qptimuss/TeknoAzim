@@ -1,27 +1,57 @@
 import { supabase } from "@/integrations/supabase/client";
 import { BlogPostWithAuthor, CommentWithAuthor, Profile } from "@shared/api";
-import { getAuthHeaders } from "./api-utils";
 
 // Type for creating a new blog post
 type NewBlogPost = {
   title: string;
   content: string;
   imageUrl?: string;
-  userId: string; // This is now only used for image upload path, not DB insertion
+  userId: string; // Kept for client-side logic if needed, but server ignores it for security
 };
 
-// Type for updating an existing blog post
-type UpdateBlogPost = {
-  title: string;
-  content: string;
-  imageUrl?: string | null;
+// Type for updating profile data
+type UpdateProfileData = {
+  name?: string;
+  description?: string | null;
 };
 
 // Type for creating a new comment
 type NewComment = {
   content: string;
   postId: string;
-  userId: string; // This is now only used for image upload path, not DB insertion
+  userId: string; // Kept for client-side logic if needed, but server ignores it for security
+};
+
+// Helper function to fetch with Authorization header
+const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session) {
+    throw new Error("Authentication required.");
+  }
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${session.access_token}`,
+    ...options.headers,
+  };
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(errorData.error || response.statusText);
+  }
+
+  // Handle 204 No Content response
+  if (response.status === 204) {
+    return null;
+  }
+
+  return response.json();
 };
 
 // Upload a blog image to Supabase Storage
@@ -46,31 +76,57 @@ export const uploadBlogImage = async (file: File, userId: string): Promise<strin
   return publicUrl;
 };
 
-// Upload a user avatar to Supabase Storage
+// Upload an avatar image to Supabase Storage
 export const uploadAvatar = async (file: File, userId: string): Promise<string | null> => {
-  // Avatars are stored in a specific path, overwriting the previous one for the user
-  // Path is now just the user ID + extension, relative to the 'avatars' bucket root.
-  const filePath = `${userId}.jpeg`; // Simplified path
+  // Cropper output is always jpeg, so we use a fixed name for upserting.
+  const fileName = `avatar.jpeg`;
+  // Using a subfolder in the existing blog_images bucket
+  const filePath = `avatars/${userId}/${fileName}`;
 
-  // Use upsert to replace the existing avatar
+  // Upload the file, overwriting any existing file with the same name
   const { error: uploadError } = await supabase.storage
-    .from('avatars')
-    .upload(filePath, file, {
-      upsert: true,
-      contentType: 'image/jpeg',
-    });
+    .from('blog_images')
+    .upload(filePath, file, { upsert: true });
 
   if (uploadError) {
     console.error('Error uploading avatar:', uploadError);
-    // Hata mesajını daha açıklayıcı hale getiriyoruz
-    throw new Error(`Avatar yüklenirken Supabase hatası: ${uploadError.message}`);
+    throw uploadError;
   }
 
+  // Get the public URL for the uploaded file
   const { data: { publicUrl } } = supabase.storage
-    .from('avatars')
+    .from('blog_images')
     .getPublicUrl(filePath);
     
-  return publicUrl;
+  // Append a timestamp as a query parameter to bust browser cache
+  return `${publicUrl}?t=${new Date().getTime()}`;
+};
+
+// Delete the user's avatar from storage and update profile URL
+export const deleteAvatar = async (userId: string) => {
+  const filePath = `avatars/${userId}/avatar.jpeg`;
+
+  // 1. Delete the file from storage
+  const { error: storageError } = await supabase.storage
+    .from('blog_images')
+    .remove([filePath]);
+
+  if (storageError && storageError.message !== 'The resource was not found') {
+    // 'The resource was not found' hatasını görmezden geliyoruz, çünkü dosya zaten silinmiş olabilir.
+    console.error('Error deleting avatar from storage:', storageError);
+    throw storageError;
+  }
+
+  // 2. Update the profile table to set avatar_url to null
+  const { error: profileUpdateError } = await supabase
+    .from('profiles')
+    .update({ avatar_url: null })
+    .eq('id', userId);
+
+  if (profileUpdateError) {
+    console.error('Error updating profile avatar_url:', profileUpdateError);
+    throw profileUpdateError;
+  }
 };
 
 
@@ -84,8 +140,7 @@ export const getBlogPosts = async (): Promise<BlogPostWithAuthor[]> => {
       content,
       image_url,
       created_at,
-      user_id,
-      profiles ( id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame )
+      profiles ( id, name, avatar_url, description, selected_title )
     `)
     .order("created_at", { ascending: false });
 
@@ -107,7 +162,7 @@ export const getBlogPostById = async (id: string): Promise<BlogPostWithAuthor | 
       image_url,
       created_at,
       user_id,
-      profiles(id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame)
+      profiles ( id, name, avatar_url, description, selected_title )
     `)
     .eq("id", id)
     .single();
@@ -128,9 +183,10 @@ export const getCommentsForPost = async (postId: string): Promise<CommentWithAut
             content,
             created_at,
             user_id,
-            profiles ( id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame )
+            profiles ( id, name, avatar_url, description, selected_title )
         `)
         .eq('post_id', postId)
+        .eq('is_moderated', true) // Only show moderated (safe) comments
         .order('created_at', { ascending: true });
 
     if (error) {
@@ -140,118 +196,74 @@ export const getCommentsForPost = async (postId: string): Promise<CommentWithAut
     return data as any;
 };
 
-// Add a new blog post (NOW SECURE VIA SERVER)
+// Add a new blog post (UPDATED to use Express API)
 export const addBlogPost = async (postData: NewBlogPost) => {
-  const headers = await getAuthHeaders();
-  
-  const response = await fetch('/api/blog/post', {
+  const data = await fetchWithAuth('/api/blog/post', {
     method: 'POST',
-    headers,
     body: JSON.stringify({
       title: postData.title,
       content: postData.content,
       imageUrl: postData.imageUrl,
     }),
   });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to add blog post via server.");
-  }
-  return await response.json();
+  return data;
 };
 
-// Update an existing blog post (NOW SECURE VIA SERVER)
-export const updateBlogPost = async (postId: string, postData: UpdateBlogPost) => {
-  const headers = await getAuthHeaders();
-
-  const response = await fetch(`/api/blog/post/${postId}`, {
+// Update a blog post (UPDATED to use Express API)
+export const updateBlogPost = async (postId: string, updateData: { title: string, content: string, imageUrl: string | null | undefined }) => {
+  const data = await fetchWithAuth(`/api/blog/post/${postId}`, {
     method: 'PUT',
-    headers,
-    body: JSON.stringify(postData),
+    body: JSON.stringify(updateData),
   });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to update blog post via server.");
-  }
-  return await response.json();
+  return data;
 };
 
-// Delete a blog post (NOW SECURE VIA SERVER)
+// Delete a blog post and its associated image (UPDATED to use Express API)
 export const deleteBlogPost = async (postId: string, imageUrl?: string | null) => {
-  const headers = await getAuthHeaders();
-
-  // 1. Delete image from storage if it exists
+  // 1. Delete the image from storage if it exists (Client-side storage deletion remains)
   if (imageUrl) {
     try {
       const url = new URL(imageUrl);
-      const pathSegments = url.pathname.split('/');
-      const bucketIndex = pathSegments.indexOf('blog_images');
-      
-      if (bucketIndex !== -1 && bucketIndex < pathSegments.length - 1) {
-        // The file path relative to the bucket is everything after 'blog_images'
-        const filePathInBucket = pathSegments.slice(bucketIndex + 1).join('/');
-        
+      // Path is everything after the bucket name
+      const imagePath = url.pathname.split('/blog_images/')[1];
+      if (imagePath) {
         const { error: storageError } = await supabase.storage
           .from('blog_images')
-          .remove([filePathInBucket]);
-        
+          .remove([imagePath]);
         if (storageError) {
+          // Log the error but don't block post deletion
           console.error("Error deleting blog image from storage:", storageError);
-          // Log error but continue to delete the post record
         }
       }
     } catch (e) {
-      console.error("Error parsing image URL for deletion:", e);
+      console.error("Could not parse image URL to delete from storage:", e);
     }
   }
 
-  // 2. Delete post record via server API
-  const response = await fetch(`/api/blog/post/${postId}`, {
+  // 2. Delete the blog post via server API
+  await fetchWithAuth(`/api/blog/post/${postId}`, {
     method: 'DELETE',
-    headers,
   });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to delete blog post via server.");
-  }
 };
 
-// Add a new comment (NOW SECURE VIA SERVER)
+// Add a new comment (UPDATED to use Express API for moderation)
 export const addComment = async (commentData: NewComment) => {
-    const headers = await getAuthHeaders();
-
-    const response = await fetch('/api/blog/comment', {
+    // Server handles user_id and moderation
+    const data = await fetchWithAuth('/api/blog/comment', {
         method: 'POST',
-        headers,
         body: JSON.stringify({
             content: commentData.content,
             postId: commentData.postId,
         }),
     });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to add comment via server.");
-    }
-    return await response.json();
+    return data;
 };
 
-// Delete a comment (NOW SECURE VIA SERVER)
+// Delete a comment (UPDATED to use Express API)
 export const deleteComment = async (commentId: string) => {
-  const headers = await getAuthHeaders();
-
-  const response = await fetch(`/api/blog/comment/${commentId}`, {
+  await fetchWithAuth(`/api/blog/comment/${commentId}`, {
     method: 'DELETE',
-    headers,
   });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to delete comment via server.");
-  }
 };
 
 // Fetch vote counts for a post (READ operation, remains client-side)
@@ -288,24 +300,18 @@ export const getUserVote = async (postId: string, userId: string) => {
     return data.vote_type === 1 ? 'liked' : 'disliked';
 };
 
-// Upsert a vote (like/dislike) (NOW SECURE VIA SERVER)
+// Upsert a vote (like/dislike) (UPDATED to use Express API)
 export const castVote = async (postId: string, userId: string, voteType: 'like' | 'dislike' | null) => {
-    // userId is no longer needed for the API call, but kept in signature for consistency
-    const headers = await getAuthHeaders();
+    // Server handles user_id and upsert logic
+    const apiVoteType = voteType === 'like' ? 'like' : voteType === 'dislike' ? 'dislike' : 'null';
     
-    const response = await fetch('/api/blog/vote', {
+    await fetchWithAuth('/api/blog/vote', {
         method: 'POST',
-        headers,
         body: JSON.stringify({
             postId,
-            voteType: voteType === null ? 'null' : voteType,
+            voteType: apiVoteType,
         }),
     });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to cast vote via server.");
-    }
 };
 
 export const getPostsByUserId = async (userId: string): Promise<BlogPostWithAuthor[]> => {
@@ -317,8 +323,7 @@ export const getPostsByUserId = async (userId: string): Promise<BlogPostWithAuth
       content,
       image_url,
       created_at,
-      user_id,
-      profiles ( id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame )
+      profiles ( id, name, avatar_url, description, selected_title )
     `)
     .eq('user_id', userId)
     .order("created_at", { ascending: false });
@@ -330,6 +335,7 @@ export const getPostsByUserId = async (userId: string): Promise<BlogPostWithAuth
   return data as any;
 };
 
+// Fetch a single profile by ID (READ operation, remains client-side)
 export const getProfileById = async (userId: string): Promise<Profile | null> => {
   const { data, error } = await supabase
     .from("profiles")
@@ -341,6 +347,14 @@ export const getProfileById = async (userId: string): Promise<Profile | null> =>
     console.error("Error fetching profile:", error);
     return null;
   }
+  return data;
+};
 
-  return data as Profile | null;
+// Update profile name or description via server API (Moderated)
+export const updateProfile = async (updateData: UpdateProfileData) => {
+  const data = await fetchWithAuth('/api/user/profile', {
+    method: 'PUT',
+    body: JSON.stringify(updateData),
+  });
+  return data;
 };

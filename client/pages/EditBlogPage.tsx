@@ -108,7 +108,13 @@ export default function EditBlogPage() {
       toast.success("Blog yazınız başarıyla güncellendi!");
       navigate(`/bloglar/${id}`);
     } catch (error) {
-      toast.error("Blog yazısı güncellenirken bir hata oluştu.");
+      const errorMessage = error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.";
+      
+      if (errorMessage.includes("uygunsuz içerik barındırdığı için reddedildi")) {
+        toast.error("İçerik Reddedildi", { description: errorMessage });
+      } else {
+        toast.error("Blog yazısı güncellenirken bir hata oluştu.", { description: errorMessage });
+      }
       console.error(error);
     }
   }

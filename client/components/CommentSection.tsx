@@ -10,7 +10,7 @@ import { addComment, deleteComment } from "@/lib/blog-store";
 import { CommentWithAuthor } from "@shared/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { MoreHorizontal, Trash2, Eye } from "lucide-react";
+import { MoreHorizontal, Trash2, Eye, Loader2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,6 +53,8 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
     defaultValues: { content: "" },
   });
 
+  const { isSubmitting } = form.formState;
+
   async function onSubmit(values: z.infer<typeof commentSchema>) {
     if (!user) {
       toast.error("Yorum yapmak için giriş yapmalısınız.");
@@ -71,6 +73,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
 
       const isFirstComment = count === 0;
 
+      // Use the updated addComment which calls the server API for moderation
       await addComment({ postId, userId: user.id, content: values.content });
       
       let finalProfileState = null;
@@ -104,7 +107,12 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
       form.reset();
       onCommentsChange();
     } catch (error) {
-      toast.error("Yorum eklenirken bir hata oluştu.");
+      // Check for specific moderation error message from the server
+      if (error instanceof Error && error.message.includes("Yorumunuz, yapay zeka tarafından uygunsuz içerik barındırdığı için reddedildi.")) {
+        toast.error("Yorum Reddedildi", { description: "Yorumunuz uygunsuz içerik barındırdığı için yayınlanmadı. Lütfen içeriği düzenleyiniz." });
+      } else {
+        toast.error("Yorum eklenirken bir hata oluştu.", { description: error instanceof Error ? error.message : "Bilinmeyen bir hata." });
+      }
     }
   }
 
@@ -157,7 +165,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                                 <span className="sr-only">Seçenekler</span>
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent>
+                            <DropdownMenuContent> {/* onClick={(e) => e.stopPropagation()} kaldırıldı */}
                               <DropdownMenuItem asChild>
                                 <Link to={`/kullanici/${comment.profiles.id}`}>Kullanıcının profiline bak</Link>
                               </DropdownMenuItem>
@@ -210,14 +218,21 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                   <FormItem>
                     <FormLabel>Yorum Ekle</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Yorumunuzu buraya yazın..." {...field} />
+                      <Textarea placeholder="Yorumunuzu buraya yazın..." {...field} className="min-h-[100px]" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                Yorum Gönder
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Yorum gönderiliyor...
+                  </>
+                ) : (
+                  "Yorum Gönder"
+                )}
               </Button>
             </form>
           </Form>

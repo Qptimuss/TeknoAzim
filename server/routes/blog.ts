@@ -1,7 +1,6 @@
 import { RequestHandler } from "express";
-import { getSupabaseAdmin } from "../lib/supabase-admin.ts";
+import { getSupabaseAdmin } from "../lib/supabase-admin";
 import { z } from "zod";
-import { Database } from "../lib/database.types.ts";
 
 // --- Schemas for validation ---
 
@@ -27,6 +26,25 @@ const castVoteSchema = z.object({
   voteType: z.enum(['like', 'dislike', 'null']),
 });
 
+// Helper function to call the Edge Function for moderation
+async function moderateContent(content: string): Promise<{ isModerated: boolean }> {
+  const supabaseAdmin = getSupabaseAdmin();
+  
+  // Invoke the Edge Function
+  const { data, error } = await supabaseAdmin.functions.invoke('moderate-comment', {
+    body: { content },
+  });
+
+  if (error) {
+    console.error("Error invoking moderation function:", error);
+    // If the moderation service fails, we default to allowing the content (isModerated: true)
+    return { isModerated: true }; 
+  }
+
+  // The Edge Function returns { isModerated: boolean, ... }
+  return data as { isModerated: boolean };
+}
+
 // --- Handlers ---
 
 // POST /api/blog/post
@@ -38,17 +56,26 @@ export const handleCreatePost: RequestHandler = async (req, res) => {
     const validatedData = newPostSchema.parse(req.body);
     const supabaseAdmin = getSupabaseAdmin();
 
-    const insertData: Database['public']['Tables']['blog_posts']['Insert'] = {
-      title: validatedData.title,
-      content: validatedData.content,
-      image_url: validatedData.imageUrl,
-      user_id: userId, // Enforce user ID from JWT, not client input
-    };
+    // --- Moderation Step for Title and Content ---
+    const { isModerated: titleModerated } = await moderateContent(validatedData.title);
+    if (!titleModerated) {
+      return res.status(403).json({ error: "Blog başlığı uygunsuz içerik barındırdığı için reddedildi." });
+    }
+    
+    const { isModerated: contentModerated } = await moderateContent(validatedData.content);
+    if (!contentModerated) {
+      return res.status(403).json({ error: "Blog içeriği uygunsuz içerik barındırdığı için reddedildi." });
+    }
 
-    // FIX 1: Cast the result of .from() to any
-    const { data, error } = await (supabaseAdmin
-      .from("blog_posts") as any)
-      .insert([insertData])
+    // Server-side insertion, ensuring user_id is set by the authenticated user
+    const { data, error } = await supabaseAdmin
+      .from("blog_posts")
+      .insert({
+        title: validatedData.title,
+        content: validatedData.content,
+        image_url: validatedData.imageUrl,
+        user_id: userId, // Enforce user ID from JWT, not client input
+      })
       .select()
       .single();
 
@@ -77,15 +104,23 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
     const validatedData = updatePostSchema.parse(req.body);
     const supabaseAdmin = getSupabaseAdmin();
 
-    // 1. Check ownership
-    const { data: existingPostData, error: fetchError } = await supabaseAdmin
+    // --- Moderation Step for Title and Content ---
+    const { isModerated: titleModerated } = await moderateContent(validatedData.title);
+    if (!titleModerated) {
+      return res.status(403).json({ error: "Blog başlığı uygunsuz içerik barındırdığı için reddedildi." });
+    }
+    
+    const { isModerated: contentModerated } = await moderateContent(validatedData.content);
+    if (!contentModerated) {
+      return res.status(403).json({ error: "Blog içeriği uygunsuz içerik barındırdığı için reddedildi." });
+    }
+
+    // 1. Check ownership (using RLS bypass capability of supabaseAdmin)
+    const { data: existingPost, error: fetchError } = await supabaseAdmin
       .from("blog_posts")
       .select("user_id")
       .eq("id", postId)
       .single();
-      
-    // Explicitly cast the result of select
-    const existingPost = existingPostData as { user_id: string } | null;
 
     if (fetchError || !existingPost) {
       return res.status(404).json({ error: "Blog post not found." });
@@ -95,16 +130,14 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
       return res.status(403).json({ error: "Forbidden: You do not own this post." });
     }
 
-    const updateData: Database['public']['Tables']['blog_posts']['Update'] = {
-      title: validatedData.title,
-      content: validatedData.content,
-      image_url: validatedData.imageUrl,
-    };
-
-    // FIX 2: Cast the result of .from() to any
-    const { data, error } = await (supabaseAdmin
-      .from("blog_posts") as any)
-      .update(updateData)
+    // 2. Perform update
+    const { data, error } = await supabaseAdmin
+      .from("blog_posts")
+      .update({
+        title: validatedData.title,
+        content: validatedData.content,
+        image_url: validatedData.imageUrl,
+      })
       .eq('id', postId)
       .select()
       .single();
@@ -132,15 +165,12 @@ export const handleDeletePost: RequestHandler = async (req, res) => {
 
   try {
     const supabaseAdmin = getSupabaseAdmin();
-    
     // 1. Check ownership
-    const { data: existingPostData, error: fetchError } = await supabaseAdmin
+    const { data: existingPost, error: fetchError } = await supabaseAdmin
       .from("blog_posts")
       .select("user_id")
       .eq("id", postId)
       .single();
-      
-    const existingPost = existingPostData as { user_id: string } | null;
 
     if (fetchError || !existingPost) {
       return res.status(404).json({ error: "Blog post not found." });
@@ -177,16 +207,23 @@ export const handleAddComment: RequestHandler = async (req, res) => {
     const validatedData = newCommentSchema.parse(req.body);
     const supabaseAdmin = getSupabaseAdmin();
 
-    const insertData: Database['public']['Tables']['comments']['Insert'] = {
-      content: validatedData.content,
-      post_id: validatedData.postId,
-      user_id: userId,
-    };
+    // --- Moderation Step ---
+    const { isModerated } = await moderateContent(validatedData.content);
+    
+    if (!isModerated) {
+      // If the comment is toxic, reject it immediately.
+      return res.status(403).json({ error: "Yorumunuz, yapay zeka tarafından uygunsuz içerik barındırdığı için reddedildi." });
+    }
 
-    // FIX 3: Cast the result of .from() to any
-    const { data, error } = await (supabaseAdmin
-      .from('comments') as any)
-      .insert([insertData])
+    // Server-side insertion, enforcing user_id from JWT
+    const { data, error } = await supabaseAdmin
+      .from('comments')
+      .insert({
+        content: validatedData.content,
+        post_id: validatedData.postId,
+        user_id: userId,
+        is_moderated: isModerated, // Should be true if it passed moderation
+      })
       .select()
       .single();
 
@@ -213,15 +250,12 @@ export const handleDeleteComment: RequestHandler = async (req, res) => {
 
   try {
     const supabaseAdmin = getSupabaseAdmin();
-    
     // 1. Check ownership
-    const { data: existingCommentData, error: fetchError } = await supabaseAdmin
+    const { data: existingComment, error: fetchError } = await supabaseAdmin
       .from("comments")
       .select("user_id")
       .eq("id", commentId)
       .single();
-      
-    const existingComment = existingCommentData as { user_id: string } | null;
 
     if (fetchError || !existingComment) {
       return res.status(404).json({ error: "Comment not found." });
@@ -259,12 +293,6 @@ export const handleCastVote: RequestHandler = async (req, res) => {
     const { postId, voteType } = validatedData;
     const supabaseAdmin = getSupabaseAdmin();
 
-    const upsertData: Database['public']['Tables']['post_votes']['Insert'] = {
-      post_id: postId,
-      user_id: userId,
-      vote_type: voteType === 'like' ? 1 : -1,
-    };
-
     if (voteType === 'null') {
       // Remove vote
       const { error } = await supabaseAdmin
@@ -274,10 +302,14 @@ export const handleCastVote: RequestHandler = async (req, res) => {
         .eq('user_id', userId);
       if (error) throw error;
     } else {
-      // FIX 4: Cast the result of .from() to any
-      const { error } = await (supabaseAdmin
-        .from('post_votes') as any)
-        .upsert([upsertData], { onConflict: 'user_id, post_id' });
+      // Add or update vote
+      const { error } = await supabaseAdmin
+        .from('post_votes')
+        .upsert({
+          post_id: postId,
+          user_id: userId,
+          vote_type: voteType === 'like' ? 1 : -1,
+        }, { onConflict: 'user_id, post_id' });
       if (error) throw error;
     }
 

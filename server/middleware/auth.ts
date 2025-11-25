@@ -37,7 +37,14 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
     req.userId = data.user.id;
     next();
   } catch (e) {
-    console.error("Error during token verification:", e);
+    // Catch errors from getSupabaseAdmin (e.g., missing service key) or JWT verification issues
+    console.error("Error during token verification or admin client initialization:", e);
+    
+    // Check if the error is related to missing service key
+    if (e instanceof Error && e.message.includes("SUPABASE_SERVICE_ROLE_KEY is missing")) {
+      return res.status(500).json({ error: "Server configuration error: Supabase Service Role Key is missing." });
+    }
+
     res.status(500).json({ error: "Internal server error during authentication." });
   }
 };

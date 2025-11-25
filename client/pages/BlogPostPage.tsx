@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { removeExp, EXP_ACTIONS } from "@/lib/gamification";
+import OtherPostsCarousel from "@/components/OtherPostsCarousel";
 
 export default function BlogPostPage() {
   const { id } = useParams<{ id: string }>();
@@ -56,8 +57,7 @@ export default function BlogPostPage() {
     try {
       await deleteBlogPost(post.id, post.image_url);
       
-      // Use the action key for removal
-      const updatedProfile = await removeExp(user.id, EXP_ACTIONS.REMOVE_POST);
+      const updatedProfile = await removeExp(user.id, EXP_ACTIONS.CREATE_POST);
       if (updatedProfile) {
         updateUser(updatedProfile);
       }
@@ -191,6 +191,9 @@ export default function BlogPostPage() {
         </article>
 
         <CommentSection postId={post.id} comments={comments} onCommentAdded={fetchPostAndComments} />
+        
+        {/* Yeni Eklenen Bölüm */}
+        <OtherPostsCarousel currentPostId={post.id} />
       </div>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

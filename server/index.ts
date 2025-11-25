@@ -2,9 +2,8 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
-import { handleModerate } from "./routes/moderate";
 import { requireAuth } from "./middleware/auth";
-import { requireAdmin } from "./middleware/admin";
+import { handleDeleteUser, handleUpdateProfile } from "./routes/user";
 import { 
   handleCreatePost, 
   handleUpdatePost, 
@@ -13,15 +12,6 @@ import {
   handleDeleteComment, 
   handleCastVote 
 } from "./routes/blog";
-import { handleUpdateProfile } from "./routes/profile";
-import { handleDeleteUser } from "./routes/user";
-import { 
-  handleUpdateExp, 
-  handleAwardBadge, 
-  handleClaimDailyReward, 
-  handleOpenCrate 
-} from "./routes/gamification";
-import { handleCreateAnnouncement } from "./routes/announcement";
 
 export function createServer() {
   const app = express();
@@ -39,37 +29,21 @@ export function createServer() {
 
   app.get("/api/demo", handleDemo);
 
-  // Moderation route
-  app.post("/api/moderate", handleModerate);
+  // User routes
+  app.delete("/api/user", requireAuth, handleDeleteUser);
+  app.put("/api/user/profile", requireAuth, handleUpdateProfile); // NEW ROUTE
 
-  // --- Secure Routes (Requires Authentication) ---
-
-  // Profile
-  app.put("/api/profile", requireAuth, handleUpdateProfile);
-
-  // Gamification (NEW SECURE ENDPOINTS)
-  app.post("/api/gamification/exp", requireAuth, handleUpdateExp);
-  app.post("/api/gamification/badge", requireAuth, handleAwardBadge);
-  app.post("/api/gamification/daily-reward", requireAuth, handleClaimDailyReward);
-  app.post("/api/gamification/open-crate", requireAuth, handleOpenCrate);
-
-  // Posts
+  // Blog Post Routes (Requires Auth for CUD operations)
   app.post("/api/blog/post", requireAuth, handleCreatePost);
   app.put("/api/blog/post/:id", requireAuth, handleUpdatePost);
   app.delete("/api/blog/post/:id", requireAuth, handleDeletePost);
 
-  // Comments
+  // Comment Routes (Requires Auth)
   app.post("/api/blog/comment", requireAuth, handleAddComment);
   app.delete("/api/blog/comment/:id", requireAuth, handleDeleteComment);
 
-  // Votes
+  // Vote Routes (Requires Auth)
   app.post("/api/blog/vote", requireAuth, handleCastVote);
-
-  // User
-  app.delete("/api/user", requireAuth, handleDeleteUser);
-
-  // Announcements (Requires Admin)
-  app.post("/api/announcement", requireAuth, requireAdmin, handleCreateAnnouncement);
 
   return app;
 }

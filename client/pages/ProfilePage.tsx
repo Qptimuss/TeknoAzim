@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth, User } from "@/contexts/AuthContext";
-import { getPostsByUserId, uploadAvatar, deleteBlogPost } from "@/lib/blog-store";
+import { getPostsByUserId, uploadAvatar, deleteBlogPost, updateProfile, deleteAvatar } from "@/lib/blog-store";
 import { BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, CheckCircle, Pencil, Check, X, Lock, ImageIcon } from "lucide-react";
+import { User as UserIcon, CheckCircle, Pencil, Check, X, Lock, Trash2, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { calculateLevel, ALL_BADGES, TITLES, removeExp, EXP_ACTIONS } from "@/lib/gamification";
@@ -50,6 +50,8 @@ export default function ProfilePage() {
   // Inline editing states
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [isSavingName, setIsSavingName] = useState(false); // NEW
+  const [isSavingDescription, setIsSavingDescription] = useState(false); // NEW
   const [nameValue, setNameValue] = useState("");
   const [descriptionValue, setDescriptionValue] = useState("");
   
@@ -60,6 +62,11 @@ export default function ProfilePage() {
   // Account Deletion States
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  // Avatar Deletion States
+  const [showDeleteAvatarDialog, setShowDeleteAvatarDialog] = useState(false);
+  const [isDeletingAvatar, setIsDeletingAvatar] = useState(false);
+
 
   useEffect(() => {
     return () => {
@@ -117,19 +124,31 @@ export default function ProfilePage() {
 
   const handleNameSave = async () => {
     if (!user) return;
-    setIsEditingName(false);
-    if (nameValue !== user.name) {
-      const result = z.string().min(2, "İsim en az 2 karakter olmalıdır.").safeParse(nameValue);
-      if (!result.success) {
-        toast.error(result.error.issues[0].message);
-        setNameValue(user.name || "");
-        return;
-      }
-      await toast.promise(updateUser({ name: nameValue }), {
-        loading: 'İsim güncelleniyor...',
-        success: 'İsim güncellendi!',
-        error: 'Hata oluştu.',
-      });
+    
+    if (nameValue === user.name) {
+      setIsEditingName(false);
+      return;
+    }
+
+    const result = z.string().min(2, "İsim en az 2 karakter olmalıdır.").safeParse(nameValue);
+    if (!result.success) {
+      toast.error(result.error.issues[0].message);
+      setNameValue(user.name || "");
+      return;
+    }
+    
+    setIsSavingName(true);
+    try {
+      const updatedData = await updateProfile({ name: nameValue });
+      await updateUser(updatedData);
+      toast.success('İsim güncellendi!');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Hata oluştu.";
+      toast.error("İsim Güncelleme Hatası", { description: errorMessage });
+      setNameValue(user.name || ""); // Revert local state on error
+    } finally {
+      setIsSavingName(false);
+      setIsEditingName(false);
     }
   };
 
@@ -140,19 +159,31 @@ export default function ProfilePage() {
 
   const handleDescriptionSave = async () => {
     if (!user) return;
-    setIsEditingDescription(false);
-    if (descriptionValue !== user.description) {
-      const result = z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").optional().safeParse(descriptionValue);
-      if (!result.success) {
-        toast.error(result.error.issues[0].message);
-        setDescriptionValue(user.description || "");
-        return;
-      }
-      await toast.promise(updateUser({ description: descriptionValue }), {
-        loading: 'Açıklama güncelleniyor...',
-        success: 'Açıklama güncellendi!',
-        error: 'Hata oluştu.',
-      });
+    
+    if (descriptionValue === user.description) {
+      setIsEditingDescription(false);
+      return;
+    }
+
+    const result = z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").optional().safeParse(descriptionValue);
+    if (!result.success) {
+      toast.error(result.error.issues[0].message);
+      setDescriptionValue(user.description || "");
+      return;
+    }
+    
+    setIsSavingDescription(true);
+    try {
+      const updatedData = await updateProfile({ description: descriptionValue });
+      await updateUser(updatedData);
+      toast.success('Açıklama güncellendi!');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Hata oluştu.";
+      toast.error("Açıklama Güncelleme Hatası", { description: errorMessage });
+      setDescriptionValue(user.description || ""); // Revert local state on error
+    } finally {
+      setIsSavingDescription(false);
+      setIsEditingDescription(false);
     }
   };
 
@@ -206,6 +237,22 @@ export default function ProfilePage() {
         },
       }
     );
+  };
+
+  const handleDeleteAvatar = async () => {
+    if (!user) return;
+    setIsDeletingAvatar(true);
+    try {
+      await deleteAvatar(user.id);
+      await updateUser({ avatar_url: null });
+      toast.success("Profil fotoğrafı başarıyla silindi.");
+    } catch (error) {
+      toast.error("Profil fotoğrafı silinirken bir hata oluştu.");
+      console.error(error);
+    } finally {
+      setIsDeletingAvatar(false);
+      setShowDeleteAvatarDialog(false);
+    }
   };
 
   const handleDeleteRequest = (postId: string, imageUrl?: string | null) => {
@@ -285,6 +332,16 @@ export default function ProfilePage() {
   const SelectedTitleIcon = selectedTitleObject ? selectedTitleObject.icon : CheckCircle;
   const selectedFrame = FRAMES.find(f => f.name === user.selected_frame);
 
+  // Avatar bileşenini yeniden kullanmak için bir helper
+  const AvatarPreview = ({ sizeClass = "h-20 w-20" }: { sizeClass?: string }) => (
+    <Avatar className={sizeClass}>
+      <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
+      <AvatarFallback>
+        <UserIcon className="h-4/6 w-4/6" />
+      </AvatarFallback>
+    </Avatar>
+  );
+
   return (
     <>
       <div className="container mx-auto px-5 py-12">
@@ -305,32 +362,36 @@ export default function ProfilePage() {
                   >
                     {user.selected_frame === 'Nova' ? (
                       <NovaFrame>
-                        <Avatar className="h-24 w-24">
-                          <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-                          <AvatarFallback>
-                            <UserIcon className="h-12 w-12 text-muted-foreground" />
-                          </AvatarFallback>
-                        </Avatar>
+                        <AvatarPreview sizeClass="h-24 w-24" />
                       </NovaFrame>
                     ) : (
                       <div className={cn("p-1", selectedFrame?.className)}>
-                        <Avatar className="h-24 w-24">
-                          <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-                          <AvatarFallback>
-                            <UserIcon className="h-12 w-12 text-muted-foreground" />
-                          </AvatarFallback>
-                        </Avatar>
+                        <AvatarPreview sizeClass="h-24 w-24" />
                       </div>
                     )}
                   </button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6" 
-                    onClick={handleAvatarEditClick}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
+                  <div className="flex flex-col gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6" 
+                      onClick={handleAvatarEditClick}
+                      title="Fotoğrafı Değiştir"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    {user.avatar_url && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 text-red-500 hover:bg-red-500/10" 
+                        onClick={() => setShowDeleteAvatarDialog(true)}
+                        title="Fotoğrafı Sil"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <Input type="file" accept="image/png, image/jpeg, image/gif" ref={fileInputRef} onChange={(e) => handleFileChange(e.target.files)} className="hidden" />
 
@@ -343,11 +404,18 @@ export default function ProfilePage() {
                         onKeyDown={(e) => { if (e.key === 'Enter') handleNameSave(); }}
                         autoFocus
                         className="w-48 text-center text-2xl font-bold font-outfit h-auto"
+                        disabled={isSavingName}
                       />
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={handleNameSave}>
-                        <Check className="h-4 w-4" />
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-green-500 hover:bg-green-500/10" 
+                        onClick={handleNameSave}
+                        disabled={isSavingName}
+                      >
+                        {isSavingName ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleNameCancel}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleNameCancel} disabled={isSavingName}>
                         <X className="h-4 w-4" />
                       </Button>
                     </>
@@ -378,12 +446,19 @@ export default function ProfilePage() {
                         autoFocus
                         placeholder="Kendinizden bahsedin..."
                         className="w-full max-w-xs text-sm text-center min-h-[80px]"
+                        disabled={isSavingDescription}
                       />
                       <div className="flex flex-col gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={handleDescriptionSave}>
-                          <Check className="h-4 w-4" />
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-green-500 hover:bg-green-500/10" 
+                          onClick={handleDescriptionSave}
+                          disabled={isSavingDescription}
+                        >
+                          {isSavingDescription ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleDescriptionCancel}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleDescriptionCancel} disabled={isSavingDescription}>
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
@@ -540,14 +615,12 @@ export default function ProfilePage() {
                         {frame.name === 'Nova' ? (
                           <div className="w-24 h-24 flex items-center justify-center">
                             <NovaFrame>
-                              <div className="w-20 h-20 flex items-center justify-center bg-background rounded-full">
-                                <ImageIcon className="h-10 w-10 text-muted-foreground" />
-                              </div>
+                              <AvatarPreview sizeClass="h-20 w-20" />
                             </NovaFrame>
                           </div>
                         ) : (
                           <div className={cn("w-24 h-24 flex items-center justify-center", frame.className)}>
-                            <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                            <AvatarPreview sizeClass="h-20 w-20" />
                           </div>
                         )}
                         {!isOwned && <Lock className="absolute bottom-1 right-1 h-4 w-4 text-foreground bg-background rounded-full p-0.5" />}
@@ -603,13 +676,34 @@ export default function ProfilePage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeletingAccount}>İptal</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteAccount}
               disabled={isDeletingAccount}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               {isDeletingAccount ? "Siliniyor..." : "Evet, Hesabımı Sil"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showDeleteAvatarDialog} onOpenChange={setShowDeleteAvatarDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Profil Fotoğrafını Sil</AlertDialogTitle>
+            <AlertDialogDescription>
+              Mevcut profil fotoğrafınızı kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingAvatar}>İptal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAvatar}
+              disabled={isDeletingAvatar}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isDeletingAvatar ? "Siliniyor..." : "Sil"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
