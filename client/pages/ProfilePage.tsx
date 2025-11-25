@@ -199,8 +199,8 @@ export default function ProfilePage() {
   const handleFileChange = (files: FileList | null) => {
     if (files && files.length > 0) {
       const file = files[0];
-      if (file.size > 2 * 1024 * 1024) {
-        toast.error("Resim boyutu 2MB'den küçük olmalıdır.");
+      if (file.size > 4 * 1024 * 1024) { // 4MB
+        toast.error("Resim boyutu 4MB'den küçük olmalıdır.");
         return;
       }
       const newUrl = URL.createObjectURL(file);

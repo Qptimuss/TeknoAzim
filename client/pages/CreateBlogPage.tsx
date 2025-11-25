@@ -27,8 +27,8 @@ const blogSchema = z.object({
     .instanceof(FileList)
     .optional()
     .refine(
-      (files) => !files || files.length === 0 || files[0].size <= 2 * 1024 * 1024, // 2MB
-      `Resim boyutu 2MB'den küçük olmalıdır.`
+      (files) => !files || files.length === 0 || files[0].size <= 4 * 1024 * 1024, // 4MB
+      `Resim boyutu 4MB'den küçük olmalıdır.`
     ),
 });
 
@@ -158,7 +158,7 @@ export default function CreateBlogPage() {
               name="imageFile"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Kapak Resmi (İsteğe Bağlı, Maks 2MB)</FormLabel>
+                  <FormLabel>Kapak Resmi (İsteğe Bağlı, Maks 4MB)</FormLabel>
                   <FormControl>
                     <Input 
                       type="file" 
