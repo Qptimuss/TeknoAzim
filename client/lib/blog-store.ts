@@ -42,8 +42,17 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(errorData.error || response.statusText);
+    let errorData: any = { error: response.statusText };
+    try {
+      // Try to parse JSON error response
+      errorData = await response.json();
+    } catch (e) {
+      // If parsing fails, use status text
+      console.error(`Failed to parse error response from ${url}:`, e);
+    }
+    
+    // Throw a more informative error
+    throw new Error(errorData.error || `Server responded with status ${response.status}: ${response.statusText}`);
   }
 
   // Handle 204 No Content response
@@ -60,20 +69,25 @@ export const uploadBlogImage = async (file: File, userId: string): Promise<strin
   const fileName = `${userId}-${Date.now()}.${fileExt}`;
   const filePath = `${fileName}`;
 
-  const { error: uploadError } = await supabase.storage
-    .from('blog_images')
-    .upload(filePath, file);
+  try {
+    const { error: uploadError } = await supabase.storage
+      .from('blog_images')
+      .upload(filePath, file);
 
-  if (uploadError) {
-    console.error('Error uploading image:', uploadError);
-    throw uploadError;
+    if (uploadError) {
+      console.error('Error uploading blog image:', uploadError);
+      throw new Error(`Resim yüklenirken hata oluştu: ${uploadError.message}`);
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('blog_images')
+      .getPublicUrl(filePath);
+      
+    return publicUrl;
+  } catch (e) {
+    console.error('Critical error in uploadBlogImage:', e);
+    throw e;
   }
-
-  const { data: { publicUrl } } = supabase.storage
-    .from('blog_images')
-    .getPublicUrl(filePath);
-    
-  return publicUrl;
 };
 
 // Upload an avatar image to Supabase Storage
@@ -83,23 +97,28 @@ export const uploadAvatar = async (file: File, userId: string): Promise<string |
   // Using a subfolder in the existing blog_images bucket
   const filePath = `avatars/${userId}/${fileName}`;
 
-  // Upload the file, overwriting any existing file with the same name
-  const { error: uploadError } = await supabase.storage
-    .from('blog_images')
-    .upload(filePath, file, { upsert: true });
+  try {
+    // Upload the file, overwriting any existing file with the same name
+    const { error: uploadError } = await supabase.storage
+      .from('blog_images')
+      .upload(filePath, file, { upsert: true });
 
-  if (uploadError) {
-    console.error('Error uploading avatar:', uploadError);
-    throw uploadError;
+    if (uploadError) {
+      console.error('Error uploading avatar:', uploadError);
+      throw new Error(`Avatar yüklenirken hata oluştu: ${uploadError.message}`);
+    }
+
+    // Get the public URL for the uploaded file
+    const { data: { publicUrl } } = supabase.storage
+      .from('blog_images')
+      .getPublicUrl(filePath);
+      
+    // Append a timestamp as a query parameter to bust browser cache
+    return `${publicUrl}?t=${new Date().getTime()}`;
+  } catch (e) {
+    console.error('Critical error in uploadAvatar:', e);
+    throw e;
   }
-
-  // Get the public URL for the uploaded file
-  const { data: { publicUrl } } = supabase.storage
-    .from('blog_images')
-    .getPublicUrl(filePath);
-    
-  // Append a timestamp as a query parameter to bust browser cache
-  return `${publicUrl}?t=${new Date().getTime()}`;
 };
 
 // Delete the user's avatar from storage and update profile URL
