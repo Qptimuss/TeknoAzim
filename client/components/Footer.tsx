@@ -10,11 +10,8 @@ const Footer = () => {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
 
-  const socialLinks = [
-    { name: 'GitHub', icon: Github, url: 'https://github.com/Qptimuss/TeknoAzim' },
-    { name: 'X', icon: XLogo, url: '#' },
-    { name: 'Instagram', icon: Instagram, url: '#' },
-  ];
+  // Sadece GitHub bağlantısını tutuyoruz
+  const githubLink = { name: 'GitHub', icon: Github, url: 'https://github.com/Qptimuss/TeknoAzim' };
 
   const footerNav = [
     { to: "/bloglar", label: "Bloglar" },
@@ -60,22 +57,20 @@ const Footer = () => {
             ))}
           </div>
 
-          {/* Social Media Links */}
+          {/* Social Media Links (Updated to only show GitHub) */}
           <div className="flex flex-col items-center md:items-start gap-3">
-            <h3 className="font-outfit text-lg font-semibold mb-2">Bizi Takip Edin</h3>
+            <h3 className="font-outfit text-lg font-semibold mb-2">GitHub Sayfamıza Göz At!</h3>
             <div className="flex gap-4">
-              {socialLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-card-foreground hover:text-muted-foreground transition-colors"
-                  aria-label={link.name}
-                >
-                  <link.icon className="h-5 w-5" />
-                </a>
-              ))}
+              <a
+                key={githubLink.name}
+                href={githubLink.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-card-foreground hover:text-muted-foreground transition-colors"
+                aria-label={githubLink.name}
+              >
+                <githubLink.icon className="h-5 w-5" />
+              </a>
             </div>
           </div>
         </div>
