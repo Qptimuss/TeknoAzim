@@ -60,12 +60,11 @@ export default function CrateOpeningDialog({ open, onClose, isProcessing, wonFra
     <Dialog open={open}>
       <DialogContent 
         className="sm:max-w-[425px] text-center"
-        hideCloseButton // X butonunu gizle
-        // Dış tıklamayla kapanmayı engellemek için onOpenChange'i kaldırıyoruz.
+        hideCloseButton
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        <DialogHeader>
+        <DialogHeader className="items-center">
           {/* Başlık kaldırıldı */}
         </DialogHeader>
         
@@ -128,8 +127,8 @@ export default function CrateOpeningDialog({ open, onClose, isProcessing, wonFra
           )}
         </div>
         {animationState === "revealed" && (
-          <DialogFooter>
-            <Button onClick={onClose} className="w-full">Kapat</Button>
+          <DialogFooter className="sm:justify-center">
+            <Button onClick={onClose} className="w-full sm:w-auto">Kapat</Button>
           </DialogFooter>
         )}
       </DialogContent>
