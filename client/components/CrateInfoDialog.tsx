@@ -8,13 +8,16 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { RARITIES, FRAMES } from "@/lib/store-items";
-import { ImageIcon, Gem } from "lucide-react";
+import { ImageIcon, Gem, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import NovaFrame from "@/components/frames/NovaFrame";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface CrateInfoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  userAvatarUrl?: string | null; // Yeni prop
+  userName?: string | null; // Yeni prop
 }
 
 // Nadirlik seviyelerine göre iade miktarları
@@ -26,11 +29,20 @@ const REFUND_AMOUNTS: { [key: string]: number } = {
   [RARITIES.ÖZEL.name]: 100,
 };
 
-export default function CrateInfoDialog({ open, onOpenChange }: CrateInfoDialogProps) {
+export default function CrateInfoDialog({ open, onOpenChange, userAvatarUrl, userName }: CrateInfoDialogProps) {
   const framesByRarity = Object.values(RARITIES).map(rarity => ({
     ...rarity,
     items: FRAMES.filter(frame => frame.rarity === rarity.name),
   }));
+
+  const AvatarPreview = ({ sizeClass = "h-16 w-16" }: { sizeClass?: string }) => (
+    <Avatar className={sizeClass}>
+      <AvatarImage src={userAvatarUrl || undefined} alt={userName || ''} />
+      <AvatarFallback>
+        <UserIcon className="h-4/6 w-4/6" />
+      </AvatarFallback>
+    </Avatar>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -77,13 +89,11 @@ export default function CrateInfoDialog({ open, onOpenChange }: CrateInfoDialogP
                       <div className="w-24 h-24 flex items-center justify-center">
                         {frame.name === 'Nova' ? (
                           <NovaFrame>
-                            <div className="w-20 h-20 flex items-center justify-center bg-background rounded-full">
-                              <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                            </div>
+                            <AvatarPreview />
                           </NovaFrame>
                         ) : (
                           <div className={cn("w-20 h-20 flex items-center justify-center", frame.className)}>
-                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                            <AvatarPreview sizeClass="h-16 w-16" />
                           </div>
                         )}
                       </div>

@@ -181,7 +181,12 @@ export default function Magaza() {
           </Card>
         </div>
       </div>
-      <CrateInfoDialog open={isInfoOpen} onOpenChange={setIsInfoOpen} />
+      <CrateInfoDialog 
+        open={isInfoOpen} 
+        onOpenChange={setIsInfoOpen} 
+        userAvatarUrl={user?.avatar_url}
+        userName={user?.name}
+      />
       <CrateOpeningDialog
         open={isCrateDialogOpen}
         onClose={handleCloseDialog}
