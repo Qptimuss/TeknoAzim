@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, CheckCircle, Pencil, Check, X, Lock, Trash2 } from "lucide-react";
+import { User as UserIcon, CheckCircle, Pencil, Check, X, Lock, Trash2, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { calculateLevel, ALL_BADGES, TITLES, removeExp, EXP_ACTIONS } from "@/lib/gamification";
@@ -50,6 +50,8 @@ export default function ProfilePage() {
   // Inline editing states
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [isSavingName, setIsSavingName] = useState(false); // NEW
+  const [isSavingDescription, setIsSavingDescription] = useState(false); // NEW
   const [nameValue, setNameValue] = useState("");
   const [descriptionValue, setDescriptionValue] = useState("");
   
@@ -122,24 +124,31 @@ export default function ProfilePage() {
 
   const handleNameSave = async () => {
     if (!user) return;
-    setIsEditingName(false);
-    if (nameValue !== user.name) {
-      const result = z.string().min(2, "İsim en az 2 karakter olmalıdır.").safeParse(nameValue);
-      if (!result.success) {
-        toast.error(result.error.issues[0].message);
-        setNameValue(user.name || "");
-        return;
-      }
-      
-      try {
-        const updatedData = await updateProfile({ name: nameValue });
-        await updateUser(updatedData);
-        toast.success('İsim güncellendi!');
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Hata oluştu.";
-        toast.error("İsim Güncelleme Hatası", { description: errorMessage });
-        setNameValue(user.name || ""); // Revert local state on error
-      }
+    
+    if (nameValue === user.name) {
+      setIsEditingName(false);
+      return;
+    }
+
+    const result = z.string().min(2, "İsim en az 2 karakter olmalıdır.").safeParse(nameValue);
+    if (!result.success) {
+      toast.error(result.error.issues[0].message);
+      setNameValue(user.name || "");
+      return;
+    }
+    
+    setIsSavingName(true);
+    try {
+      const updatedData = await updateProfile({ name: nameValue });
+      await updateUser(updatedData);
+      toast.success('İsim güncellendi!');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Hata oluştu.";
+      toast.error("İsim Güncelleme Hatası", { description: errorMessage });
+      setNameValue(user.name || ""); // Revert local state on error
+    } finally {
+      setIsSavingName(false);
+      setIsEditingName(false);
     }
   };
 
@@ -150,24 +159,31 @@ export default function ProfilePage() {
 
   const handleDescriptionSave = async () => {
     if (!user) return;
-    setIsEditingDescription(false);
-    if (descriptionValue !== user.description) {
-      const result = z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").optional().safeParse(descriptionValue);
-      if (!result.success) {
-        toast.error(result.error.issues[0].message);
-        setDescriptionValue(user.description || "");
-        return;
-      }
-      
-      try {
-        const updatedData = await updateProfile({ description: descriptionValue });
-        await updateUser(updatedData);
-        toast.success('Açıklama güncellendi!');
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Hata oluştu.";
-        toast.error("Açıklama Güncelleme Hatası", { description: errorMessage });
-        setDescriptionValue(user.description || ""); // Revert local state on error
-      }
+    
+    if (descriptionValue === user.description) {
+      setIsEditingDescription(false);
+      return;
+    }
+
+    const result = z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").optional().safeParse(descriptionValue);
+    if (!result.success) {
+      toast.error(result.error.issues[0].message);
+      setDescriptionValue(user.description || "");
+      return;
+    }
+    
+    setIsSavingDescription(true);
+    try {
+      const updatedData = await updateProfile({ description: descriptionValue });
+      await updateUser(updatedData);
+      toast.success('Açıklama güncellendi!');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Hata oluştu.";
+      toast.error("Açıklama Güncelleme Hatası", { description: errorMessage });
+      setDescriptionValue(user.description || ""); // Revert local state on error
+    } finally {
+      setIsSavingDescription(false);
+      setIsEditingDescription(false);
     }
   };
 
@@ -378,11 +394,18 @@ export default function ProfilePage() {
                         onKeyDown={(e) => { if (e.key === 'Enter') handleNameSave(); }}
                         autoFocus
                         className="w-48 text-center text-2xl font-bold font-outfit h-auto"
+                        disabled={isSavingName}
                       />
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={handleNameSave}>
-                        <Check className="h-4 w-4" />
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-green-500 hover:bg-green-500/10" 
+                        onClick={handleNameSave}
+                        disabled={isSavingName}
+                      >
+                        {isSavingName ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleNameCancel}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleNameCancel} disabled={isSavingName}>
                         <X className="h-4 w-4" />
                       </Button>
                     </>
@@ -413,12 +436,19 @@ export default function ProfilePage() {
                         autoFocus
                         placeholder="Kendinizden bahsedin..."
                         className="w-full max-w-xs text-sm text-center min-h-[80px]"
+                        disabled={isSavingDescription}
                       />
                       <div className="flex flex-col gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={handleDescriptionSave}>
-                          <Check className="h-4 w-4" />
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-green-500 hover:bg-green-500/10" 
+                          onClick={handleDescriptionSave}
+                          disabled={isSavingDescription}
+                        >
+                          {isSavingDescription ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleDescriptionCancel}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleDescriptionCancel} disabled={isSavingDescription}>
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
@@ -636,7 +666,7 @@ export default function ProfilePage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeletingAccount}>İptal</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteAccount}
               disabled={isDeletingAccount}

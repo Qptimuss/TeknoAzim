@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { addBlogPost, uploadBlogImage, getPostsByUserId } from "@/lib/blog-store";
 import { useAuth } from "@/contexts/AuthContext";
 import { addExp, awardBadge, EXP_ACTIONS } from "@/lib/gamification";
+import { Loader2 } from "lucide-react"; // Import Loader2
 
 const blogSchema = z.object({
   title: z.string().min(5, "Başlık en az 5 karakter olmalıdır."),
@@ -195,7 +196,14 @@ export default function CreateBlogPage() {
               )}
             />
             <Button type="submit" size="lg" disabled={form.formState.isSubmitting} className="w-full text-lg">
-              {form.formState.isSubmitting ? "Yayınlanıyor..." : "Yayınla"}
+              {form.formState.isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Yayınlanıyor...
+                </>
+              ) : (
+                "Yayınla"
+              )}
             </Button>
           </form>
         </Form>
