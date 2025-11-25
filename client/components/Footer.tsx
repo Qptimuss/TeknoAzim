@@ -11,7 +11,7 @@ const Footer = () => {
   const isHomePage = location.pathname === '/';
 
   const socialLinks = [
-    { name: 'GitHub', icon: Github, url: '#' },
+    { name: 'GitHub', icon: Github, url: 'https://github.com/Qptimuss/TeknoAzim' },
     { name: 'X', icon: XLogo, url: '#' },
     { name: 'Instagram', icon: Instagram, url: '#' },
   ];
