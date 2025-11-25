@@ -1,4 +1,3 @@
-import { supabase } from "@/integrations/supabase/client";
 import { 
   Award, BookOpen, MessageSquare, ThumbsUp, FilePlus2, Zap, Star,
   PenSquare, TrendingUp, Users, Lightbulb, Sparkles, MessageSquareQuote,
@@ -64,7 +63,7 @@ export const EXP_ACTIONS = {
   REMOVE_POST: 'REMOVE_POST',
   EARN_BADGE: 'EARN_BADGE',
   CREATE_COMMENT: 'CREATE_COMMENT',
-};
+} as const;
 
 // Function to add experience points to a user (NOW SECURE VIA SERVER)
 export const addExp = async (userId: string, actionType: keyof typeof EXP_ACTIONS): Promise<Profile | null> => {
