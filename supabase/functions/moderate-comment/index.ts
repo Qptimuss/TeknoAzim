@@ -10,9 +10,8 @@ const corsHeaders = {
 const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
 
 // --- MODERATION CONFIGURATION ---
-// SADECE BU SABİTİ DEĞİŞTİREREK İSTEDİĞİNİZ MODELİ KULLANABİLİRSİNİZ.
-// Şu anki model: unitary/multilingual-toxic-xlm-roberta
-const HF_MODEL = 'unitary/multilingual-toxic-xlm-roberta';
+// YENİ MODEL: JungleLee/bert-toxic-comment-classification (Çoklu etiket çıktısı verir)
+const HF_MODEL = 'JungleLee/bert-toxic-comment-classification';
 
 // Toksisite eşiği: Bu değerin üzerindeki puanlar toksik kabul edilir.
 const TOXICITY_THRESHOLD = 0.7; 
@@ -31,7 +30,9 @@ const WHOLE_WORD_BANNED = new Set([
   "kancık", "orospu", "piç", "puşt", "kahpe", "döl", "bok", "salak", "aptal", "gerizekalı", "beyinsiz", "mal", "ibne", "eşcinsel", "top",
   "porno", "sex", "vajina", "penis", "meme", "anal", "oral", "sikiş", "seks", "cinsel", "erotik", "çıplak", "pornografi", "mastürbasyon", "tecavüz", "ensest",
   "sakso", "grupseks", "oral seks", "anal seks", "grup seks",
-  "sülale", "sülaleni", "pezevenk", "yarak"
+  "sülale", "sülaleni", "pezevenk", "yarak",
+  // Yeni eklenen yaygın argolar
+  "amk", "siktir", "anan", "sik", "yarrak", "göt", "oç"
 ]);
 
 // Hugging Face istemcisini sadece token ile başlatıyoruz.
@@ -95,15 +96,27 @@ serve(async (req) => {
 
     try {
       const moderationResponse = await hf.textClassification({
-        model: HF_MODEL, // Tek model sabiti kullanılıyor
+        model: HF_MODEL, 
         inputs: content,
       });
       
-      // Model çıktısı genellikle 'toxic' veya 'LABEL_1' etiketini içerir.
-      const toxicLabel = moderationResponse.flat().find(item => item.label.toLowerCase().includes('toxic') || item.label === 'LABEL_1');
-      if (toxicLabel) {
-        toxicScore = toxicLabel.score;
+      const scores = moderationResponse.flat();
+      
+      const toxicLabels = scores.filter(item => 
+        item.label.toLowerCase() !== 'non-toxic' && item.label !== 'LABEL_0'
+      );
+      
+      if (toxicLabels.length > 0) {
+        // Toksik etiketler arasında en yüksek puanı al
+        toxicScore = Math.max(...toxicLabels.map(item => item.score));
+      } else {
+        // Eğer model sadece LABEL_0/LABEL_1 döndürüyorsa ve LABEL_1 toksikse, onu al.
+        const label1 = scores.find(item => item.label === 'LABEL_1');
+        if (label1) {
+            toxicScore = label1.score;
+        }
       }
+
     } catch (hfError) {
       console.log("Error calling Hugging Face API:", hfError);
       // API hatası durumunda, güvenlik için toksik kabul et (Fail-Toxic)
