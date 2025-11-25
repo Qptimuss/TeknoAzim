@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { Profile } from "@shared/api";
 import { toast } from "sonner";
+import { updateProfileDetails, claimDailyReward } from "@/lib/profile-store";
 
 export type User = Profile & { email?: string };
 
@@ -11,16 +12,31 @@ interface AuthContextType {
   loading: boolean;
   logout: () => Promise<void>;
   updateUser: (newUserData: Partial<User>) => Promise<void>;
+  login: (supabaseUser: SupabaseUser) => Promise<void>;
+  mergeProfileState: (data: Partial<User>) => void; 
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Helper to check if the last reward was claimed today
 const isSameDay = (d1: Date, d2: Date) => {
-  return d1.getFullYear() === d2.getFullYear() &&
-         d1.getMonth() === d2.getMonth() &&
-         d1.getDate() === d2.getDate();
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
 };
+
+// Define the keys that are safe for client-initiated updates via the /api/profile endpoint.
+// All gamification fields (exp, level, gems, badges, owned_frames, last_daily_reward_claimed_at) 
+// must be excluded as they are managed by secure server endpoints.
+const SAFE_PROFILE_UPDATE_KEYS: Array<keyof Profile> = [
+  'name',
+  'avatar_url',
+  'description',
+  'selected_title',
+  'selected_frame',
+];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -28,49 +44,76 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
     const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at')
-      .eq('id', supabaseUser.id)
+      .from("profiles")
+      .select(
+        "id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at"
+      )
+      .eq("id", supabaseUser.id)
       .single();
 
     if (error) {
       console.error("Error fetching profile:", error);
       return null;
     }
-    
+
     return {
       ...profile,
       email: supabaseUser.email,
     } as User;
   };
 
-  const handleDailyReward = async (profile: User): Promise<User | null> => {
-    const lastClaimed = profile.last_daily_reward_claimed_at ? new Date(profile.last_daily_reward_claimed_at) : null;
+  // Function to merge state after a secure server call returns the updated profile
+  const mergeProfileState = (data: Partial<User>) => {
+    setUser(prevUser => {
+      if (!prevUser) return null;
+      return {
+        ...prevUser,
+        ...data,
+      };
+    });
+  };
+
+  // Server-side daily reward handling
+  const handleDailyReward = async (profile: User): Promise<User> => {
+    const lastClaimed = profile.last_daily_reward_claimed_at
+      ? new Date(profile.last_daily_reward_claimed_at)
+      : null;
     const today = new Date();
 
     if (!lastClaimed || !isSameDay(lastClaimed, today)) {
-      const newGems = (profile.gems || 0) + 20;
-      const { data: updatedProfile, error } = await supabase
-        .from('profiles')
-        .update({ gems: newGems, last_daily_reward_claimed_at: today.toISOString() })
-        .eq('id', profile.id)
-        .select('id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at')
-        .single();
-      
-      if (error) {
-        console.error("Error claiming daily reward:", error);
-        return profile; // Return original profile on error
+      try {
+        const updatedProfile = await claimDailyReward();
+        toast.success("Günlük Giriş Ödülü", {
+          description: "Hesabına 5 Gem eklendi!",
+        });
+        return { ...updatedProfile, email: profile.email } as User;
+      } catch (e) {
+        // If claiming failed (e.g., already claimed or server error), return original profile
+        if (e instanceof Error && e.message.includes("Daily reward already claimed today.")) {
+             // This case should ideally not happen if isSameDay check passes, but good to handle.
+        } else {
+            console.error("Error claiming daily reward via server:", e);
+        }
+        return profile;
       }
-      
-      toast.success("Günlük Giriş Ödülü", { description: "Hesabına 20 Elmas eklendi!" });
-      return { ...updatedProfile, email: profile.email } as User;
     }
-    return profile; // No reward needed, return original profile
+
+    return profile;
+  };
+
+  const login = async (supabaseUser: SupabaseUser) => {
+    let profile = await fetchUserProfile(supabaseUser);
+    if (profile) {
+      profile = await handleDailyReward(profile);
+    }
+    setUser(profile);
   };
 
   useEffect(() => {
     const getSessionAndProfile = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session?.user) {
         let profile = await fetchUserProfile(session.user);
         if (profile) {
@@ -83,18 +126,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     getSessionAndProfile();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        let profile = await fetchUserProfile(session.user);
-        if (profile) {
-          profile = await handleDailyReward(profile);
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (session?.user) {
+          let profile = await fetchUserProfile(session.user);
+          if (profile) {
+            profile = await handleDailyReward(profile);
+          }
+          setUser(profile);
+        } else {
+          setUser(null);
         }
-        setUser(profile);
-      } else {
-        setUser(null);
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    );
 
     return () => {
       authListener.subscription.unsubscribe();
@@ -106,24 +151,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  // SECURE UPDATE USER: Only allows updating non-gamification fields via the secure server API.
   const updateUser = async (newUserData: Partial<User>) => {
     if (!user) return;
 
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update(newUserData)
-      .eq('id', user.id);
+    const safeUpdateData: Partial<Profile> = {};
 
-    if (updateError) {
-      console.error("Error updating profile:", updateError);
-      throw updateError;
+    // Filter newUserData to only include safe keys
+    SAFE_PROFILE_UPDATE_KEYS.forEach(key => {
+      if (newUserData[key] !== undefined) {
+        // FIX: Use type assertion on the target object to allow dynamic assignment
+        (safeUpdateData as any)[key] = newUserData[key];
+      }
+    });
+
+    if (Object.keys(safeUpdateData).length === 0) {
+        return;
     }
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      const updatedProfile = await fetchUserProfile(session.user);
-      setUser(updatedProfile);
-    }
+    // Use the secure server API for profile updates
+    const updatedFields = await updateProfileDetails(safeUpdateData);
+
+    // Merge the updated fields back into the current user state
+    mergeProfileState(updatedFields);
   };
 
   const value = {
@@ -131,6 +181,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     logout,
     updateUser,
+    login,
+    mergeProfileState,
   };
 
   return (

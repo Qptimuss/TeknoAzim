@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.81.1",
+    "@types/react-easy-crop": "^2.0.0",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "react-easy-crop": "^5.5.3",

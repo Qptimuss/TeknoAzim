@@ -34,5 +34,6 @@ export interface BlogPostWithAuthor {
   content: string;
   image_url?: string | null;
   created_at: string;
+  user_id: string; // The ID of the author
   profiles: Profile | null; // The author of the blog post
 }

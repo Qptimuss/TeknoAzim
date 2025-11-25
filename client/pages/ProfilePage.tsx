@@ -107,9 +107,9 @@ export default function ProfilePage() {
     let successMessage: string;
 
     if (user.selected_frame === frameName) {
-      const newGems = (user.gems || 0) + 5;
-      updateData = { selected_frame: null, gems: newGems };
-      successMessage = 'Çerçeve kaldırıldı ve 5 elmas geri kazanıldı!';
+      // Removed client-side gem refund logic for unselecting a frame to maintain state consistency with secure server API.
+      updateData = { selected_frame: null };
+      successMessage = 'Çerçeve kaldırıldı.';
     } else {
       updateData = { selected_frame: frameName };
       successMessage = 'Çerçeve güncellendi!';
@@ -216,16 +216,25 @@ export default function ProfilePage() {
     setImageToCrop(null);
     if (!user) return;
 
-    const croppedFile = new File([croppedBlob], "avatar.jpeg", { type: "image/jpeg" });
+    // Dosya adını userId.jpeg olarak ayarlıyoruz, bu RLS kuralıyla eşleşmeli.
+    const croppedFile = new File([croppedBlob], `${user.id}.jpeg`, { type: "image/jpeg" });
+    
     await toast.promise(
       async () => {
         const uploadedUrl = await uploadAvatar(croppedFile, user.id);
-        if (uploadedUrl) await updateUser({ avatar_url: uploadedUrl });
+        if (uploadedUrl) {
+          // Önbelleği atlatmak için URL'ye zaman damgası ekle
+          const cacheBustingUrl = `${uploadedUrl}?v=${Date.now()}`;
+          await updateUser({ avatar_url: cacheBustingUrl });
+        }
       },
       {
         loading: "Profil fotoğrafı yükleniyor...",
         success: "Profil fotoğrafı güncellendi!",
-        error: "Profil fotoğrafı güncellenirken bir hata oluştu.",
+        error: (e) => {
+          console.error("Avatar update failed:", e);
+          return e.message || "Profil fotoğrafı güncellenirken bir hata oluştu.";
+        },
       }
     );
   };
@@ -257,7 +266,8 @@ export default function ProfilePage() {
       await deleteBlogPost(postToDelete.id, postToDelete.imageUrl);
       setUserPosts(prev => prev.filter(p => p.id !== postToDelete.id));
       
-      const updatedProfile = await removeExp(user.id, EXP_ACTIONS.CREATE_POST);
+      // Use the action key for removal
+      const updatedProfile = await removeExp(user.id, EXP_ACTIONS.REMOVE_POST);
       if (updatedProfile) {
         updateUser(updatedProfile);
       }

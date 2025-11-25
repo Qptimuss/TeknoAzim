@@ -3,11 +3,10 @@ import { MobileNav } from "@/components/MobileNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Gem, Info } from "lucide-react";
+import { User as UserIcon, Gem } from "lucide-react";
 import AppLogo from "./AppLogo";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { ThemeToggle } from "./ThemeToggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 export default function Navbar() {
@@ -23,9 +22,9 @@ export default function Navbar() {
   // Ana Sayfa bağlantısını sadece kullanıcı giriş yapmamışsa gösteriyoruz.
   const baseNavLinks = [
     { to: "/bloglar", label: "Bloglar" },
-    { to: "/magaza", label: "Mağaza" },
     { to: "/duyurular", label: "Duyurular" },
     { to: "/hakkimizda", label: "Hakkımızda" },
+    { to: "/magaza", label: "Mağaza" },
   ];
 
   const mainNavLinks = user 
@@ -89,24 +88,21 @@ export default function Navbar() {
                         </AvatarFallback>
                       </Avatar>
                     </Link>
-                    <div className="flex items-center gap-1 mt-1">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex items-center gap-1 bg-muted/50 rounded-full px-2 py-0.5 text-xs cursor-help">
-                            <span className="font-bold">{user.gems ?? 0}</span>
-                            <Gem className="h-3 w-3 text-green-500" />
-                            <Info className="h-3 w-3 text-muted-foreground" />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <div className="text-center">
-                            <p className="font-bold">Elmas Kazancı</p>
-                            <p>Her 24 saatte bir giriş: +20 Elmas</p>
-                            <p>Her yeni rozet: +30 Elmas</p>
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link to="/magaza" className="flex items-center gap-1 bg-muted/50 rounded-full px-2 py-0.5 text-xs mt-1">
+                          <span className="font-bold">{user.gems ?? 0}</span>
+                          <Gem className="h-3 w-3 text-green-500" />
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="text-center">
+                          <p className="font-bold">Gem Kazancı</p>
+                          <p>Her 24 saatte bir giriş: +5 Gem</p>
+                          <p>Her yeni rozet: +10 Gem</p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 </>
               ) : (
@@ -116,7 +112,6 @@ export default function Navbar() {
                   </Link>
                 ))
               )}
-              <ThemeToggle />
             </div>
           </div>
         </nav>

@@ -55,19 +55,11 @@ export default function Kaydol() {
     }
 
     setIsSubmitting(true);
-
-    const { data: existingProfile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('name', formData.name)
-      .single();
-
-    if (existingProfile) {
-      toast.error("Kayıt Hatası", { description: "Bu kullanıcı adı zaten kullanılıyor. Lütfen başka bir tane seçin." });
-      setIsSubmitting(false);
-      return;
-    }
     
+    // Removed client-side profile check to prevent username enumeration.
+    // We rely on the database trigger/constraint to handle username uniqueness 
+    // during or immediately after signup, and provide a generic error message if it fails.
+
     const { error } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
@@ -82,7 +74,17 @@ export default function Kaydol() {
     setIsSubmitting(false);
 
     if (error) {
-      toast.error("Kayıt Hatası", { description: error.message });
+      let description = error.message;
+      
+      // If the error is due to a database constraint (like unique username), 
+      // we must generalize the message to prevent enumeration.
+      if (error.message.includes("duplicate key value violates unique constraint")) {
+        description = "Kayıt başarısız oldu. Lütfen girdiğiniz bilgileri kontrol edin (Kullanıcı adı veya e-posta zaten kullanılıyor olabilir).";
+      } else if (error.message.includes("User already registered")) {
+        description = "Bu e-posta adresi zaten kayıtlı.";
+      }
+      
+      toast.error("Kayıt Hatası", { description });
     } else {
       setShowSuccessDialog(true);
     }

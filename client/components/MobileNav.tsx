@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
-import { ThemeToggle } from "./ThemeToggle";
 
 interface NavLink {
   to: string;
@@ -69,9 +68,7 @@ export function MobileNav({ mainLinks, authLinks, logo, onMouseEnter, onMouseLea
             ))}
           </div>
         </div>
-        <div className="mt-auto flex justify-end">
-          <ThemeToggle />
-        </div>
+        {/* ThemeToggle kaldırıldı */}
       </SheetContent>
     </Sheet>
   );
