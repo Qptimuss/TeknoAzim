@@ -10,7 +10,7 @@ import { addComment, deleteComment } from "@/lib/blog-store";
 import { CommentWithAuthor } from "@shared/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { MoreHorizontal, Trash2, Eye } from "lucide-react";
+import { MoreHorizontal, Trash2, Eye, Loader2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,6 +52,8 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
     resolver: zodResolver(commentSchema),
     defaultValues: { content: "" },
   });
+
+  const { isSubmitting } = form.formState;
 
   async function onSubmit(values: z.infer<typeof commentSchema>) {
     if (!user) {
@@ -222,8 +224,15 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                Yorum Gönder
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Yorum gönderiliyor...
+                  </>
+                ) : (
+                  "Yorum Gönder"
+                )}
               </Button>
             </form>
           </Form>
