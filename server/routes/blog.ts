@@ -27,7 +27,7 @@ const castVoteSchema = z.object({
 });
 
 // Helper function to call the Edge Function for moderation
-async function moderateComment(content: string): Promise<{ isModerated: boolean }> {
+async function moderateContent(content: string): Promise<{ isModerated: boolean }> {
   const supabaseAdmin = getSupabaseAdmin();
   
   // Invoke the Edge Function
@@ -37,7 +37,7 @@ async function moderateComment(content: string): Promise<{ isModerated: boolean 
 
   if (error) {
     console.error("Error invoking moderation function:", error);
-    // If the moderation service fails, we default to allowing the comment (isModerated: true)
+    // If the moderation service fails, we default to allowing the content (isModerated: true)
     return { isModerated: true }; 
   }
 
@@ -55,6 +55,17 @@ export const handleCreatePost: RequestHandler = async (req, res) => {
   try {
     const validatedData = newPostSchema.parse(req.body);
     const supabaseAdmin = getSupabaseAdmin();
+
+    // --- Moderation Step for Title and Content ---
+    const { isModerated: titleModerated } = await moderateContent(validatedData.title);
+    if (!titleModerated) {
+      return res.status(403).json({ error: "Blog başlığı uygunsuz içerik barındırdığı için reddedildi." });
+    }
+    
+    const { isModerated: contentModerated } = await moderateContent(validatedData.content);
+    if (!contentModerated) {
+      return res.status(403).json({ error: "Blog içeriği uygunsuz içerik barındırdığı için reddedildi." });
+    }
 
     // Server-side insertion, ensuring user_id is set by the authenticated user
     const { data, error } = await supabaseAdmin
@@ -92,6 +103,17 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
   try {
     const validatedData = updatePostSchema.parse(req.body);
     const supabaseAdmin = getSupabaseAdmin();
+
+    // --- Moderation Step for Title and Content ---
+    const { isModerated: titleModerated } = await moderateContent(validatedData.title);
+    if (!titleModerated) {
+      return res.status(403).json({ error: "Blog başlığı uygunsuz içerik barındırdığı için reddedildi." });
+    }
+    
+    const { isModerated: contentModerated } = await moderateContent(validatedData.content);
+    if (!contentModerated) {
+      return res.status(403).json({ error: "Blog içeriği uygunsuz içerik barındırdığı için reddedildi." });
+    }
 
     // 1. Check ownership (using RLS bypass capability of supabaseAdmin)
     const { data: existingPost, error: fetchError } = await supabaseAdmin
@@ -186,7 +208,7 @@ export const handleAddComment: RequestHandler = async (req, res) => {
     const supabaseAdmin = getSupabaseAdmin();
 
     // --- Moderation Step ---
-    const { isModerated } = await moderateComment(validatedData.content);
+    const { isModerated } = await moderateContent(validatedData.content);
     
     if (!isModerated) {
       // If the comment is toxic, reject it immediately.

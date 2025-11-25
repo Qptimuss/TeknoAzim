@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth, User } from "@/contexts/AuthContext";
-import { getPostsByUserId, uploadAvatar, deleteBlogPost } from "@/lib/blog-store";
+import { getPostsByUserId, uploadAvatar, deleteBlogPost, updateProfile } from "@/lib/blog-store";
 import { BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
 import { Button } from "@/components/ui/button";
@@ -125,11 +125,16 @@ export default function ProfilePage() {
         setNameValue(user.name || "");
         return;
       }
-      await toast.promise(updateUser({ name: nameValue }), {
-        loading: 'İsim güncelleniyor...',
-        success: 'İsim güncellendi!',
-        error: 'Hata oluştu.',
-      });
+      
+      try {
+        const updatedData = await updateProfile({ name: nameValue });
+        await updateUser(updatedData);
+        toast.success('İsim güncellendi!');
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Hata oluştu.";
+        toast.error("İsim Güncelleme Hatası", { description: errorMessage });
+        setNameValue(user.name || ""); // Revert local state on error
+      }
     }
   };
 
@@ -148,11 +153,16 @@ export default function ProfilePage() {
         setDescriptionValue(user.description || "");
         return;
       }
-      await toast.promise(updateUser({ description: descriptionValue }), {
-        loading: 'Açıklama güncelleniyor...',
-        success: 'Açıklama güncellendi!',
-        error: 'Hata oluştu.',
-      });
+      
+      try {
+        const updatedData = await updateProfile({ description: descriptionValue });
+        await updateUser(updatedData);
+        toast.success('Açıklama güncellendi!');
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Hata oluştu.";
+        toast.error("Açıklama Güncelleme Hatası", { description: errorMessage });
+        setDescriptionValue(user.description || ""); // Revert local state on error
+      }
     }
   };
 

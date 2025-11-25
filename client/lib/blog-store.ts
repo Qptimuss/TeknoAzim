@@ -9,6 +9,12 @@ type NewBlogPost = {
   userId: string; // Kept for client-side logic if needed, but server ignores it for security
 };
 
+// Type for updating profile data
+type UpdateProfileData = {
+  name?: string;
+  description?: string | null;
+};
+
 // Type for creating a new comment
 type NewComment = {
   content: string;
@@ -314,5 +320,14 @@ export const getProfileById = async (userId: string): Promise<Profile | null> =>
     console.error("Error fetching profile:", error);
     return null;
   }
+  return data;
+};
+
+// Update profile name or description via server API (Moderated)
+export const updateProfile = async (updateData: UpdateProfileData) => {
+  const data = await fetchWithAuth('/api/user/profile', {
+    method: 'PUT',
+    body: JSON.stringify(updateData),
+  });
   return data;
 };

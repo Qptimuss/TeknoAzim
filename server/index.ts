@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { requireAuth } from "./middleware/auth";
-import { handleDeleteUser } from "./routes/user";
+import { handleDeleteUser, handleUpdateProfile } from "./routes/user";
 import { 
   handleCreatePost, 
   handleUpdatePost, 
@@ -31,6 +31,7 @@ export function createServer() {
 
   // User routes
   app.delete("/api/user", requireAuth, handleDeleteUser);
+  app.put("/api/user/profile", requireAuth, handleUpdateProfile); // NEW ROUTE
 
   // Blog Post Routes (Requires Auth for CUD operations)
   app.post("/api/blog/post", requireAuth, handleCreatePost);
