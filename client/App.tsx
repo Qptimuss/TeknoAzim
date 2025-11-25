@@ -25,6 +25,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./components/ThemeProvider";
 import Magaza from "./pages/Magaza";
 import EditBlogPage from "./pages/EditBlogPage";
+import CreateAnnouncementPage from "./pages/CreateAnnouncementPage"; // New import
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
                   <Route path="/blog-olustur" element={<CreateBlogPage />} />
                   <Route path="/profil" element={<ProfilePage />} />
                   <Route path="/bloglar/:id/duzenle" element={<EditBlogPage />} />
+                  <Route path="/duyuru-olustur" element={<CreateAnnouncementPage />} />
                 </Route>
               </Route>
               
