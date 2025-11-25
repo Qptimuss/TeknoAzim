@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Gem, LogOut, User, PenSquare } from "lucide-react";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfile } from "../hooks/useProfile"; // DÜZELTME: Göreceli yol kullanıldı.
 import {
   Tooltip,
   TooltipContent,
@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/tooltip";
 
 export default function Navbar() {
-  const { user, loading } = useAuth(); // session yerine user kullanıldı
+  const { user, loading } = useAuth();
   const { profile, isLoading: profileLoading } = useProfile(user?.id);
   const navigate = useNavigate();
 
