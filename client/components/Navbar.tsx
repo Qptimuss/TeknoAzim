@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
@@ -21,8 +21,8 @@ import {
 } from "@/components/ui/tooltip";
 
 export default function Navbar() {
-  const { session, loading } = useAuth();
-  const { profile, isLoading: profileLoading } = useProfile(session?.user?.id);
+  const { user, loading } = useAuth(); // session yerine user kullanıldı
+  const { profile, isLoading: profileLoading } = useProfile(user?.id);
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -49,7 +49,7 @@ export default function Navbar() {
           <div className="flex items-center space-x-4">
             {loading || profileLoading ? (
               <div className="h-10 w-24 bg-muted rounded-md animate-pulse" />
-            ) : session ? (
+            ) : user ? (
               <>
                 <TooltipProvider>
                   <Tooltip>
@@ -76,7 +76,7 @@ export default function Navbar() {
                 </TooltipProvider>
 
                 <Button asChild>
-                  <Link to="/new-post">
+                  <Link to="/blog-olustur">
                     <PenSquare className="h-4 w-4 mr-2" />
                     Yazı Yaz
                   </Link>
@@ -94,7 +94,7 @@ export default function Navbar() {
                     <DropdownMenuLabel>Hesabım</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link to={`/profile/${session.user.id}`}>
+                      <Link to={`/profil`}>
                         <User className="mr-2 h-4 w-4" />
                         <span>Profil</span>
                       </Link>
@@ -109,7 +109,7 @@ export default function Navbar() {
               </>
             ) : (
               <Button asChild>
-                <Link to="/login">Giriş Yap</Link>
+                <Link to="/giris">Giriş Yap</Link>
               </Button>
             )}
           </div>
