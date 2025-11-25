@@ -15,6 +15,7 @@ const Footer = () => {
 
   const footerNav = [
     { to: "/bloglar", label: "Bloglar" },
+    { to: "/magaza", label: "Mağaza" }, // Mağaza eklendi
     { to: "/duyurular", label: "Duyurular" },
     { to: "/hakkimizda", label: "Hakkımızda" },
   ];
