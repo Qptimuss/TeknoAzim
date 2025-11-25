@@ -126,7 +126,19 @@ export default function Magaza() {
             <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
               <li>Her 24 saatte bir giriş yaptığında: <span className="font-bold text-foreground">+20 Elmas</span></li>
               <li>Her yeni rozet kazandığında: <span className="font-bold text-foreground">+30 Elmas</span></li>
-              <li>Zaten sahip olduğun bir çerçeve sandıktan çıktığında: <span className="font-bold text-foreground">Nadirliğe göre Elmas iadesi</span> (5-100 Elmas)</li>
+              <li className="flex items-center">
+                Zaten sahip olduğun bir çerçeve sandıktan çıktığında: 
+                <span className="font-bold text-foreground ml-1">Nadirliğe göre Elmas iadesi</span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6 p-0 ml-2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setIsInfoOpen(true)}
+                >
+                  <Info className="h-4 w-4" />
+                  <span className="sr-only">Görmek için tıkla</span>
+                </Button>
+              </li>
             </ul>
           </div>
           {!user && (

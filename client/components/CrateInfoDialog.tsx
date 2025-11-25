@@ -8,7 +8,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { RARITIES, FRAMES } from "@/lib/store-items";
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, Gem } from "lucide-react";
 import { cn } from "@/lib/utils";
 import NovaFrame from "@/components/frames/NovaFrame";
 
@@ -16,6 +16,15 @@ interface CrateInfoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+// Nadirlik seviyelerine göre iade miktarları
+const REFUND_AMOUNTS: { [key: string]: number } = {
+  [RARITIES.SIRADAN.name]: 5,
+  [RARITIES.SIRADISI.name]: 10,
+  [RARITIES.ENDER.name]: 15,
+  [RARITIES.EFSANEVI.name]: 25,
+  [RARITIES.ÖZEL.name]: 100,
+};
 
 export default function CrateInfoDialog({ open, onOpenChange }: CrateInfoDialogProps) {
   const framesByRarity = Object.values(RARITIES).map(rarity => ({
@@ -27,20 +36,27 @@ export default function CrateInfoDialog({ open, onOpenChange }: CrateInfoDialogP
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Çerçeve Sandığı İçerikleri</DialogTitle>
+          <DialogTitle>Çerçeve Sandığı İçerikleri ve Oranları</DialogTitle>
           <DialogDescription>
-            Bu sandıktan çıkabilecek tüm çerçeveler ve nadirlik oranları aşağıda listelenmiştir.
+            Bu sandıktan çıkabilecek tüm çerçeveler, nadirlik oranları ve tekrar çıkması durumunda iade edilecek elmas miktarları aşağıda listelenmiştir.
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="h-[60vh] pr-4">
           <div className="space-y-6">
+            
+            {/* Nadirlik ve İade Oranları */}
             <div>
-              <h3 className="text-lg font-semibold mb-2">Nadirlik Oranları</h3>
-              <div className="space-y-1">
+              <h3 className="text-lg font-semibold mb-2">Nadirlik ve İade Oranları</h3>
+              <div className="space-y-1 p-3 bg-muted rounded-lg border border-border">
                 {Object.values(RARITIES).map(rarity => (
                   <div key={rarity.name} className="flex justify-between items-center text-sm">
-                    <span className={cn("font-medium", rarity.color)}>{rarity.name}</span>
-                    <span className="text-muted-foreground">{rarity.chance}</span>
+                    <span className={cn("font-medium", rarity.color)}>{rarity.name} ({rarity.chance})</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-muted-foreground">İade:</span>
+                      <span className="font-bold text-green-500 flex items-center gap-0.5">
+                        {REFUND_AMOUNTS[rarity.name]} <Gem className="h-3 w-3" />
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -48,6 +64,7 @@ export default function CrateInfoDialog({ open, onOpenChange }: CrateInfoDialogP
 
             <Separator />
 
+            {/* Çerçeve Listesi */}
             {framesByRarity.map(rarityGroup => (
               <div key={rarityGroup.name}>
                 <h3 className={cn("text-lg font-semibold mb-4 flex items-baseline gap-2", rarityGroup.color)}>
