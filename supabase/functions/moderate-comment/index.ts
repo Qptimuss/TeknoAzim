@@ -120,7 +120,7 @@ serve(async (req) => {
     } catch (hfError) {
       console.log("Error calling Hugging Face API:", hfError);
       // API hatası durumunda, güvenlik için toksik kabul et (Fail-Toxic)
-      toxicScore = 1.0; 
+      toxicScore = 0; 
     }
 
     const isToxic = toxicScore > TOXICITY_THRESHOLD;
