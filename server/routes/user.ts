@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import { getSupabaseAdmin } from "../lib/supabase-admin";
 import { z } from "zod";
-import { Database } from "../lib/database.types";
+import { Database } from "../lib/database.types"; // Import Database type
 
 // --- Profil Güncelleme Mantığı ---
 
@@ -18,7 +18,7 @@ export const handleUpdateProfile: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = updateProfileSchema.partial().parse(req.body);
+    const validatedData = updateProfileSchema.partial().parse(req.body) as Database['public']['Tables']['profiles']['Update'];
     const supabaseAdmin = getSupabaseAdmin();
 
     if (Object.keys(validatedData).length === 0) {
@@ -26,7 +26,7 @@ export const handleUpdateProfile: RequestHandler = async (req, res) => {
     }
 
     const { data, error } = await (supabaseAdmin
-      .from("profiles") as any) // Hata 3'ü düzeltmek için 'as any' eklendi
+      .from("profiles") as any) // Cast to any to bypass generic type issues with update payload
       .update(validatedData)
       .eq('id', userId) 
       .select('id, name, avatar_url, description, selected_title, selected_frame')

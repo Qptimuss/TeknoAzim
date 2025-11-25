@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import { getSupabaseAdmin } from "../lib/supabase-admin";
 import { z } from "zod";
-import { Database } from "../lib/database.types";
+import { Database } from "../lib/database.types"; // Import Database type
 
 // --- Schemas for validation ---
 
@@ -68,7 +68,6 @@ export const handleCreatePost: RequestHandler = async (req, res) => {
       return res.status(403).json({ error: "Blog içeriği uygunsuz içerik barındırdığı için reddedildi." });
     }
 
-    // Server-side insertion, ensuring user_id is set by the authenticated user
     const insertPayload: Database['public']['Tables']['blog_posts']['Insert'] = {
         title: validatedData.title,
         content: validatedData.content,
@@ -76,8 +75,9 @@ export const handleCreatePost: RequestHandler = async (req, res) => {
         user_id: userId, // Enforce user ID from JWT, not client input
     };
 
+    // Server-side insertion, ensuring user_id is set by the authenticated user
     const { data, error } = await (supabaseAdmin
-      .from("blog_posts") as any) // Fix TS2769 (Error 4)
+      .from("blog_posts") as any) // Cast to any to bypass generic type issues
       .insert(insertPayload)
       .select()
       .single();
@@ -124,26 +124,27 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
       .select("user_id")
       .eq("id", postId)
       .single();
-      
-    const post = existingPost as { user_id: string } | null; // Fix TS2339 (Error 5)
 
-    if (fetchError || !post) {
+    if (fetchError || !existingPost) {
       return res.status(404).json({ error: "Blog post not found." });
     }
 
-    if (post.user_id !== userId) {
+    // Explicitly type the fetched data for safe access (Error 5)
+    const postData = existingPost as Pick<Database['public']['Tables']['blog_posts']['Row'], 'user_id'>;
+
+    if (postData.user_id !== userId) {
       return res.status(403).json({ error: "Forbidden: You do not own this post." });
     }
 
-    // 2. Perform update
     const updatePayload: Database['public']['Tables']['blog_posts']['Update'] = {
         title: validatedData.title,
         content: validatedData.content,
         image_url: validatedData.imageUrl,
     };
 
+    // 2. Perform update
     const { data, error } = await (supabaseAdmin
-      .from("blog_posts") as any) // Fix TS2345 (Error 6)
+      .from("blog_posts") as any) // Cast to any (Error 6)
       .update(updatePayload)
       .eq('id', postId)
       .select()
@@ -178,14 +179,15 @@ export const handleDeletePost: RequestHandler = async (req, res) => {
       .select("user_id")
       .eq("id", postId)
       .single();
-      
-    const post = existingPost as { user_id: string } | null; // Fix TS2339 (Error 7)
 
-    if (fetchError || !post) {
+    if (fetchError || !existingPost) {
       return res.status(404).json({ error: "Blog post not found." });
     }
+    
+    // Explicitly type the fetched data for safe access (Error 7)
+    const postData = existingPost as Pick<Database['public']['Tables']['blog_posts']['Row'], 'user_id'>;
 
-    if (post.user_id !== userId) {
+    if (postData.user_id !== userId) {
       return res.status(403).json({ error: "Forbidden: You do not own this post." });
     }
 
@@ -224,15 +226,16 @@ export const handleAddComment: RequestHandler = async (req, res) => {
       return res.status(403).json({ error: "Yorumunuz, yapay zeka tarafından uygunsuz içerik barındırdığı için reddedildi." });
     }
 
-    // Server-side insertion, enforcing user_id from JWT
     const insertPayload: Database['public']['Tables']['comments']['Insert'] = {
         content: validatedData.content,
         post_id: validatedData.postId,
         user_id: userId,
+        // is_moderated is not in the database schema, removing it from payload
     };
 
+    // Server-side insertion, enforcing user_id from JWT
     const { data, error } = await (supabaseAdmin
-      .from('comments') as any) // Fix TS2769 (Error 8)
+      .from('comments') as any) // Cast to any (Error 8)
       .insert(insertPayload)
       .select()
       .single();
@@ -266,14 +269,15 @@ export const handleDeleteComment: RequestHandler = async (req, res) => {
       .select("user_id")
       .eq("id", commentId)
       .single();
-      
-    const comment = existingComment as { user_id: string } | null; // Fix TS2339 (Error 9)
 
-    if (fetchError || !comment) {
+    if (fetchError || !existingComment) {
       return res.status(404).json({ error: "Comment not found." });
     }
 
-    if (comment.user_id !== userId) {
+    // Explicitly type the fetched data for safe access (Error 9)
+    const commentData = existingComment as Pick<Database['public']['Tables']['comments']['Row'], 'user_id'>;
+
+    if (commentData.user_id !== userId) {
       return res.status(403).json({ error: "Forbidden: You do not own this comment." });
     }
 
@@ -315,15 +319,15 @@ export const handleCastVote: RequestHandler = async (req, res) => {
       if (error) throw error;
     } else {
       // Add or update vote
-      const upsertPayload: Database['public']['Tables']['post_votes']['Insert'] = {
-        post_id: postId,
-        user_id: userId,
-        vote_type: voteType === 'like' ? 1 : -1,
+      const votePayload: Database['public']['Tables']['post_votes']['Insert'] = {
+          post_id: postId,
+          user_id: userId,
+          vote_type: voteType === 'like' ? 1 : -1,
       };
 
       const { error } = await (supabaseAdmin
-        .from('post_votes') as any) // Fix TS2769 (Error 10)
-        .upsert(upsertPayload, { onConflict: 'user_id, post_id' });
+        .from('post_votes') as any) // Cast to any (Error 10)
+        .upsert(votePayload, { onConflict: 'user_id, post_id' });
       if (error) throw error;
     }
 
