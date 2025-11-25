@@ -78,8 +78,8 @@ export const uploadBlogImage = async (file: File, userId: string): Promise<strin
 
 // Upload an avatar image to Supabase Storage
 export const uploadAvatar = async (file: File, userId: string): Promise<string | null> => {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `avatar.${fileExt}`;
+  // Cropper output is always jpeg, so we use a fixed name for upserting.
+  const fileName = `avatar.jpeg`;
   // Using a subfolder in the existing blog_images bucket
   const filePath = `avatars/${userId}/${fileName}`;
 
