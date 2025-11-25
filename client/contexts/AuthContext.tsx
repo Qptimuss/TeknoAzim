@@ -111,17 +111,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const getSessionAndProfile = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user) {
-        let profile = await fetchUserProfile(session.user);
-        if (profile) {
-          profile = await handleDailyReward(profile);
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session?.user) {
+          let profile = await fetchUserProfile(session.user);
+          if (profile) {
+            profile = await handleDailyReward(profile);
+          }
+          setUser(profile);
+        } else {
+          setUser(null);
         }
-        setUser(profile);
+      } catch (e) {
+        console.error("Auth initialization error:", e);
+        // Hata durumunda bile yüklemeyi bitiriyoruz ki uygulama render olmaya devam edebilsin.
+        setUser(null); 
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     getSessionAndProfile();
@@ -185,9 +194,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mergeProfileState,
   };
 
+  // Eğer yükleniyorsa, siyah ekran yerine basit bir yükleme göstergesi göster.
+  if (loading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center text-foreground">Yükleniyor...</div>;
+  }
+
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }
