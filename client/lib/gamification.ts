@@ -53,6 +53,7 @@ export const ALL_BADGES = [
   { name: "Topluluk İnşacısı", description: "5 blog yazısı yayınla.", icon: Award },
   { name: "İlk Yorumcu", description: "Bir gönderiye ilk yorumu yap.", icon: MessageSquare },
   { name: "Hızlı Parmaklar", description: "Üç farklı gönderiye ilk yorumu yap.", icon: Zap },
+  { name: "Beğeni Başlangıcı", description: "Bir gönderin 2 beğeni alsın.", icon: ThumbsUp }, // YENİ ROZET
   { name: "Beğeni Mıknatısı", description: "Bir gönderin 5 beğeni alsın.", icon: ThumbsUp },
   { name: "Popüler Yazar", description: "Bir gönderin 10 beğeni alsın.", icon: Star },
 ];
