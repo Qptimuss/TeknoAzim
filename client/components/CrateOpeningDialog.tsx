@@ -60,13 +60,13 @@ export default function CrateOpeningDialog({ open, onClose, isProcessing, wonFra
     <Dialog open={open}>
       <DialogContent 
         className="sm:max-w-[425px] text-center"
+        hideCloseButton // X butonunu gizle
         // Dış tıklamayla kapanmayı engellemek için onOpenChange'i kaldırıyoruz.
-        // Kapanma sadece 'Kapat' butonu ile yapılacak.
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle className="text-center text-2xl font-outfit">Sandık Açılıyor</DialogTitle>
+          {/* Başlık kaldırıldı */}
         </DialogHeader>
         
         {/* Tıklama alanını tüm içeriğe genişletmek için bu div'i kullanıyoruz */}
