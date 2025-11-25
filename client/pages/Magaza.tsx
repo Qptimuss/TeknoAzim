@@ -104,8 +104,19 @@ export default function Magaza() {
           <h1 className="text-foreground text-4xl md:text-5xl font-outfit font-bold">
             Mağaza
           </h1>
+          <div className="mt-4 p-4 bg-muted rounded-lg border border-border">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-2">
+              <Gem className="h-5 w-5 text-green-500" />
+              Nasıl Elmas Kazanırım?
+            </h2>
+            <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+              <li>Her 24 saatte bir giriş yaptığında: <span className="font-bold text-foreground">+20 Elmas</span></li>
+              <li>Her yeni rozet kazandığında: <span className="font-bold text-foreground">+30 Elmas</span></li>
+              <li>Zaten sahip olduğun bir çerçeve sandıktan çıktığında: <span className="font-bold text-foreground">+5 Elmas iadesi</span></li>
+            </ul>
+          </div>
           {!user && (
-            <p className="text-sm text-muted-foreground mt-2 bg-muted p-3 rounded-lg border border-border inline-block">
+            <p className="text-sm text-muted-foreground mt-4 bg-muted p-3 rounded-lg border border-border inline-block">
               Mağazayı kullanabilmek için giriş yapmanız gerekmektedir.
             </p>
           )}
