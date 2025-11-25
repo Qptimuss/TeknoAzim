@@ -12,6 +12,12 @@ import {
   handleDeleteComment, 
   handleCastVote 
 } from "./routes/blog";
+import {
+  handleUpdateExp,
+  handleAwardBadge,
+  handleClaimDailyReward,
+  handleOpenCrate
+} from "./routes/gamification";
 
 export function createServer() {
   const app = express();
@@ -31,7 +37,7 @@ export function createServer() {
 
   // User routes
   app.delete("/api/user", requireAuth, handleDeleteUser);
-  app.put("/api/profile", requireAuth, handleUpdateProfile); // Corrected route
+  app.put("/api/profile", requireAuth, handleUpdateProfile);
 
   // Blog Post Routes (Requires Auth for CUD operations)
   app.post("/api/blog/post", requireAuth, handleCreatePost);
@@ -44,6 +50,12 @@ export function createServer() {
 
   // Vote Routes (Requires Auth)
   app.post("/api/blog/vote", requireAuth, handleCastVote);
+
+  // Gamification Routes (Requires Auth)
+  app.post("/api/gamification/exp", requireAuth, handleUpdateExp);
+  app.post("/api/gamification/badge", requireAuth, handleAwardBadge);
+  app.post("/api/gamification/daily-reward", requireAuth, handleClaimDailyReward);
+  app.post("/api/gamification/open-crate", requireAuth, handleOpenCrate);
 
   return app;
 }
