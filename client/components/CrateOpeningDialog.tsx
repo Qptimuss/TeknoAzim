@@ -65,7 +65,7 @@ export default function CrateOpeningDialog({ open, onClose, isProcessing, wonFra
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogHeader className="items-center">
-          {/* Başlık kaldırıldı */}
+          <DialogTitle className="text-center text-2xl font-outfit">Sandık Açılıyor</DialogTitle>
         </DialogHeader>
         
         {/* Tıklama alanını tüm içeriğe genişletmek için bu div'i kullanıyoruz */}
