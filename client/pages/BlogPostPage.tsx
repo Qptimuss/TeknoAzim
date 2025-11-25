@@ -56,7 +56,8 @@ export default function BlogPostPage() {
     try {
       await deleteBlogPost(post.id, post.image_url);
       
-      const updatedProfile = await removeExp(user.id, EXP_ACTIONS.CREATE_POST);
+      // Use the action key for removal
+      const updatedProfile = await removeExp(user.id, EXP_ACTIONS.REMOVE_POST);
       if (updatedProfile) {
         updateUser(updatedProfile);
       }

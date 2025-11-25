@@ -100,9 +100,9 @@ export default function ProfilePage() {
     let successMessage: string;
 
     if (user.selected_frame === frameName) {
-      const newGems = (user.gems || 0) + 5;
-      updateData = { selected_frame: null, gems: newGems };
-      successMessage = 'Çerçeve kaldırıldı ve 5 elmas geri kazanıldı!';
+      // Removed client-side gem refund logic for unselecting a frame to maintain state consistency with secure server API.
+      updateData = { selected_frame: null };
+      successMessage = 'Çerçeve kaldırıldı.';
     } else {
       updateData = { selected_frame: frameName };
       successMessage = 'Çerçeve güncellendi!';
@@ -219,7 +219,8 @@ export default function ProfilePage() {
       await deleteBlogPost(postToDelete.id, postToDelete.imageUrl);
       setUserPosts(prev => prev.filter(p => p.id !== postToDelete.id));
       
-      const updatedProfile = await removeExp(user.id, EXP_ACTIONS.CREATE_POST);
+      // Use the action key for removal
+      const updatedProfile = await removeExp(user.id, EXP_ACTIONS.REMOVE_POST);
       if (updatedProfile) {
         updateUser(updatedProfile);
       }

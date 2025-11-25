@@ -2,8 +2,9 @@ import { RequestHandler } from "express";
 import { getSupabaseAdmin } from "../lib/supabase-admin.ts";
 import { z } from "zod";
 import { Database } from "../lib/database.types.ts";
+import { SERVER_EXP_ACTIONS, BADGE_REWARD_GEMS } from "../lib/gamification-constants.ts";
 
-// --- Helper Functions (Copied from client/lib/gamification.ts for server-side calculation) ---
+// --- Helper Functions (Crucial for server-side level calculation) ---
 
 const getExpForNextLevel = (level: number): number => {
   if (level <= 0) return 25;
@@ -26,8 +27,8 @@ const calculateLevel = (exp: number): { level: number, expForNextLevel: number, 
 // --- Schemas ---
 
 const expUpdateSchema = z.object({
-  amount: z.number().int().nonnegative(),
-  action: z.enum(['add', 'remove']),
+  // Client now sends the action type, not the amount or action (add/remove)
+  actionType: z.enum(['CREATE_POST', 'REMOVE_POST', 'CREATE_COMMENT']),
 });
 
 const badgeAwardSchema = z.object({
@@ -48,6 +49,13 @@ export const handleUpdateExp: RequestHandler = async (req, res) => {
   try {
     const validatedData = expUpdateSchema.parse(req.body);
     const supabaseAdmin = getSupabaseAdmin();
+    
+    const actionKey = validatedData.actionType;
+    const expChange = SERVER_EXP_ACTIONS[actionKey];
+
+    if (expChange === undefined) {
+        return res.status(400).json({ error: "Invalid gamification action type." });
+    }
 
     // 1. Fetch current profile data
     const { data: profileData, error: fetchError } = await supabaseAdmin
@@ -63,13 +71,8 @@ export const handleUpdateExp: RequestHandler = async (req, res) => {
       return res.status(404).json({ error: "Profile not found." });
     }
 
-    let newExp = profile.exp || 0;
-    
-    if (validatedData.action === 'add') {
-      newExp += validatedData.amount;
-    } else if (validatedData.action === 'remove') {
-      newExp = Math.max(0, newExp - validatedData.amount);
-    }
+    let newExp = (profile.exp || 0) + expChange;
+    newExp = Math.max(0, newExp); // Ensure EXP doesn't go below zero
 
     const { level: newLevel } = calculateLevel(newExp);
     
@@ -79,16 +82,10 @@ export const handleUpdateExp: RequestHandler = async (req, res) => {
       level: newLevel,
     };
     
-    // If level drops and selected title is no longer valid, remove it.
+    // If level drops, check if selected title needs to be removed (simplified check)
     if (newLevel < profile.level && profile.selected_title) {
-        // Simple check: If the title level requirement is higher than the new level, remove it.
-        // For now, we rely on the client to handle the title selection logic based on the new level.
-        // However, to prevent invalid state, we check if the level dropped.
-        if (newLevel < profile.level) {
-             // We cannot reliably check the title requirement without the TITLES map. 
-             // We will rely on the client to handle the notification, but we won't force remove the title here 
-             // unless we implement the full TITLES logic on the server.
-        }
+        // We rely on the client to handle the title selection logic based on the new level.
+        // For now, we won't force remove the title here unless we implement the full TITLES logic on the server.
     }
 
     const { data: updatedProfile, error: updateError } = await (supabaseAdmin
@@ -143,10 +140,14 @@ export const handleAwardBadge: RequestHandler = async (req, res) => {
       return res.status(200).json(profile); 
     }
 
-    const EXP_ACTIONS = { EARN_BADGE: 50 }; // Define constant locally
+    // --- Server-side fixed rewards for earning a badge ---
+    const expReward = SERVER_EXP_ACTIONS.EARN_BADGE;
+    const gemReward = BADGE_REWARD_GEMS; 
+    // -----------------------------------------------------
+
     const newBadges = [...currentBadges, badgeName];
-    const newExp = (profile.exp || 0) + EXP_ACTIONS.EARN_BADGE;
-    const newGems = (profile.gems || 0) + 10; 
+    const newExp = (profile.exp || 0) + expReward;
+    const newGems = (profile.gems || 0) + gemReward; 
     const { level: newLevel } = calculateLevel(newExp);
 
     // 2. Update profile
@@ -219,7 +220,10 @@ export const handleClaimDailyReward: RequestHandler = async (req, res) => {
       return res.status(409).json({ error: "Daily reward already claimed today." });
     }
 
+    // --- Server-side fixed reward ---
     const DAILY_REWARD_GEMS = 5;
+    // --------------------------------
+
     const newGems = (profile.gems || 0) + DAILY_REWARD_GEMS;
     
     // 2. Update profile

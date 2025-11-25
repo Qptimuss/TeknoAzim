@@ -57,16 +57,17 @@ export const ALL_BADGES = [
   { name: "Popüler Yazar", description: "Bir gönderin 10 beğeni alsın.", icon: Star },
 ];
 
-// --- EXP KAZANIM MİKTARLARI ---
+// --- EXP KAZANIM EYLEM ANAHTARLARI (Client-side only for reference/lookup) ---
+// The server holds the authoritative amounts.
 export const EXP_ACTIONS = {
-  CREATE_POST: 25,
-  CREATE_COMMENT: 10,
-  RECEIVE_LIKE: 5,
-  EARN_BADGE: 50,
+  CREATE_POST: 'CREATE_POST',
+  REMOVE_POST: 'REMOVE_POST',
+  EARN_BADGE: 'EARN_BADGE',
+  CREATE_COMMENT: 'CREATE_COMMENT',
 };
 
 // Function to add experience points to a user (NOW SECURE VIA SERVER)
-export const addExp = async (userId: string, amount: number): Promise<Profile | null> => {
+export const addExp = async (userId: string, actionType: keyof typeof EXP_ACTIONS): Promise<Profile | null> => {
   const headers = await getAuthHeaders();
   
   // 1. Fetch current profile state to check for level up later
@@ -85,8 +86,7 @@ export const addExp = async (userId: string, amount: number): Promise<Profile | 
     method: 'POST',
     headers,
     body: JSON.stringify({
-      amount,
-      action: 'add',
+      actionType, // Send action type instead of amount/action
     }),
   });
 
@@ -106,7 +106,7 @@ export const addExp = async (userId: string, amount: number): Promise<Profile | 
 };
 
 // Function to remove experience points from a user (NOW SECURE VIA SERVER)
-export const removeExp = async (userId: string, amount: number): Promise<Profile | null> => {
+export const removeExp = async (userId: string, actionType: keyof typeof EXP_ACTIONS): Promise<Profile | null> => {
   const headers = await getAuthHeaders();
   
   // 1. Fetch current profile state to check for level drop later
@@ -125,8 +125,7 @@ export const removeExp = async (userId: string, amount: number): Promise<Profile
     method: 'POST',
     headers,
     body: JSON.stringify({
-      amount,
-      action: 'remove',
+      actionType, // Send action type instead of amount/action
     }),
   });
 
@@ -187,8 +186,9 @@ export const awardBadge = async (userId: string, badgeName: string): Promise<Pro
   const updatedProfile = await response.json();
   
   // Client-side notification for badge and gem/exp gain
+  // Note: We hardcode the notification values here, assuming they match the server's hardcoded values (50 EXP, 10 Gem)
   toast.success("Yeni Rozet Kazandın!", {
-    description: `"${badgeName}" rozetini kazandın, ${EXP_ACTIONS.EARN_BADGE} EXP ve 10 Gem elde ettin!`,
+    description: `"${badgeName}" rozetini kazandın, 50 EXP ve 10 Gem elde ettin!`,
   });
   
   // Check for level up notification (client side)
