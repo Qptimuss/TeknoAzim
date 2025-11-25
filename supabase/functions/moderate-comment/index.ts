@@ -124,8 +124,13 @@ serve(async (req) => {
       }
 
     } catch (hfError) {
-      console.log("Error calling Hugging Face API:", hfError);
-      toxicScore = 0; 
+      console.log("Error calling Hugging Face API (likely Invalid API Key):", hfError);
+      // Eğer Hugging Face API çağrısı başarısız olursa (örneğin anahtar geçersizse), 
+      // içeriğin geçmesine izin ver (fail-safe) ve uyarı döndür.
+      return new Response(JSON.stringify({ isModerated: true, warning: "Moderation API call failed." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
 
     const isToxic = toxicScore > TOXICITY_THRESHOLD;

@@ -39,9 +39,24 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
   });
 
   if (!response.ok) {
-    // Try to parse error JSON, but fallback if it fails
-    const errorData = await response.json().catch(() => ({ error: 'Bilinmeyen bir sunucu hatası oluştu.' }));
-    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    let errorText = `HTTP error! status: ${response.status}`;
+    let errorData: any = {};
+
+    try {
+      // Sunucudan gelen JSON hata mesajını ayrıştırmayı dene
+      errorData = await response.json();
+      errorText = errorData.error || errorData.message || errorText;
+    } catch (e) {
+      // JSON ayrıştırma başarısız olursa, yanıt metnini dene
+      try {
+        errorText = await response.text() || errorText;
+      } catch (e) {
+        // Metin de alınamazsa, varsayılan hata mesajını kullan
+      }
+    }
+    
+    // Hata mesajını bir Error nesnesine sararak fırlat
+    throw new Error(errorText);
   }
 
   // Handle 204 No Content case for DELETE, etc.
@@ -49,5 +64,6 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
     return null;
   }
 
+  // Başarılı yanıtı JSON olarak döndür
   return response.json();
 };

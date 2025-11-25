@@ -97,9 +97,9 @@ export default function Navbar() {
                       </TooltipTrigger>
                       <TooltipContent>
                         <div className="text-center">
-                          <p className="font-bold">Gem Kazancı</p>
-                          <p>Her 24 saatte bir giriş: +5 Gem</p>
-                          <p>Her yeni rozet: +10 Gem</p>
+                          <p className="font-bold">Elmas Kazancı</p>
+                          <p>Her 24 saatte bir giriş: +20 Elmas</p>
+                          <p>Her yeni rozet: +30 Elmas</p>
                         </div>
                       </TooltipContent>
                     </Tooltip>
