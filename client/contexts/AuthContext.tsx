@@ -166,14 +166,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (Object.keys(safeUpdateData).length === 0) {
+        // If no safe fields are being updated, we assume the update was for gamification fields 
+        // which are handled by server endpoints and the server response should be merged directly.
+        // Since this function is explicitly for client-initiated profile detail updates, 
+        // we only proceed if there are safe fields.
+        mergeProfileState(newUserData);
         return;
     }
 
-    // Use the secure server API for profile updates
-    const updatedFields = await updateProfileDetails(safeUpdateData);
+    try {
+        // Use the secure server API for profile updates
+        const updatedFields = await updateProfileDetails(safeUpdateData);
 
-    // Merge the updated fields back into the current user state
-    mergeProfileState(updatedFields);
+        // Merge the updated fields back into the current user state
+        mergeProfileState(updatedFields);
+    } catch (e) {
+        // Ensure that whatever is thrown is an Error object
+        throw e instanceof Error ? e : new Error(String(e));
+    }
   };
 
   const value = {

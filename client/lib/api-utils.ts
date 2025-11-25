@@ -41,6 +41,8 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
   if (!response.ok) {
     // Try to parse error JSON, but fallback if it fails
     const errorData = await response.json().catch(() => ({ error: 'Bilinmeyen bir sunucu hatası oluştu.' }));
+    
+    // Hata mesajını bir Error nesnesine sararak fırlat
     throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
   }
 
