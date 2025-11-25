@@ -16,9 +16,6 @@ const HF_MODEL = 'JungleLee/bert-toxic-comment-classification';
 // Toksisite eşiği: Bu değerin üzerindeki puanlar toksik kabul edilir.
 const TOXICITY_THRESHOLD = 0.7; 
 
-// Özel test cümlesi için istisna
-const EXCEPTIONAL_PHRASE = "emailinizi falan girin üstten profilinizi oluşturun sonra buraya mesaj atin bakalım cidden calisiyo mu 😎";
-
 // Helper to create a regex pattern that allows for character repetitions
 function createSpammyRegex(word: string): string {
   return word.split('').map(char => `${char}+`).join('');
@@ -119,7 +116,6 @@ serve(async (req) => {
 
     } catch (hfError) {
       console.log("Error calling Hugging Face API:", hfError);
-      // API hatası durumunda, güvenlik için toksik kabul et (Fail-Toxic)
       toxicScore = 0; 
     }
 
