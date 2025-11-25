@@ -47,7 +47,7 @@ export const claimDailyReward = async (): Promise<Profile> => {
  * @param cost The cost of the crate.
  * @returns The full updated profile object and the item won.
  */
-export const openCrate = async (cost: number): Promise<{ updatedProfile: Profile, itemWon: string }> => {
+export const openCrate = async (cost: number): Promise<{ updatedProfile: Profile, itemWon: any, alreadyOwned: boolean, refundAmount: number }> => {
   // fetchWithAuth handles headers, response checking, and error throwing.
   return fetchWithAuth('/api/gamification/open-crate', {
     method: 'POST',

@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "../lib/supabase-admin.ts";
 import { z } from "zod";
 import { Database } from "../lib/database.types.ts";
 import { SERVER_EXP_ACTIONS, BADGE_REWARD_GEMS } from "../lib/gamification-constants.ts";
+import { FRAMES, RARITIES } from "../lib/store-items.ts";
 
 // --- Helper Functions (Crucial for server-side level calculation) ---
 
@@ -20,14 +21,12 @@ const calculateLevel = (exp: number): { level: number, expForNextLevel: number, 
     level++;
   }
   
-  // Note: We only need the final level for the update logic.
   return { level, expForNextLevel: getExpForNextLevel(level), currentLevelExp: cumulativeExp };
 };
 
 // --- Schemas ---
 
 const expUpdateSchema = z.object({
-  // Client now sends the action type, not the amount or action (add/remove)
   actionType: z.enum(['CREATE_POST', 'REMOVE_POST', 'CREATE_COMMENT']),
 });
 
@@ -39,9 +38,37 @@ const crateOpenSchema = z.object({
   cost: z.number().int().positive(),
 });
 
+// --- Crate Logic ---
+
+const REFUND_AMOUNTS: { [key: string]: number } = {
+  [RARITIES.SIRADAN.name]: 5,
+  [RARITIES.SIRADISI.name]: 10,
+  [RARITIES.ENDER.name]: 15,
+  [RARITIES.EFSANEVI.name]: 25,
+  [RARITIES.ÖZEL.name]: 100,
+};
+
+const selectRandomFrame = () => {
+  const rand = Math.random() * 100;
+  let selectedRarityName: string;
+
+  if (rand < 1) selectedRarityName = RARITIES.ÖZEL.name;
+  else if (rand < 6) selectedRarityName = RARITIES.EFSANEVI.name;
+  else if (rand < 21) selectedRarityName = RARITIES.ENDER.name;
+  else if (rand < 51) selectedRarityName = RARITIES.SIRADISI.name;
+  else selectedRarityName = RARITIES.SIRADAN.name;
+
+  const framesInRarity = FRAMES.filter(frame => frame.rarity === selectedRarityName);
+  if (framesInRarity.length === 0) {
+    const commonFrames = FRAMES.filter(frame => frame.rarity === RARITIES.SIRADAN.name);
+    return commonFrames[Math.floor(Math.random() * commonFrames.length)];
+  }
+  return framesInRarity[Math.floor(Math.random() * framesInRarity.length)];
+};
+
+
 // --- Handlers ---
 
-// POST /api/gamification/exp
 export const handleUpdateExp: RequestHandler = async (req, res) => {
   const userId = req.userId;
   if (!userId) return res.status(401).json({ error: "User ID missing." });
@@ -57,7 +84,6 @@ export const handleUpdateExp: RequestHandler = async (req, res) => {
         return res.status(400).json({ error: "Invalid gamification action type." });
     }
 
-    // 1. Fetch current profile data
     const { data: profileData, error: fetchError } = await supabaseAdmin
       .from('profiles')
       .select('exp, level, selected_title')
@@ -72,22 +98,15 @@ export const handleUpdateExp: RequestHandler = async (req, res) => {
     }
 
     let newExp = (profile.exp || 0) + expChange;
-    newExp = Math.max(0, newExp); // Ensure EXP doesn't go below zero
+    newExp = Math.max(0, newExp);
 
     const { level: newLevel } = calculateLevel(newExp);
     
-    // 2. Update profile
     const updatePayload: Database['public']['Tables']['profiles']['Update'] = {
       exp: newExp,
       level: newLevel,
     };
     
-    // If level drops, check if selected title needs to be removed (simplified check)
-    if (newLevel < profile.level && profile.selected_title) {
-        // We rely on the client to handle the title selection logic based on the new level.
-        // For now, we won't force remove the title here unless we implement the full TITLES logic on the server.
-    }
-
     const { data: updatedProfile, error: updateError } = await (supabaseAdmin
       .from("profiles") as any)
       .update(updatePayload)
@@ -110,7 +129,6 @@ export const handleUpdateExp: RequestHandler = async (req, res) => {
   }
 };
 
-// POST /api/gamification/badge
 export const handleAwardBadge: RequestHandler = async (req, res) => {
   const userId = req.userId;
   if (!userId) return res.status(401).json({ error: "User ID missing." });
@@ -120,7 +138,6 @@ export const handleAwardBadge: RequestHandler = async (req, res) => {
     const { badgeName } = validatedData;
     const supabaseAdmin = getSupabaseAdmin();
     
-    // 1. Fetch current profile data
     const { data: profileData, error: fetchError } = await supabaseAdmin
       .from('profiles')
       .select('badges, exp, level, gems')
@@ -136,21 +153,17 @@ export const handleAwardBadge: RequestHandler = async (req, res) => {
 
     const currentBadges = profile.badges || [];
     if (currentBadges.includes(badgeName)) {
-      // Already has badge, return current profile (200 OK)
       return res.status(200).json(profile); 
     }
 
-    // --- Server-side fixed rewards for earning a badge ---
     const expReward = SERVER_EXP_ACTIONS.EARN_BADGE;
     const gemReward = BADGE_REWARD_GEMS; 
-    // -----------------------------------------------------
 
     const newBadges = [...currentBadges, badgeName];
     const newExp = (profile.exp || 0) + expReward;
     const newGems = (profile.gems || 0) + gemReward; 
     const { level: newLevel } = calculateLevel(newExp);
 
-    // 2. Update profile
     const updatePayload: Database['public']['Tables']['profiles']['Update'] = {
       badges: newBadges,
       exp: newExp,
@@ -180,7 +193,6 @@ export const handleAwardBadge: RequestHandler = async (req, res) => {
   }
 };
 
-// POST /api/gamification/daily-reward
 export const handleClaimDailyReward: RequestHandler = async (req, res) => {
   const userId = req.userId;
   if (!userId) return res.status(401).json({ error: "User ID missing." });
@@ -188,7 +200,6 @@ export const handleClaimDailyReward: RequestHandler = async (req, res) => {
   try {
     const supabaseAdmin = getSupabaseAdmin();
 
-    // 1. Fetch current profile data
     const { data: profileData, error: fetchError } = await supabaseAdmin
       .from('profiles')
       .select('gems, last_daily_reward_claimed_at')
@@ -207,7 +218,6 @@ export const handleClaimDailyReward: RequestHandler = async (req, res) => {
       : null;
     const today = new Date();
     
-    // Helper to check if the last reward was claimed today
     const isSameDay = (d1: Date, d2: Date) => {
       return (
         d1.getFullYear() === d2.getFullYear() &&
@@ -220,13 +230,9 @@ export const handleClaimDailyReward: RequestHandler = async (req, res) => {
       return res.status(409).json({ error: "Daily reward already claimed today." });
     }
 
-    // --- Server-side fixed reward ---
     const DAILY_REWARD_GEMS = 20;
-    // --------------------------------
-
     const newGems = (profile.gems || 0) + DAILY_REWARD_GEMS;
     
-    // 2. Update profile
     const updatePayload: Database['public']['Tables']['profiles']['Update'] = {
       gems: newGems,
       last_daily_reward_claimed_at: today.toISOString(),
@@ -254,7 +260,6 @@ export const handleClaimDailyReward: RequestHandler = async (req, res) => {
   }
 };
 
-// POST /api/gamification/open-crate
 export const handleOpenCrate: RequestHandler = async (req, res) => {
   const userId = req.userId;
   if (!userId) return res.status(401).json({ error: "User ID missing." });
@@ -264,7 +269,6 @@ export const handleOpenCrate: RequestHandler = async (req, res) => {
     const { cost } = validatedData;
     const supabaseAdmin = getSupabaseAdmin();
 
-    // 1. Fetch current profile data
     const { data: profileData, error: fetchError } = await supabaseAdmin
       .from('profiles')
       .select('gems, owned_frames')
@@ -282,32 +286,21 @@ export const handleOpenCrate: RequestHandler = async (req, res) => {
       return res.status(403).json({ error: "Insufficient gems." });
     }
 
-    // --- Crate Opening Logic (Simplified for now) ---
-    
-    // Define minimal item pool here for server-side control
-    const MOCK_FRAMES = [
-      { name: 'Klasik Bronz', rarity: 'Sıradan' },
-      { name: 'Çift Halkalı Altın', rarity: 'Sıradışı' },
-      { name: 'Kraliyet Moru', rarity: 'Ender' },
-    ];
-
+    const itemWon = selectRandomFrame();
     const ownedFrames = profile.owned_frames || [];
-    const unownedFrame = MOCK_FRAMES.find(f => !ownedFrames.includes(f.name));
-    
-    let newOwnedFrames = ownedFrames;
-    let itemWon = null;
+    const isOwned = ownedFrames.includes(itemWon.name);
 
-    if (unownedFrame) {
-      newOwnedFrames = [...ownedFrames, unownedFrame.name];
-      itemWon = unownedFrame.name;
+    let newGems = (profile.gems || 0) - cost;
+    let newOwnedFrames = ownedFrames;
+    let refund = 0;
+
+    if (isOwned) {
+      refund = REFUND_AMOUNTS[itemWon.rarity] || 5;
+      newGems += refund;
     } else {
-      // If all frames owned, give 5 gems back (fallback)
-      itemWon = "5 Gem (Tüm çerçeveler zaten sende)";
+      newOwnedFrames = [...ownedFrames, itemWon.name];
     }
 
-    const newGems = (profile.gems || 0) - cost + (itemWon.includes("Gem") ? 5 : 0);
-
-    // 2. Update profile
     const updatePayload: Database['public']['Tables']['profiles']['Update'] = {
       gems: newGems,
       owned_frames: newOwnedFrames,
@@ -325,8 +318,7 @@ export const handleOpenCrate: RequestHandler = async (req, res) => {
       return res.status(500).json({ error: "Failed to open crate." });
     }
 
-    // Return the updated profile and the item won
-    res.status(200).json({ updatedProfile, itemWon });
+    res.status(200).json({ updatedProfile, itemWon, alreadyOwned: isOwned, refundAmount: refund });
   } catch (e) {
     if (e instanceof z.ZodError) {
       return res.status(400).json({ error: "Invalid input data.", details: e.errors });

@@ -186,9 +186,8 @@ export const awardBadge = async (userId: string, badgeName: string): Promise<Pro
   const updatedProfile = await response.json();
   
   // Client-side notification for badge and gem/exp gain
-  // Note: We hardcode the notification values here, assuming they match the server's hardcoded values (50 EXP, 10 Gem)
   toast.success("Yeni Rozet Kazandın!", {
-    description: `"${badgeName}" rozetini kazandın, 50 EXP ve 10 Gem elde ettin!`,
+    description: `"${badgeName}" rozetini kazandın, 50 EXP ve 30 Gem elde ettin!`,
   });
   
   // Check for level up notification (client side)
