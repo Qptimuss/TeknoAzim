@@ -18,9 +18,10 @@ interface CrateOpeningDialogProps {
   isProcessing: boolean;
   wonFrame: WonFrame | null;
   alreadyOwned: boolean;
+  refundAmount: number; // Yeni prop
 }
 
-export default function CrateOpeningDialog({ open, onClose, isProcessing, wonFrame, alreadyOwned }: CrateOpeningDialogProps) {
+export default function CrateOpeningDialog({ open, onClose, isProcessing, wonFrame, alreadyOwned, refundAmount }: CrateOpeningDialogProps) {
   const [clickCount, setClickCount] = useState(0);
   const [animationState, setAnimationState] = useState<"idle" | "shaking" | "opening" | "revealed">("idle");
 
@@ -90,7 +91,7 @@ export default function CrateOpeningDialog({ open, onClose, isProcessing, wonFra
                 <div className="text-center mt-2 p-2 bg-muted rounded-md border border-border">
                   <p className="text-sm text-muted-foreground">(Bu çerçeveye zaten sahipsin)</p>
                   <p className="text-sm font-semibold text-green-500 flex items-center justify-center gap-1">
-                    +5 <Gem className="h-4 w-4" /> Geri Verildi!
+                    +{refundAmount} <Gem className="h-4 w-4" /> Geri Verildi!
                   </p>
                 </div>
               )}

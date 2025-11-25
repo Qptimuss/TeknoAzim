@@ -12,6 +12,15 @@ import CrateOpeningDialog from "@/components/CrateOpeningDialog";
 
 const CRATE_COST = 10;
 
+// Nadirlik seviyelerine göre iade miktarları
+const REFUND_AMOUNTS: { [key: string]: number } = {
+  [RARITIES.SIRADAN.name]: 5,
+  [RARITIES.SIRADISI.name]: 10,
+  [RARITIES.ENDER.name]: 15,
+  [RARITIES.EFSANEVI.name]: 25,
+  [RARITIES.ÖZEL.name]: 100,
+};
+
 const selectRandomFrame = () => {
   const rand = Math.random() * 100;
   let selectedRarityName: string;
@@ -40,6 +49,7 @@ export default function Magaza() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [wonFrame, setWonFrame] = useState<any | null>(null);
   const [alreadyOwned, setAlreadyOwned] = useState(false);
+  const [refundAmount, setRefundAmount] = useState(0); // Yeni iade miktarı state'i
 
   const handleOpenCrate = async () => {
     if (!user) {
@@ -60,6 +70,7 @@ export default function Magaza() {
     setIsProcessing(true);
     setWonFrame(null);
     setAlreadyOwned(false);
+    setRefundAmount(0);
 
     try {
       const frame = selectRandomFrame();
@@ -74,9 +85,11 @@ export default function Magaza() {
       const currentFrames = currentProfile.owned_frames || [];
       const isOwned = currentFrames.includes(frame.name);
       let newFrames = currentFrames;
+      let refund = 0;
 
       if (isOwned) {
-        newGems += 5; // 5 elmas iade et
+        refund = REFUND_AMOUNTS[frame.rarity] || 5; // Nadirliğe göre iade miktarını al
+        newGems += refund;
       } else {
         newFrames = [...currentFrames, frame.name];
       }
@@ -85,6 +98,7 @@ export default function Magaza() {
 
       setWonFrame(frame);
       setAlreadyOwned(isOwned);
+      setRefundAmount(refund);
     } catch (error) {
       toast.error("Bir hata oluştu", { description: error instanceof Error ? error.message : "Sandık açma işlemi başarısız." });
       setIsCrateDialogOpen(false);
@@ -112,7 +126,7 @@ export default function Magaza() {
             <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
               <li>Her 24 saatte bir giriş yaptığında: <span className="font-bold text-foreground">+20 Elmas</span></li>
               <li>Her yeni rozet kazandığında: <span className="font-bold text-foreground">+30 Elmas</span></li>
-              <li>Zaten sahip olduğun bir çerçeve sandıktan çıktığında: <span className="font-bold text-foreground">+5 Elmas iadesi</span></li>
+              <li>Zaten sahip olduğun bir çerçeve sandıktan çıktığında: <span className="font-bold text-foreground">Nadirliğe göre Elmas iadesi</span> (5-100 Elmas)</li>
             </ul>
           </div>
           {!user && (
@@ -162,6 +176,7 @@ export default function Magaza() {
         isProcessing={isProcessing}
         wonFrame={wonFrame}
         alreadyOwned={alreadyOwned}
+        refundAmount={refundAmount}
       />
     </>
   );
