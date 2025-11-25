@@ -4,6 +4,7 @@ import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { handleModerate } from "./routes/moderate";
 import { requireAuth } from "./middleware/auth";
+import { requireAdmin } from "./middleware/admin";
 import { 
   handleCreatePost, 
   handleUpdatePost, 
@@ -20,6 +21,7 @@ import {
   handleClaimDailyReward, 
   handleOpenCrate 
 } from "./routes/gamification";
+import { handleCreateAnnouncement } from "./routes/announcement";
 
 export function createServer() {
   const app = express();
@@ -65,6 +67,9 @@ export function createServer() {
 
   // User
   app.delete("/api/user", requireAuth, handleDeleteUser);
+
+  // Announcements (Requires Admin)
+  app.post("/api/announcement", requireAuth, requireAdmin, handleCreateAnnouncement);
 
   return app;
 }
