@@ -5,7 +5,7 @@ import path from "path";
 export default defineConfig({
   build: {
     lib: {
-      entry: path.resolve(__dirname, "server/netlify-build.ts"),
+      entry: path.resolve(__dirname, "netlify/functions/api.ts"),
       name: "api",
       fileName: "api",
       formats: ["es"],
