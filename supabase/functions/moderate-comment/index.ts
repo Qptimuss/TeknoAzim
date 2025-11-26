@@ -10,7 +10,7 @@ const corsHeaders = {
 const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
 
 // --- MODERATION CONFIGURATION ---
-const HF_MODEL = 'unitary/toxic-bert';
+const HF_MODEL = 'bert-base-multilingual-cased-finetuned-toxic';
 const TOXICITY_THRESHOLD = 0.7; 
 
 // Helper to create a regex pattern that allows for character repetitions
@@ -21,7 +21,7 @@ function createSpammyRegex(word: string): string {
 // Tam kelime olarak eşleşmesi gereken yasaklı kelimeler (regex ile \b kullanılarak)
 const WHOLE_WORD_BANNED = new Set([
   "nigger", "fuck", "shit", "cunt", "asshole", "bitch", "bastard", "motherfucker", "faggot", "retard", "idiot", "moron",
-  "kancık", "orospu", "piç", "puşt", "kahpe", "döl", "bok", "salak", "aptal", "gerizekalı", "beyinsiz", "mal", "ibne", "eşcinsel", "top",
+  "kancık", "orospu", "piç", "puşt", "kahpe", "döl", "bok", "salak", "aptal", "gerizekalı", "beyinsiz", "mal", "ibne", "top",
   "porno", "sex", "vajina", "penis", "meme", "anal", "oral", "sikiş", "seks", "cinsel", "erotik", "çıplak", "pornografi", "mastürbasyon", "tecavüz", "ensest",
   "sakso", "grupseks", "oral seks", "anal seks", "grup seks",
   "sülale", "sülaleni", "pezevenk", "yarak",
