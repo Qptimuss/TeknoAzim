@@ -10,7 +10,7 @@ const corsHeaders = {
 const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
 
 // --- MODERATION CONFIGURATION ---
-const HF_MODEL = 'bert-base-multilingual-cased-finetuned-toxic';
+const HF_MODEL = 'unitary/toxic-bert';
 const TOXICITY_THRESHOLD = 0.7; 
 
 // Helper to create a regex pattern that allows for character repetitions
