@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/form";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
-import { getAuthHeaders } from "@/lib/api-utils";
+import { fetchWithAuth } from "@/lib/api-utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { isAdmin } from "@/lib/auth-utils";
 import { useEffect } from "react";
@@ -55,18 +55,11 @@ export default function CreateAnnouncementPage() {
     }
 
     try {
-      const headers = await getAuthHeaders();
-      
-      const response = await fetch('/api/announcement', {
+      // fetchWithAuth handles headers and response checking
+      await fetchWithAuth('/api/announcement', {
         method: 'POST',
-        headers,
         body: JSON.stringify(values),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Duyuru oluşturulurken bir hata oluştu.");
-      }
 
       toast.success("Duyuru başarıyla oluşturuldu!");
       form.reset();

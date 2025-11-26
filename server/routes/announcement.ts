@@ -13,11 +13,12 @@ export const handleCreateAnnouncement: RequestHandler = async (req, res) => {
     return res.status(400).json({ error: "Title and content are required." });
   }
 
-  // Mock success response
+  // Mock success response - Ensure a valid JSON object is returned
   res.status(201).json({ 
     message: "Announcement created successfully (MOCK).",
     title,
     content,
     adminId: userId,
+    id: "mock-announcement-id-" + Date.now(), // Add a mock ID
   });
 };

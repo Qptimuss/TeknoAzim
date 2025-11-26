@@ -5,7 +5,7 @@ import { getSupabaseAdmin } from "../lib/supabase-admin";
 // ideally via environment variables or a database lookup.
 const ADMIN_EMAILS = [
   "zeynepecemsezer5566@hotmail.com",
-  "mehmetakif.msrli55@gmail.com",
+  "mehmetakif.msrli55@gmail.com", // Qptimuss'un e-postası olarak varsayılıyor
 ];
 
 /**
