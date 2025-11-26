@@ -1,20 +1,8 @@
 [build]
-  command = "npm run build:client"
-  functions = "netlify/functions"
+  command = "npm run build"
   publish = "dist/spa"
-
+  functions = "dist/serverless/netlify/functions"
 
 [functions]
-  external_node_modules = ["express"]
   node_bundler = "esbuild"
-  
-[[redirects]]
-  force = true
-  from = "/api/*"
-  status = 200
-  to = "/.netlify/functions/api/:splat"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+  external_node_modules = [] # Force bundling all dependencies
