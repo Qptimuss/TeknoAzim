@@ -19,7 +19,8 @@ import {
   handleClaimDailyReward,
   handleOpenCrate
 } from "./routes/gamification";
-import { handleGrantAll } from "./routes/admin"; // Import the new admin handler
+import { handleGrantAll } from "./routes/admin";
+import { handleCreateAnnouncement } from "./routes/announcement"; // Import the announcement handler
 
 export function createServer() {
   const app = express();
@@ -61,6 +62,9 @@ export function createServer() {
 
   // Admin Routes (Requires Auth and Admin privileges)
   app.post("/api/admin/grant-all", requireAuth, requireAdmin, handleGrantAll);
+  
+  // Announcement Routes (Requires Auth and Admin privileges)
+  app.post("/api/announcement", requireAuth, requireAdmin, handleCreateAnnouncement);
 
   return app;
 }
