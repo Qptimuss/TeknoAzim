@@ -1,4 +1,3 @@
-import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
@@ -22,7 +21,12 @@ import {
 import { handleGrantAll } from "./routes/admin";
 import { handleCreateAnnouncement, handleGetAnnouncements, handleUpdateAnnouncement, handleDeleteAnnouncement } from "./routes/announcement"; // Import new handlers
 
-export function createServer() {
+export function createServer(env?: Record<string, string>) {
+  // Geliştirme sırasında Vite'den gelen ortam değişkenlerini process.env'e ata
+  if (env) {
+    Object.assign(process.env, env);
+  }
+
   const app = express();
 
   // Middleware

@@ -9,7 +9,11 @@ export const getBlogPosts = async (): Promise<BlogPostWithAuthor[]> => {
     .from("blog_posts")
     .select("*, profiles(*)")
     .order("created_at", { ascending: false });
-  if (error) throw error;
+  
+  if (error) {
+    console.error("Error fetching blog posts:", error);
+    return []; // Hata durumunda boş dizi döndür
+  }
   return data as BlogPostWithAuthor[];
 };
 
@@ -32,7 +36,7 @@ export const getPostsByUserId = async (userId: string): Promise<BlogPostWithAuth
     .select("*, profiles(*)")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return data as BlogPostWithAuthor[];
 };
 
@@ -55,22 +59,16 @@ export const updateBlogPost = async (postId: string, updateData: { title: string
 };
 
 export const deleteBlogPost = async (postId: string, imageUrl?: string | null) => {
-  // First, delete the image from storage if it exists
   if (imageUrl) {
     try {
       const url = new URL(imageUrl);
       const path = url.pathname.split('/images/')[1];
-      if (path) {
-        await supabase.storage.from('images').remove([path]);
-      }
+      if (path) await supabase.storage.from('images').remove([path]);
     } catch (e) {
       console.error("Could not parse or delete image from storage:", e);
     }
   }
-  // Then, delete the post from the database via the secure endpoint
-  return fetchWithAuth(`/api/blog/post/${postId}`, {
-    method: 'DELETE',
-  });
+  return fetchWithAuth(`/api/blog/post/${postId}`, { method: 'DELETE' });
 };
 
 export const uploadBlogImage = async (file: File, userId: string): Promise<string | null> => {
@@ -96,7 +94,7 @@ export const getCommentsForPost = async (postId: string): Promise<CommentWithAut
     .select("*, profiles(*)")
     .eq("post_id", postId)
     .order("created_at", { ascending: true });
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return data as CommentWithAuthor[];
 };
 
@@ -111,9 +109,7 @@ export const addComment = async (comment: { postId: string; userId: string; cont
 };
 
 export const deleteComment = async (commentId: string) => {
-  return fetchWithAuth(`/api/blog/comment/${commentId}`, {
-    method: 'DELETE',
-  });
+  return fetchWithAuth(`/api/blog/comment/${commentId}`, { method: 'DELETE' });
 };
 
 // --- Vote Functions ---
@@ -123,7 +119,7 @@ export const getVoteCounts = async (postId: string): Promise<{ likes: number; di
     .from('post_votes')
     .select('vote_type')
     .eq('post_id', postId);
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   
   const likes = data.filter(v => v.vote_type === 1).length;
   const dislikes = data.filter(v => v.vote_type === -1).length;
@@ -144,21 +140,14 @@ export const getUserVote = async (postId: string, userId: string): Promise<'like
 export const castVote = async (postId: string, userId: string, voteType: 'like' | 'dislike' | null) => {
   return fetchWithAuth('/api/blog/vote', {
     method: 'POST',
-    body: JSON.stringify({
-      postId,
-      voteType: voteType === null ? 'null' : voteType,
-    }),
+    body: JSON.stringify({ postId, voteType: voteType === null ? 'null' : voteType }),
   });
 };
 
 // --- Profile Functions ---
 
 export const getProfileById = async (userId: string): Promise<Profile | null> => {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .single();
+  const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single();
   if (error) {
     console.error("Error fetching profile by ID:", error);
     return null;
@@ -167,48 +156,27 @@ export const getProfileById = async (userId: string): Promise<Profile | null> =>
 };
 
 export const updateProfile = async (updateData: Partial<Pick<Profile, 'name' | 'description' | 'avatar_url'>>) => {
-  // This function is now a wrapper around the secure server endpoint
-  return fetchWithAuth('/api/profile', {
-    method: 'PUT',
-    body: JSON.stringify(updateData),
-  });
+  return fetchWithAuth('/api/profile', { method: 'PUT', body: JSON.stringify(updateData) });
 };
 
 export const uploadAvatar = async (file: File, userId: string): Promise<string> => {
   const fileExt = file.name.split('.').pop();
   const filePath = `avatars/${userId}.${fileExt}`;
 
-  const { error } = await supabase.storage.from('images').upload(filePath, file, {
-    cacheControl: '3600',
-    upsert: true,
-  });
-
-  if (error) {
-    console.error('Supabase Storage Error:', error);
-    // Kullanıcıya daha açıklayıcı bir hata mesajı göster
-    throw new Error(`Avatar yüklenemedi: ${error.message}`);
-  }
+  const { error } = await supabase.storage.from('images').upload(filePath, file, { cacheControl: '3600', upsert: true });
+  if (error) throw new Error(`Avatar yüklenemedi: ${error.message}`);
 
   const { data } = supabase.storage.from('images').getPublicUrl(filePath);
-  
-  // Tarayıcı önbelleğini atlatmak için URL'ye bir zaman damgası ekle
   return `${data.publicUrl}?t=${new Date().getTime()}`;
 };
 
 export const deleteAvatar = async (avatarUrl: string): Promise<void> => {
   try {
     const url = new URL(avatarUrl);
-    // Zaman damgasını ve diğer parametreleri temizle
     const path = url.pathname.split('/images/')[1];
-    if (!path) {
-      console.error("Could not determine file path from URL.");
-      return;
-    }
+    if (!path) return;
     const { error } = await supabase.storage.from('images').remove([path]);
-    if (error) {
-      console.error('Error deleting avatar:', error);
-      throw new Error('Avatar could not be deleted.');
-    }
+    if (error) throw new Error('Avatar could not be deleted.');
   } catch (e) {
     console.error("Error processing avatar URL for deletion:", e);
   }

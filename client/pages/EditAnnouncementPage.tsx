@@ -81,7 +81,7 @@ export default function EditAnnouncementPage() {
 
     // Zod resolver'dan geçtiği için values'un tam ve zorunlu alanlara sahip olduğunu biliyoruz.
     // Bu nedenle, tipi zorunlu alanlara sahip bir nesne olarak atayabiliriz.
-    const updateData: { title: string; content: string } = values;
+    const updateData = values as { title: string; content: string };
 
     try {
       await updateAnnouncement(id, updateData);

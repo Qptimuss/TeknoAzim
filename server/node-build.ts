@@ -1,3 +1,4 @@
+import 'dotenv/config'; // .env dosyasını yüklemek için en üste ekle
 import path from "path";
 import { createServer } from "./index";
 import * as express from "express";

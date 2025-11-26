@@ -1,10 +1,9 @@
 import { RequestHandler } from "express";
 import { getSupabaseAdmin } from "../lib/supabase-admin";
 import { z } from "zod";
-import { Database } from "../lib/database.types"; // Import Database type
+import { Database } from "../lib/database.types";
 
 // --- Schemas for validation ---
-
 const newPostSchema = z.object({
   title: z.string().min(1),
   content: z.string().min(1),
@@ -27,22 +26,24 @@ const castVoteSchema = z.object({
   voteType: z.enum(['like', 'dislike', 'null']),
 });
 
-// Helper function to call the Edge Function for moderation
+// --- Helper function for moderation ---
 async function moderateContent(content: string): Promise<{ isModerated: boolean }> {
   const supabaseAdmin = getSupabaseAdmin();
-  
-  // Invoke the Edge Function
+
   const { data, error } = await supabaseAdmin.functions.invoke('moderate-comment', {
     body: { content },
   });
 
   if (error) {
-    console.error("Error invoking moderation function:", error);
-    // If the moderation service fails, we default to allowing the content (isModerated: true)
-    return { isModerated: true }; 
+    console.error("Moderasyon servisi çağrısında hata:", error);
+    throw new Error(`Moderasyon servisi hatası: ${error.message}`);
   }
 
-  // The Edge Function returns { isModerated: boolean, ... }
+  if (!data || data.error) {
+    console.error("Moderasyon fonksiyonu hata döndürdü:", data?.error);
+    throw new Error(`Moderasyon servisi iç hatası: ${data?.error || 'Bilinmeyen hata'}`);
+  }
+
   return data as { isModerated: boolean };
 }
 
@@ -51,49 +52,41 @@ async function moderateContent(content: string): Promise<{ isModerated: boolean 
 // POST /api/blog/post
 export const handleCreatePost: RequestHandler = async (req, res) => {
   const userId = req.userId;
-  if (!userId) return res.status(401).json({ error: "User ID missing." });
+  if (!userId) return res.status(401).json({ error: "User ID eksik." });
 
   try {
     const validatedData = newPostSchema.parse(req.body);
     const supabaseAdmin = getSupabaseAdmin();
 
-    // --- Moderation Step for Title and Content ---
+    // Moderasyon: başlık ve içerik
     const { isModerated: titleModerated } = await moderateContent(validatedData.title);
-    if (!titleModerated) {
-      return res.status(403).json({ error: "Blog başlığı uygunsuz içerik barındırdığı için reddedildi." });
-    }
-    
+    if (!titleModerated) return res.status(403).json({ error: "Blog başlığı uygunsuz içerik barındırıyor." });
+
     const { isModerated: contentModerated } = await moderateContent(validatedData.content);
-    if (!contentModerated) {
-      return res.status(403).json({ error: "Blog içeriği uygunsuz içerik barındırdığı için reddedildi." });
-    }
+    if (!contentModerated) return res.status(403).json({ error: "Blog içeriği uygunsuz içerik barındırıyor." });
 
     const insertPayload: Database['public']['Tables']['blog_posts']['Insert'] = {
-        title: validatedData.title,
-        content: validatedData.content,
-        image_url: validatedData.imageUrl,
-        user_id: userId, // Enforce user ID from JWT, not client input
+      title: validatedData.title,
+      content: validatedData.content,
+      image_url: validatedData.imageUrl,
+      user_id: userId,
     };
 
-    // Server-side insertion, ensuring user_id is set by the authenticated user
-    const { data, error } = await (supabaseAdmin
-      .from("blog_posts") as any) // Cast to any to bypass generic type issues
+    const { data, error } = await (supabaseAdmin.from('blog_posts') as any)
       .insert(insertPayload)
       .select()
       .single();
 
     if (error) {
-      console.error("Supabase insert error:", error);
-      return res.status(500).json({ error: "Failed to create blog post." });
+      console.error("Supabase insert hatası:", error);
+      return res.status(500).json({ error: "Blog gönderisi oluşturulamadı." });
     }
 
     res.status(201).json(data);
   } catch (e) {
-    if (e instanceof z.ZodError) {
-      return res.status(400).json({ error: "Invalid input data.", details: e.errors });
-    }
-    console.error("Error creating post:", e);
-    res.status(500).json({ error: "Internal server error." });
+    if (e instanceof z.ZodError) return res.status(400).json({ error: "Geçersiz veri.", details: e.errors });
+    console.error("Blog oluşturma hatası:", e);
+    res.status(500).json({ error: "Sunucu hatası." });
   }
 };
 
@@ -101,67 +94,54 @@ export const handleCreatePost: RequestHandler = async (req, res) => {
 export const handleUpdatePost: RequestHandler = async (req, res) => {
   const userId = req.userId;
   const postId = req.params.id;
-  if (!userId) return res.status(401).json({ error: "User ID missing." });
+  if (!userId) return res.status(401).json({ error: "User ID eksik." });
 
   try {
     const validatedData = updatePostSchema.parse(req.body);
     const supabaseAdmin = getSupabaseAdmin();
 
-    // --- Moderation Step for Title and Content ---
+    // Moderasyon
     const { isModerated: titleModerated } = await moderateContent(validatedData.title);
-    if (!titleModerated) {
-      return res.status(403).json({ error: "Blog başlığı uygunsuz içerik barındırdığı için reddedildi." });
-    }
-    
-    const { isModerated: contentModerated } = await moderateContent(validatedData.content);
-    if (!contentModerated) {
-      return res.status(403).json({ error: "Blog içeriği uygunsuz içerik barındırdığı için reddedildi." });
-    }
+    if (!titleModerated) return res.status(403).json({ error: "Blog başlığı uygunsuz içerik barındırıyor." });
 
-    // 1. Check ownership (using RLS bypass capability of supabaseAdmin)
+    const { isModerated: contentModerated } = await moderateContent(validatedData.content);
+    if (!contentModerated) return res.status(403).json({ error: "Blog içeriği uygunsuz içerik barındırıyor." });
+
+    // Sahiplik kontrolü
     const { data: existingPost, error: fetchError } = await supabaseAdmin
       .from("blog_posts")
       .select("user_id")
       .eq("id", postId)
       .single();
 
-    if (fetchError || !existingPost) {
-      return res.status(404).json({ error: "Blog post not found." });
-    }
+    type PostOwner = Pick<Database['public']['Tables']['blog_posts']['Row'], 'user_id'>;
+    const postOwner = existingPost as PostOwner | null;
 
-    // Explicitly type the fetched data for safe access (Error 5)
-    const postData = existingPost as Pick<Database['public']['Tables']['blog_posts']['Row'], 'user_id'>;
-
-    if (postData.user_id !== userId) {
-      return res.status(403).json({ error: "Forbidden: You do not own this post." });
-    }
+    if (fetchError || !postOwner) return res.status(404).json({ error: "Blog gönderisi bulunamadı." });
+    if (postOwner.user_id !== userId) return res.status(403).json({ error: "Bu gönderiyi düzenleme yetkiniz yok." });
 
     const updatePayload: Database['public']['Tables']['blog_posts']['Update'] = {
-        title: validatedData.title,
-        content: validatedData.content,
-        image_url: validatedData.imageUrl,
+      title: validatedData.title,
+      content: validatedData.content,
+      image_url: validatedData.imageUrl,
     };
 
-    // 2. Perform update
-    const { data, error } = await (supabaseAdmin
-      .from("blog_posts") as any) // Cast to any (Error 6)
+    const { data, error } = await (supabaseAdmin.from('blog_posts') as any)
       .update(updatePayload)
       .eq('id', postId)
       .select()
       .single();
 
     if (error) {
-      console.error("Supabase update error:", error);
-      return res.status(500).json({ error: "Failed to update blog post." });
+      console.error("Supabase update hatası:", error);
+      return res.status(500).json({ error: "Blog gönderisi güncellenemedi." });
     }
 
     res.status(200).json(data);
   } catch (e) {
-    if (e instanceof z.ZodError) {
-      return res.status(400).json({ error: "Invalid input data.", details: e.errors });
-    }
-    console.error("Error updating post:", e);
-    res.status(500).json({ error: "Internal server error." });
+    if (e instanceof z.ZodError) return res.status(400).json({ error: "Geçersiz veri.", details: e.errors });
+    console.error("Blog güncelleme hatası:", e);
+    res.status(500).json({ error: "Sunucu hatası." });
   }
 };
 
@@ -169,89 +149,73 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
 export const handleDeletePost: RequestHandler = async (req, res) => {
   const userId = req.userId;
   const postId = req.params.id;
-  if (!userId) return res.status(401).json({ error: "User ID missing." });
+  if (!userId) return res.status(401).json({ error: "User ID eksik." });
 
   try {
     const supabaseAdmin = getSupabaseAdmin();
-    // 1. Check ownership
+
     const { data: existingPost, error: fetchError } = await supabaseAdmin
       .from("blog_posts")
       .select("user_id")
       .eq("id", postId)
       .single();
 
-    if (fetchError || !existingPost) {
-      return res.status(404).json({ error: "Blog post not found." });
-    }
-    
-    // Explicitly type the fetched data for safe access (Error 7)
-    const postData = existingPost as Pick<Database['public']['Tables']['blog_posts']['Row'], 'user_id'>;
+    type PostOwner = Pick<Database['public']['Tables']['blog_posts']['Row'], 'user_id'>;
+    const postOwner = existingPost as PostOwner | null;
 
-    if (postData.user_id !== userId) {
-      return res.status(403).json({ error: "Forbidden: You do not own this post." });
-    }
+    if (fetchError || !postOwner) return res.status(404).json({ error: "Blog gönderisi bulunamadı." });
+    if (postOwner.user_id !== userId) return res.status(403).json({ error: "Bu gönderiyi silme yetkiniz yok." });
 
-    // 2. Perform deletion
     const { error } = await supabaseAdmin
       .from('blog_posts')
       .delete()
       .eq('id', postId);
 
     if (error) {
-      console.error("Supabase delete error:", error);
-      return res.status(500).json({ error: "Failed to delete blog post." });
+      console.error("Supabase delete hatası:", error);
+      return res.status(500).json({ error: "Blog gönderisi silinemedi." });
     }
 
     res.status(204).send();
   } catch (e) {
-    console.error("Error deleting post:", e);
-    res.status(500).json({ error: "Internal server error." });
+    console.error("Blog silme hatası:", e);
+    res.status(500).json({ error: "Sunucu hatası." });
   }
 };
 
 // POST /api/blog/comment
 export const handleAddComment: RequestHandler = async (req, res) => {
   const userId = req.userId;
-  if (!userId) return res.status(401).json({ error: "User ID missing." });
+  if (!userId) return res.status(401).json({ error: "User ID eksik." });
 
   try {
     const validatedData = newCommentSchema.parse(req.body);
     const supabaseAdmin = getSupabaseAdmin();
 
-    // --- Moderation Step ---
     const { isModerated } = await moderateContent(validatedData.content);
-    
-    if (!isModerated) {
-      // If the comment is toxic, reject it immediately.
-      return res.status(403).json({ error: "Yorumunuz, yapay zeka tarafından uygunsuz içerik barındırdığı için reddedildi." });
-    }
+    if (!isModerated) return res.status(403).json({ error: "Yorumunuz uygunsuz içerik barındırıyor." });
 
     const insertPayload: Database['public']['Tables']['comments']['Insert'] = {
-        content: validatedData.content,
-        post_id: validatedData.postId,
-        user_id: userId,
-        // is_moderated is not in the database schema, removing it from payload
+      content: validatedData.content,
+      post_id: validatedData.postId,
+      user_id: userId,
     };
 
-    // Server-side insertion, enforcing user_id from JWT
-    const { data, error } = await (supabaseAdmin
-      .from('comments') as any) // Cast to any (Error 8)
+    const { data, error } = await (supabaseAdmin.from('comments') as any)
       .insert(insertPayload)
       .select()
       .single();
 
     if (error) {
-      console.error("Supabase insert error:", error);
-      return res.status(500).json({ error: "Failed to add comment." });
+      console.error("Supabase comment insert hatası:", error);
+      return res.status(500).json({ error: "Yorum eklenemedi." });
     }
 
     res.status(201).json(data);
   } catch (e) {
-    if (e instanceof z.ZodError) {
-      return res.status(400).json({ error: "Invalid input data.", details: e.errors });
-    }
-    console.error("Error adding comment:", e);
-    res.status(500).json({ error: "Internal server error." });
+    if (e instanceof z.ZodError) return res.status(400).json({ error: "Geçersiz veri.", details: e.errors });
+    console.error("Yorum ekleme hatası:", e);
+    res.status(500).json({ error: "Sunucu hatası." });
   }
 };
 
@@ -259,50 +223,44 @@ export const handleAddComment: RequestHandler = async (req, res) => {
 export const handleDeleteComment: RequestHandler = async (req, res) => {
   const userId = req.userId;
   const commentId = req.params.id;
-  if (!userId) return res.status(401).json({ error: "User ID missing." });
+  if (!userId) return res.status(401).json({ error: "User ID eksik." });
 
   try {
     const supabaseAdmin = getSupabaseAdmin();
-    // 1. Check ownership
+
     const { data: existingComment, error: fetchError } = await supabaseAdmin
       .from("comments")
       .select("user_id")
       .eq("id", commentId)
       .single();
 
-    if (fetchError || !existingComment) {
-      return res.status(404).json({ error: "Comment not found." });
-    }
+    type CommentOwner = Pick<Database['public']['Tables']['comments']['Row'], 'user_id'>;
+    const commentOwner = existingComment as CommentOwner | null;
 
-    // Explicitly type the fetched data for safe access (Error 9)
-    const commentData = existingComment as Pick<Database['public']['Tables']['comments']['Row'], 'user_id'>;
+    if (fetchError || !commentOwner) return res.status(404).json({ error: "Yorum bulunamadı." });
+    if (commentOwner.user_id !== userId) return res.status(403).json({ error: "Bu yorumu silme yetkiniz yok." });
 
-    if (commentData.user_id !== userId) {
-      return res.status(403).json({ error: "Forbidden: You do not own this comment." });
-    }
-
-    // 2. Perform deletion
     const { error } = await supabaseAdmin
       .from('comments')
       .delete()
       .eq('id', commentId);
 
     if (error) {
-      console.error("Supabase delete error:", error);
-      return res.status(500).json({ error: "Failed to delete comment." });
+      console.error("Supabase comment delete hatası:", error);
+      return res.status(500).json({ error: "Yorum silinemedi." });
     }
 
     res.status(204).send();
   } catch (e) {
-    console.error("Error deleting comment:", e);
-    res.status(500).json({ error: "Internal server error." });
+    console.error("Yorum silme hatası:", e);
+    res.status(500).json({ error: "Sunucu hatası." });
   }
 };
 
 // POST /api/blog/vote
 export const handleCastVote: RequestHandler = async (req, res) => {
   const userId = req.userId;
-  if (!userId) return res.status(401).json({ error: "User ID missing." });
+  if (!userId) return res.status(401).json({ error: "User ID eksik." });
 
   try {
     const validatedData = castVoteSchema.parse(req.body);
@@ -310,7 +268,6 @@ export const handleCastVote: RequestHandler = async (req, res) => {
     const supabaseAdmin = getSupabaseAdmin();
 
     if (voteType === 'null') {
-      // Remove vote
       const { error } = await supabaseAdmin
         .from('post_votes')
         .delete()
@@ -318,25 +275,21 @@ export const handleCastVote: RequestHandler = async (req, res) => {
         .eq('user_id', userId);
       if (error) throw error;
     } else {
-      // Add or update vote
-      const votePayload: Database['public']['Tables']['post_votes']['Insert'] = {
-          post_id: postId,
-          user_id: userId,
-          vote_type: voteType === 'like' ? 1 : -1,
+      const upsertPayload: Database['public']['Tables']['post_votes']['Insert'] = {
+        post_id: postId,
+        user_id: userId,
+        vote_type: voteType === 'like' ? 1 : -1,
       };
 
-      const { error } = await (supabaseAdmin
-        .from('post_votes') as any) // Cast to any (Error 10)
-        .upsert(votePayload, { onConflict: 'user_id, post_id' });
+      const { error } = await (supabaseAdmin.from('post_votes') as any)
+        .upsert(upsertPayload, { onConflict: 'user_id, post_id' });
       if (error) throw error;
     }
 
     res.status(204).send();
   } catch (e) {
-    if (e instanceof z.ZodError) {
-      return res.status(400).json({ error: "Invalid input data.", details: e.errors });
-    }
-    console.error("Error casting vote:", e);
-    res.status(500).json({ error: "Internal server error." });
+    if (e instanceof z.ZodError) return res.status(400).json({ error: "Geçersiz veri.", details: e.errors });
+    console.error("Oy verme hatası:", e);
+    res.status(500).json({ error: "Sunucu hatası." });
   }
 };

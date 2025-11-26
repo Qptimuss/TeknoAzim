@@ -39,27 +39,32 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
   });
 
   if (!response.ok) {
-    let errorText = `HTTP error! status: ${response.status}`;
-    let errorData: any = {};
-
+    let errorMessage = `Sunucu Hatası: ${response.status}`; // Varsayılan hata mesajı
     try {
-      // Sunucudan gelen JSON hata mesajını ayrıştırmayı dene
-      errorData = await response.json();
-      errorText = errorData.error || errorData.message || errorText;
+      // Sunucudan gelen JSON formatındaki hata mesajını ayrıştırmayı dene
+      const errorData = await response.json();
+      // Gelen veride 'error' veya 'message' alanı varsa onu kullan
+      if (typeof errorData.error === 'string' && errorData.error) {
+        errorMessage = errorData.error;
+      } else if (typeof errorData.message === 'string' && errorData.message) {
+        errorMessage = errorData.message;
+      }
     } catch (e) {
-      // JSON ayrıştırma başarısız olursa, yanıt metnini dene
+      // JSON ayrıştırma başarısız olursa, yanıt metnini ham olarak almayı dene
       try {
-        errorText = await response.text() || errorText;
-      } catch (e) {
-        // Metin de alınamazsa, varsayılan hata mesajını kullan
+        const textError = await response.text();
+        if (textError) {
+          errorMessage = textError;
+        }
+      } catch (textErr) {
+        // Eğer yanıtı okumak tamamen başarısız olursa, varsayılan mesaj kullanılır.
       }
     }
-    
-    // Hata mesajını bir Error nesnesine sararak fırlat
-    throw new Error(errorText);
+    // Her zaman standart bir Error nesnesi fırlat. Bu, '[object Object]' hatasını önler.
+    throw new Error(errorMessage);
   }
 
-  // Handle 204 No Content case for DELETE, etc.
+  // DELETE gibi işlemler için 204 No Content durumunu ele al
   if (response.status === 204) {
     return null;
   }
