@@ -31,14 +31,6 @@ export function createServer(env?: Record<string, string>) {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // Netlify'da yolun başına /api ekleyerek yönlendirme sorununu çözen ara yazılım
-  app.use((req, res, next) => {
-    if (process.env.NETLIFY && !req.path.startsWith('/api')) {
-      req.url = `/api${req.url}`;
-    }
-    next();
-  });
-
   // Example API routes
   app.get("/api/ping", (_req, res) => {
     const ping = process.env.PING_MESSAGE ?? "ping";
