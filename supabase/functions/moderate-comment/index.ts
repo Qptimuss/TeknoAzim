@@ -10,7 +10,7 @@ const corsHeaders = {
 const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
 
 // --- MODERATION CONFIGURATION ---
-const HF_MODEL = 'unitary/toxic-bert';
+const HF_MODEL = 'bert-base-multilingual-cased-finetuned-toxic';
 const TOXICITY_THRESHOLD = 0.7; 
 
 // Helper to create a regex pattern that allows for character repetitions
@@ -92,7 +92,7 @@ serve(async (req) => {
     // 3. Hugging Face toksisite denetimi (eğer yasaklı kelime bulunmazsa)
     if (!hf) {
       // API anahtarı yoksa, hata döndür
-      return new Response(JSON.stringify({ error: "Moderation API key is missing or invalid." }), {
+      return new Response(JSON.stringify({ error: "Moderation API key is missing or invalid. Please set HUGGING_FACE_API_KEY secret." }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
       });
@@ -125,8 +125,13 @@ serve(async (req) => {
 
     } catch (hfError) {
       console.log("Error calling Hugging Face API:", hfError);
-      // Hugging Face API çağrısı başarısız olursa (genellikle anahtar hatası), 500 döndür.
-      return new Response(JSON.stringify({ error: "External Moderation API call failed (Check HF Key)." }), {
+      let errorMessage = "External Moderation API call failed.";
+      if (hfError.message.includes("401")) {
+        errorMessage = "Hugging Face API key is invalid or missing. Please check the 'HUGGING_FACE_API_KEY' secret in your Supabase project settings.";
+      } else {
+        errorMessage = `Hugging Face API error: ${hfError.message}`;
+      }
+      return new Response(JSON.stringify({ error: errorMessage }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
       });
