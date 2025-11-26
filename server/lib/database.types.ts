@@ -125,6 +125,29 @@ export interface Database {
           created_at?: string;
         };
       };
+      announcements: { // Yeni tablo
+        Row: {
+          id: string;
+          title: string;
+          content: string;
+          created_at: string;
+          user_id: string; // Admin ID
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          content: string;
+          created_at?: string;
+          user_id: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          content?: string;
+          created_at?: string;
+          user_id?: string;
+        };
+      };
     };
     Views: {};
     Functions: {};

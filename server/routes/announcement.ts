@@ -1,24 +1,68 @@
 import { RequestHandler } from "express";
+import { getSupabaseAdmin } from "../lib/supabase-admin";
+import { z } from "zod";
+import { Database } from "../lib/database.types";
 
-// POST /api/announcement
+const announcementSchema = z.object({
+  title: z.string().min(5),
+  content: z.string().min(20),
+});
+
+// POST /api/announcement (Admin only)
 export const handleCreateAnnouncement: RequestHandler = async (req, res) => {
-  // Since requireAdmin runs before this, we know the user is an admin.
   const userId = req.userId;
-  const { title, content } = req.body;
+  if (!userId) return res.status(401).json({ error: "User ID missing." });
 
-  // In a real scenario, you would insert this into a 'announcements' table.
-  console.log(`Admin ${userId} created announcement: ${title}`);
+  try {
+    const validatedData = announcementSchema.parse(req.body);
+    const supabaseAdmin = getSupabaseAdmin();
 
-  if (!title || !content) {
-    return res.status(400).json({ error: "Title and content are required." });
+    const insertPayload: Database['public']['Tables']['announcements']['Insert'] = {
+        title: validatedData.title,
+        content: validatedData.content,
+        user_id: userId,
+    };
+
+    const { data, error } = await (supabaseAdmin
+      .from("announcements") as any)
+      .insert(insertPayload)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Supabase insert announcement error:", error);
+      return res.status(500).json({ error: "Failed to create announcement." });
+    }
+
+    res.status(201).json(data);
+  } catch (e) {
+    if (e instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid input data.", details: e.errors });
+    }
+    console.error("Error creating announcement:", e);
+    res.status(500).json({ error: "Internal server error." });
   }
+};
 
-  // Mock success response - Ensure a valid JSON object is returned
-  res.status(201).json({ 
-    message: "Announcement created successfully (MOCK).",
-    title,
-    content,
-    adminId: userId,
-    id: "mock-announcement-id-" + Date.now(), // Add a mock ID
-  });
+// GET /api/announcement (Public access)
+export const handleGetAnnouncements: RequestHandler = async (_req, res) => {
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // Fetch all announcements, ordered by creation date
+    const { data, error } = await supabaseAdmin
+      .from("announcements")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Supabase fetch announcements error:", error);
+      return res.status(500).json({ error: "Failed to fetch announcements." });
+    }
+
+    res.status(200).json(data);
+  } catch (e) {
+    console.error("Error fetching announcements:", e);
+    res.status(500).json({ error: "Internal server error." });
+  }
 };

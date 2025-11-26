@@ -20,7 +20,7 @@ import {
   handleOpenCrate
 } from "./routes/gamification";
 import { handleGrantAll } from "./routes/admin";
-import { handleCreateAnnouncement } from "./routes/announcement"; // Import the announcement handler
+import { handleCreateAnnouncement, handleGetAnnouncements } from "./routes/announcement"; // Import the new handler
 
 export function createServer() {
   const app = express();
@@ -63,8 +63,9 @@ export function createServer() {
   // Admin Routes (Requires Auth and Admin privileges)
   app.post("/api/admin/grant-all", requireAuth, requireAdmin, handleGrantAll);
   
-  // Announcement Routes (Requires Auth and Admin privileges)
+  // Announcement Routes
   app.post("/api/announcement", requireAuth, requireAdmin, handleCreateAnnouncement);
+  app.get("/api/announcement", handleGetAnnouncements); // Public read access
 
   return app;
 }
