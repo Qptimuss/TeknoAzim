@@ -37,7 +37,7 @@ export const getPostsByUserId = async (userId: string): Promise<BlogPostWithAuth
     .select("*, profiles(*)")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return data as BlogPostWithAuthor[];
 };
 
@@ -101,7 +101,7 @@ export const getCommentsForPost = async (postId: string): Promise<CommentWithAut
     .select("*, profiles(*)")
     .eq("post_id", postId)
     .order("created_at", { ascending: true });
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return data as CommentWithAuthor[];
 };
 
@@ -128,7 +128,7 @@ export const getVoteCounts = async (postId: string): Promise<{ likes: number; di
     .from('post_votes')
     .select('vote_type')
     .eq('post_id', postId);
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   
   const likes = data.filter(v => v.vote_type === 1).length;
   const dislikes = data.filter(v => v.vote_type === -1).length;
