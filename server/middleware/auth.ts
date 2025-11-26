@@ -45,6 +45,8 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
       return res.status(500).json({ error: "Server configuration error: Supabase Service Role Key is missing." });
     }
 
-    res.status(500).json({ error: "Internal server error during authentication." });
+    // Return the error message if it's a standard Error, otherwise the generic message.
+    const errorMessage = e instanceof Error ? e.message : "Internal server error during authentication.";
+    res.status(500).json({ error: errorMessage });
   }
 };
