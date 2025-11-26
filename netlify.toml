@@ -1,29 +1,19 @@
-# This file configures the build and deployment settings for Netlify.
-# It specifies the build command, the directory to publish, and the location of serverless functions.
-
 [build]
-  # Command to build the entire application (client and server).
-  command = "pnpm build"
-  
-  # The directory containing the built static frontend files (the SPA).
-  publish = "dist/spa"
-  
-  # The directory where Netlify will find the serverless functions to deploy.
+  command = "npm run build:client"
   functions = "netlify/functions"
+  publish = "dist/spa"
 
-# This section configures how Netlify handles serverless functions.
+
 [functions]
-  # Specifies the bundler to use. 'esbuild' is fast and efficient.
+  external_node_modules = ["express"]
   node_bundler = "esbuild"
   
-  # This is the crucial part: It tells the bundler NOT to bundle these modules,
-  # but instead to make them available in the function's node_modules directory.
-  # This solves the "Cannot find module" error for packages like 'express'.
-  external_node_modules = ["express", "cors", "serverless-http"]
+[[redirects]]
+  force = true
+  from = "/api/*"
+  status = 200
+  to = "/.netlify/functions/api/:splat"
 
-# This redirect rule is essential for Single Page Applications (SPAs) like React.
-# It ensures that any path not explicitly matched (like /bloglar/123) is
-# redirected to the main index.html file, allowing React Router to handle the routing.
 [[redirects]]
   from = "/*"
   to = "/index.html"
