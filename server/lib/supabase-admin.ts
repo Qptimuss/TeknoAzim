@@ -3,7 +3,7 @@ import "dotenv/config";
 import { Database } from "./database.types";
 
 // Supabase URL'sini doğrudan ortam değişkeninden okumayı tercih ediyoruz.
-const SUPABASE_URL = process.env.SUPABASE_URL || "https://yswvdavntaevzbxluvkh.supabase.co";
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://vbnkhhrlgszewrswyksz.supabase.co";
 
 // This client bypasses Row Level Security (RLS) and should only be used on the server.
 // We are making it a singleton getter to avoid crashing the dev server on startup
