@@ -106,13 +106,49 @@ export const getCommentsForPost = async (postId: string): Promise<CommentWithAut
 };
 
 export const addComment = async (comment: { postId: string; content: string }) => {
-  return fetchWithAuth('/api/blog/comment', {
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  
+  if (sessionError) {
+    throw new Error(`Supabase session hatası: ${sessionError.message}`);
+  }
+
+  if (!session) {
+    throw new Error("Kullanıcı kimliği doğrulanmadı. Lütfen tekrar giriş yapın.");
+  }
+
+  const response = await fetch('/api/blog/comment', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
     body: JSON.stringify({
       postId: comment.postId,
       content: comment.content,
     }),
   });
+
+  if (!response.ok) {
+    let errorMessage = `Sunucu Hatası: ${response.status}`;
+    try {
+      const errorData = await response.json();
+      if (errorData && typeof errorData.error === 'string') {
+        errorMessage = errorData.error;
+      } else if (errorData && errorData.details && Array.isArray(errorData.details)) {
+        // Handle Zod error details
+        errorMessage = `Invalid input data. Details: ${errorData.details.map((d: any) => `${d.path.join('.')} - ${d.message}`).join(', ')}`;
+      }
+    } catch (e) {
+      // Ignore if parsing fails
+    }
+    throw new Error(errorMessage);
+  }
+
+  if (response.status === 204) {
+    return null;
+  }
+
+  return response.json();
 };
 
 export const deleteComment = async (commentId: string) => {
