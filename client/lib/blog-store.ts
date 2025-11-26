@@ -9,7 +9,12 @@ export const getBlogPosts = async (): Promise<BlogPostWithAuthor[]> => {
     .from("blog_posts")
     .select("*, profiles(*)")
     .order("created_at", { ascending: false });
-  if (error) throw error;
+  
+  if (error) {
+    console.error("Error fetching blog posts:", error);
+    // Hata durumunda boş bir dizi döndürerek uygulamanın çökmesini engelliyoruz.
+    return []; 
+  }
   return data as BlogPostWithAuthor[];
 };
 
