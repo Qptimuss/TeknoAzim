@@ -18,9 +18,12 @@ import {
   handleOpenCrate
 } from "./routes/gamification";
 
-// dotenv kaldırıldı. Vite, .env dosyasını otomatik olarak yükler.
+export function createServer(env?: Record<string, string>) {
+  // Geliştirme sırasında Vite'den gelen ortam değişkenlerini process.env'e ata
+  if (env) {
+    Object.assign(process.env, env);
+  }
 
-export function createServer() {
   const app = express();
 
   // Middleware
