@@ -12,10 +12,9 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:client && npm run build:server && npm run build:netlify",
+    "build": "npm run build:client && npm run build:server",
     "build:client": "vite build",
     "build:server": "vite build --config vite.config.server.ts",
-    "build:netlify": "vite build --config vite.config.netlify.ts",
     "start": "node dist/server/node-build.mjs",
     "test": "vitest --run",
     "format.fix": "prettier --write .",
@@ -27,8 +26,7 @@
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "react-easy-crop": "^5.5.3",
-    "zod": "^3.25.76",
-    "serverless-http": "^3.2.0"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@dyad-sh/react-vite-component-tagger": "^0.8.0",
