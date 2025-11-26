@@ -30,8 +30,10 @@ export const handleCreateAnnouncement: RequestHandler = async (req, res) => {
       .single();
 
     if (error) {
+      // Hata detayını konsola yazdır
       console.error("Supabase insert announcement error:", error);
-      return res.status(500).json({ error: "Failed to create announcement." });
+      // İstemciye daha açıklayıcı bir hata mesajı gönder
+      return res.status(500).json({ error: "Failed to create announcement.", details: error.message });
     }
 
     res.status(201).json(data);
