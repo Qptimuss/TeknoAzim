@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, CheckCircle, Pencil, Check, X, Lock, Trash2, Loader2 } from "lucide-react";
+import { User as UserIcon, CheckCircle, Pencil, Check, X, Lock, Trash2, Loader2, Crown } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { calculateLevel, ALL_BADGES, TITLES, removeExp, EXP_ACTIONS } from "@/lib/gamification";
@@ -36,6 +36,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { FRAMES } from "@/lib/store-items";
 import NovaFrame from "@/components/frames/NovaFrame";
 import ImageViewerDialog from "@/components/ImageViewerDialog";
+import { isAdmin } from "@/lib/auth-utils";
+import { getAuthHeaders } from "@/lib/api-utils";
 
 export default function ProfilePage() {
   const { user, saveProfileDetails, updateUser, loading, logout } = useAuth();
@@ -66,6 +68,10 @@ export default function ProfilePage() {
   // Avatar Deletion States
   const [showDeleteAvatarDialog, setShowDeleteAvatarDialog] = useState(false);
   const [isDeletingAvatar, setIsDeletingAvatar] = useState(false);
+
+  // Admin State
+  const isUserAdmin = isAdmin(user);
+  const [isGranting, setIsGranting] = useState(false);
 
 
   useEffect(() => {
@@ -310,6 +316,41 @@ export default function ProfilePage() {
     }
   };
 
+  // --- Admin Functionality ---
+  const handleGrantAllItems = async () => {
+    if (!user || !user.email) return;
+    setIsGranting(true);
+
+    try {
+      const headers = await getAuthHeaders();
+      
+      const response = await fetch('/api/admin/grant-all', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ targetEmail: user.email }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Tüm öğeler verilirken bir hata oluştu.");
+      }
+
+      const { profile: updatedProfile } = await response.json();
+      updateUser(updatedProfile);
+      toast.success("Tebrikler!", { description: "Tüm ünvanlar ve çerçeveler hesabınıza eklendi!" });
+
+    } catch (error) {
+      toast.error("Yönetici İşlemi Başarısız", {
+        description: error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.",
+      });
+      console.error(error);
+    } finally {
+      setIsGranting(false);
+    }
+  };
+  // --- End Admin Functionality ---
+
+
   if (loading) {
     return <div className="text-foreground text-center p-12">Yükleniyor...</div>;
   }
@@ -342,6 +383,22 @@ export default function ProfilePage() {
           Profilim
         </h1>
         
+        {isUserAdmin && (
+          <div className="mb-8 p-4 bg-red-900/20 border border-red-700/50 rounded-lg flex items-center justify-between">
+            <p className="text-red-400 font-semibold flex items-center gap-2">
+              <Crown className="h-5 w-5" /> Yönetici Paneli
+            </p>
+            <Button 
+              onClick={handleGrantAllItems} 
+              disabled={isGranting}
+              variant="destructive"
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isGranting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : "Tüm Öğeleri Ekle"}
+            </Button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
             <div className="bg-card border border-border rounded-lg p-8">

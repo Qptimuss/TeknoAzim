@@ -35,3 +35,5 @@ export const FRAMES = [
   // Özel
   { name: 'Nova', rarity: RARITIES.ÖZEL.name, className: '' },
 ];
+
+export const ALL_FRAME_NAMES = FRAMES.map(f => f.name);

@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { requireAuth } from "./middleware/auth";
+import { requireAdmin } from "./middleware/admin";
 import { handleDeleteUser, handleUpdateProfile } from "./routes/user";
 import { 
   handleCreatePost, 
@@ -18,6 +19,7 @@ import {
   handleClaimDailyReward,
   handleOpenCrate
 } from "./routes/gamification";
+import { handleGrantAll } from "./routes/admin"; // Import the new admin handler
 
 export function createServer() {
   const app = express();
@@ -56,6 +58,9 @@ export function createServer() {
   app.post("/api/gamification/badge", requireAuth, handleAwardBadge);
   app.post("/api/gamification/daily-reward", requireAuth, handleClaimDailyReward);
   app.post("/api/gamification/open-crate", requireAuth, handleOpenCrate);
+
+  // Admin Routes (Requires Auth and Admin privileges)
+  app.post("/api/admin/grant-all", requireAuth, requireAdmin, handleGrantAll);
 
   return app;
 }

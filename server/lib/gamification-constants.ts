@@ -9,3 +9,16 @@ export const SERVER_EXP_ACTIONS = {
 };
 
 export const BADGE_REWARD_GEMS = 30;
+
+export const ALL_TITLE_NAMES = [
+  "Yeni Blogger",
+  "Gelişen Yazar",
+  "Topluluk Üyesi",
+  "Fikir Lideri",
+  "İçerik Ustası",
+  "Bilge Paylaşımcı",
+  "Tartışma Başlatan",
+  "Topluluk Mentoru",
+  "Usta Kalem",
+  "TeknoAzim Elçisi",
+];
