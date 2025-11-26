@@ -3,7 +3,7 @@ import { isAdmin } from "./auth-utils";
 import { User } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
-const TARGET_EMAIL = "zeynepecemsezer5566@hotmail.com";
+const TARGET_EMAIL = "mehmetakif.msrli55@gmail.com";
 const STORAGE_KEY = "admin_grant_executed";
 
 /**
