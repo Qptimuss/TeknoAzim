@@ -61,8 +61,9 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
       return;
     }
     
-    if (!postId) {
-      toast.error("Yorum yapılacak gönderi ID'si eksik.");
+    // postId'nin burada kesinlikle string olduğundan emin oluyoruz.
+    if (!postId || typeof postId !== 'string') {
+      toast.error("Yorum yapılacak gönderi ID'si eksik veya geçersiz.");
       return;
     }
 
@@ -78,7 +79,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
 
       const isFirstComment = count === 0;
 
-      // Use the updated addComment which no longer requires userId
+      // postId ve content'i doğrudan gönderiyoruz.
       await addComment({ postId, content: values.content });
       
       let finalProfileState = null;
