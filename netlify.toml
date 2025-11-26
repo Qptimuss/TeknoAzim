@@ -1,8 +1,18 @@
+# netlify.toml
 [build]
-  command = "npm run build"
+  command = "pnpm build"
   publish = "dist/spa"
+  functions = "netlify/functions"
 
-[functions]
-  directory = "dist/serverless/netlify/functions"
-  node_bundler = "esbuild"
-  external_node_modules = [] # Force bundling all dependencies
+# API isteklerini sunucusuz fonksiyona yönlendirir
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+# Tek Sayfa Uygulaması (SPA) yönlendirmesi
+# Bu kural en sonda olmalıdır
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

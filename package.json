@@ -12,7 +12,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:client && npm run build:server && npm run build:netlify",
+    "build": "vite build",
     "build:client": "vite build",
     "build:server": "vite build --config vite.config.server.ts",
     "build:netlify": "vite build --config vite.config.netlify.ts",
