@@ -56,6 +56,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
     }
     
     // Hata mesajını bir Error nesnesine sararak fırlat
+    // BURADA DÜZELTME YAPILDI: Her zaman yeni bir Error nesnesi fırlatılıyor.
     throw new Error(errorText);
   }
 
