@@ -22,3 +22,14 @@ export const ALL_TITLE_NAMES = [
   "Usta Kalem",
   "TeknoAzim Elçisi",
 ];
+
+export const ALL_BADGE_NAMES = [
+  "İlk Blog",
+  "Hevesli Katılımcı",
+  "Topluluk İnşacısı",
+  "İlk Yorumcu",
+  "Hızlı Parmaklar",
+  "Beğeni Başlangıcı",
+  "Beğeni Mıknatısı",
+  "Popüler Yazar",
+];

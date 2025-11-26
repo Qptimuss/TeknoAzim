@@ -1,8 +1,17 @@
 import { RequestHandler } from "express";
 import { getSupabaseAdmin } from "../lib/supabase-admin";
 import { ALL_FRAME_NAMES } from "../lib/store-items";
-import { ALL_TITLE_NAMES } from "../lib/gamification-constants";
+import { ALL_TITLE_NAMES, ALL_BADGE_NAMES } from "../lib/gamification-constants";
 import { z } from "zod";
+
+// Helper function to calculate EXP for a target level (Level 10)
+const calculateExpForLevel = (targetLevel: number): number => {
+  let cumulativeExp = 0;
+  for (let level = 1; level < targetLevel; level++) {
+    cumulativeExp += level * 25; // Assuming getExpForNextLevel(level) = level * 25
+  }
+  return cumulativeExp;
+};
 
 const grantAllSchema = z.object({
   targetEmail: z.string().email(),
@@ -30,11 +39,18 @@ export const handleGrantAll: RequestHandler = async (req, res) => {
 
     const targetUserId = userData.users[0].id;
 
+    // Calculate EXP needed for Level 10 (the highest title level)
+    const MAX_LEVEL = 10;
+    const EXP_FOR_MAX_LEVEL = calculateExpForLevel(MAX_LEVEL);
+
     // 2. Update the target user's profile with all items
     const updatePayload = {
       owned_frames: ALL_FRAME_NAMES,
       selected_frame: ALL_FRAME_NAMES[ALL_FRAME_NAMES.length - 1], // Set the last one (Nova) as selected
-      selected_title: ALL_TITLE_NAMES[ALL_TITLE_NAMES.length - 1], // Set the last one as selected
+      badges: ALL_BADGE_NAMES, // Grant all badges
+      selected_title: ALL_TITLE_NAMES[ALL_TITLE_NAMES.length - 1], // Set the last title
+      exp: EXP_FOR_MAX_LEVEL, // Set max EXP
+      level: MAX_LEVEL, // Set max level
     };
 
     const { data: updatedProfile, error: updateError } = await (supabaseAdmin
