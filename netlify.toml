@@ -1,26 +1,21 @@
-# This file configures the build and deployment settings for Netlify.
+# netlify.toml
 
 [build]
-  # The build command now includes the new `build:netlify` step.
-  command = "pnpm build"
+  # Command to build the site
+  command = "npm run build"
   
-  # The directory containing the built static frontend files (the SPA).
+  # Directory with static files to publish
   publish = "dist/spa"
   
-  # The directory where Netlify will find the serverless function.
+  # Directory with serverless functions
   functions = "dist/serverless"
 
-# Bu kısım, Netlify'a 'api' adlı fonksiyonun tam olarak hangi dosyadan geldiğini söyler.
-# Vite çıktısı 'api.mjs' olduğu için bu kuralı ekliyoruz.
-[[functions]]
-  function = "api"
-  # Netlify'ın bu fonksiyonu 'api.mjs' olarak bulmasını sağlıyoruz.
-  # Bu, /api/* rotasına eşleşecektir.
-  included_files = ["api.mjs"] 
+# Redirects for API and client-side routing
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
 
-# This redirect rule is essential for Single Page Applications (SPAs).
-# It ensures that any path not explicitly matched (like /bloglar/123) is
-# redirected to the main index.html file, allowing React Router to handle routing.
 [[redirects]]
   from = "/*"
   to = "/index.html"
