@@ -41,8 +41,9 @@ export const executeAdminGrant = async (user: User | null, updateUser: (data: Pa
     }
   } catch (error) {
     console.error("Admin Grant Failed:", error);
-    // Hata durumunda bile, tekrar denemeyi önlemek için localStorage'ı ayarlayabiliriz, 
-    // ancak bu, kullanıcının manuel olarak tekrar denemesini engeller. 
-    // Şimdilik hata durumunda tekrar denemeye izin veriyoruz.
+    // Hata durumunda, kullanıcıya daha spesifik bir mesaj gösterelim.
+    toast.error("Yönetici İşlemi Başarısız", {
+        description: error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu. Lütfen konsolu kontrol edin.",
+    });
   }
 };
