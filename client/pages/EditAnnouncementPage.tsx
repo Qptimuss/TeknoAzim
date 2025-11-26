@@ -79,7 +79,8 @@ export default function EditAnnouncementPage() {
   async function onSubmit(values: AnnouncementFormValues) {
     if (!user || !isUserAdmin || !id) return;
 
-    // TypeScript'e values'un tam tip olduğunu bildiriyoruz
+    // Zod resolver'dan geçtiği için values'un tam ve zorunlu alanlara sahip olduğunu biliyoruz.
+    // Bu nedenle, tipi zorunlu alanlara sahip bir nesne olarak atayabiliriz.
     const updateData: { title: string; content: string } = values;
 
     try {
