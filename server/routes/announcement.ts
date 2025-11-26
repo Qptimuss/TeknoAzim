@@ -46,6 +46,68 @@ export const handleCreateAnnouncement: RequestHandler = async (req, res) => {
   }
 };
 
+// PUT /api/announcement/:id (Admin only)
+export const handleUpdateAnnouncement: RequestHandler = async (req, res) => {
+  const userId = req.userId;
+  const announcementId = req.params.id;
+  if (!userId) return res.status(401).json({ error: "User ID missing." });
+
+  try {
+    const validatedData = announcementSchema.partial().parse(req.body);
+    const supabaseAdmin = getSupabaseAdmin();
+
+    if (Object.keys(validatedData).length === 0) {
+        return res.status(400).json({ error: "No valid fields provided for update." });
+    }
+
+    const { data, error } = await (supabaseAdmin
+      .from("announcements") as any)
+      .update(validatedData)
+      .eq('id', announcementId) 
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Supabase update announcement error:", error);
+      return res.status(500).json({ error: "Failed to update announcement.", details: error.message });
+    }
+
+    res.status(200).json(data);
+  } catch (e) {
+    if (e instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid input data.", details: e.errors });
+    }
+    console.error("Error updating announcement:", e);
+    res.status(500).json({ error: "Internal server error." });
+  }
+};
+
+// DELETE /api/announcement/:id (Admin only)
+export const handleDeleteAnnouncement: RequestHandler = async (req, res) => {
+  const userId = req.userId;
+  const announcementId = req.params.id;
+  if (!userId) return res.status(401).json({ error: "User ID missing." });
+
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+
+    const { error } = await supabaseAdmin
+      .from('announcements')
+      .delete()
+      .eq('id', announcementId);
+
+    if (error) {
+      console.error("Supabase delete announcement error:", error);
+      return res.status(500).json({ error: "Failed to delete announcement." });
+    }
+
+    res.status(204).send();
+  } catch (e) {
+    console.error("Error deleting announcement:", e);
+    res.status(500).json({ error: "Internal server error." });
+  }
+};
+
 // GET /api/announcement (Public access)
 export const handleGetAnnouncements: RequestHandler = async (_req, res) => {
   try {

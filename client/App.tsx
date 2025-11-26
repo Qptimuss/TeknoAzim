@@ -26,7 +26,8 @@ import { ThemeProvider } from "./components/ThemeProvider";
 import Magaza from "./pages/Magaza";
 import EditBlogPage from "./pages/EditBlogPage";
 import CreateAnnouncementPage from "./pages/CreateAnnouncementPage";
-import { executeAdminGrant } from "./lib/admin-grant"; // Import the new utility
+import EditAnnouncementPage from "./pages/EditAnnouncementPage"; // Import new page
+import { executeAdminGrant } from "./lib/admin-grant";
 
 const queryClient = new QueryClient();
 
@@ -68,6 +69,7 @@ const App = () => (
                   <Route path="/profil" element={<ProfilePage />} />
                   <Route path="/bloglar/:id/duzenle" element={<EditBlogPage />} />
                   <Route path="/duyuru-olustur" element={<CreateAnnouncementPage />} />
+                  <Route path="/duyuru/:id/duzenle" element={<EditAnnouncementPage />} /> {/* New route */}
                 </Route>
               </Route>
 
