@@ -1,44 +1,35 @@
 import { defineConfig } from "vite";
 import path from "path";
 
-// Netlify serverless function build configuration
+// This configuration is specifically for bundling the Netlify serverless function.
 export default defineConfig({
   build: {
     lib: {
-      entry: path.resolve(__dirname, "netlify/functions/api.ts"),
+      entry: path.resolve(__dirname, "server/netlify-build.ts"),
       name: "api",
       fileName: "api",
       formats: ["es"],
     },
-    outDir: "dist/serverless/netlify/functions",
+    outDir: "dist/serverless",
     target: "node22",
     ssr: true,
     rollupOptions: {
+      // Ensure Node.js built-ins and essential server packages are not bundled.
+      // They will be available in the Netlify runtime environment.
       external: [
-        // Node.js built-ins
-        "fs",
-        "path",
-        "url",
-        "http",
-        "https",
-        "os",
-        "crypto",
-        "stream",
-        "util",
-        "events",
-        "buffer",
-        "querystring",
-        "child_process",
-        // External dependencies that should be bundled by Vite/Rollup
-        // We explicitly exclude 'express' and 'serverless-http' from external to force bundling them.
-        // This is the key change to fix the 'Cannot find module 'express'' error.
+        "express",
+        "cors",
+        "serverless-http",
+        "zod",
+        "@supabase/supabase-js",
+        "dotenv",
       ],
       output: {
         format: "es",
-        entryFileNames: "[name].js", // Netlify requires .js extension for ES modules
+        entryFileNames: "[name].mjs", // Çıktı uzantısının .mjs olduğunu teyit ediyoruz
       },
     },
-    minify: false, // Keep readable for debugging
+    minify: false,
     sourcemap: true,
   },
   resolve: {
