@@ -61,6 +61,11 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
       return;
     }
     
+    if (!postId) {
+      toast.error("Yorum yapılacak gönderi ID'si eksik.");
+      return;
+    }
+
     try {
       const { count, error: countError } = await supabase
         .from('comments')
@@ -73,8 +78,8 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
 
       const isFirstComment = count === 0;
 
-      // Use the updated addComment which calls the server API for moderation
-      await addComment({ postId, userId: user.id, content: values.content });
+      // Use the updated addComment which no longer requires userId
+      await addComment({ postId, content: values.content });
       
       let finalProfileState = null;
 

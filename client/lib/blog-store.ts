@@ -105,7 +105,7 @@ export const getCommentsForPost = async (postId: string): Promise<CommentWithAut
   return data as CommentWithAuthor[];
 };
 
-export const addComment = async (comment: { postId: string; userId: string; content: string }) => {
+export const addComment = async (comment: { postId: string; content: string }) => {
   return fetchWithAuth('/api/blog/comment', {
     method: 'POST',
     body: JSON.stringify({
