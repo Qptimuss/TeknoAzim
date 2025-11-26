@@ -79,8 +79,11 @@ export default function EditAnnouncementPage() {
   async function onSubmit(values: AnnouncementFormValues) {
     if (!user || !isUserAdmin || !id) return;
 
+    // TypeScript'e values'un tam tip olduğunu bildiriyoruz
+    const updateData: { title: string; content: string } = values;
+
     try {
-      await updateAnnouncement(id, values);
+      await updateAnnouncement(id, updateData);
 
       toast.success("Duyuru başarıyla güncellendi!");
       navigate("/duyurular");
