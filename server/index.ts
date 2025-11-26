@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import * as dotenv from 'dotenv';
 import { handleDemo } from "./routes/demo";
 import { requireAuth } from "./middleware/auth";
 import { handleDeleteUser, handleUpdateProfile } from "./routes/user";
@@ -17,6 +18,8 @@ import {
   handleClaimDailyReward,
   handleOpenCrate
 } from "./routes/gamification";
+
+dotenv.config();
 
 export function createServer() {
   const app = express();

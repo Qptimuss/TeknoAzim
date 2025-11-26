@@ -1,5 +1,4 @@
 import { createClient } from "@supabase/supabase-js";
-import "dotenv/config";
 import { Database } from "./database.types";
 
 // Supabase URL'sini doğrudan ortam değişkeninden okumayı tercih ediyoruz.
