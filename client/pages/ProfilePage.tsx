@@ -52,8 +52,8 @@ export default function ProfilePage() {
   // Inline editing states
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
-  const [isSavingName, setIsSavingName] = useState(false); // NEW
-  const [isSavingDescription, setIsSavingDescription] = useState(false); // NEW
+  const [isSavingName, setIsSavingName] = useState(false);
+  const [isSavingDescription, setIsSavingDescription] = useState(false);
   const [nameValue, setNameValue] = useState("");
   const [descriptionValue, setDescriptionValue] = useState("");
   
@@ -71,8 +71,7 @@ export default function ProfilePage() {
 
   // Admin State
   const isUserAdmin = isAdmin(user);
-  const [isGranting, setIsGranting] = useState(false);
-
+  // Admin Granting state removed
 
   useEffect(() => {
     return () => {
@@ -316,40 +315,7 @@ export default function ProfilePage() {
     }
   };
 
-  // --- Admin Functionality ---
-  const handleGrantAllItems = async () => {
-    if (!user || !user.email) return;
-    setIsGranting(true);
-
-    try {
-      const headers = await getAuthHeaders();
-      
-      const response = await fetch('/api/admin/grant-all', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ targetEmail: user.email }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Tüm öğeler verilirken bir hata oluştu.");
-      }
-
-      const { profile: updatedProfile } = await response.json();
-      updateUser(updatedProfile);
-      toast.success("Tebrikler!", { description: "Tüm ünvanlar ve çerçeveler hesabınıza eklendi!" });
-
-    } catch (error) {
-      toast.error("Yönetici İşlemi Başarısız", {
-        description: error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.",
-      });
-      console.error(error);
-    } finally {
-      setIsGranting(false);
-    }
-  };
-  // --- End Admin Functionality ---
-
+  // Admin Granting logic removed
 
   if (loading) {
     return <div className="text-foreground text-center p-12">Yükleniyor...</div>;
@@ -383,21 +349,7 @@ export default function ProfilePage() {
           Profilim
         </h1>
         
-        {isUserAdmin && (
-          <div className="mb-8 p-4 bg-red-900/20 border border-red-700/50 rounded-lg flex items-center justify-between">
-            <p className="text-red-400 font-semibold flex items-center gap-2">
-              <Crown className="h-5 w-5" /> Yönetici Paneli
-            </p>
-            <Button 
-              onClick={handleGrantAllItems} 
-              disabled={isGranting}
-              variant="destructive"
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {isGranting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : "Tüm Öğeleri Ekle"}
-            </Button>
-          </div>
-        )}
+        {/* Admin Paneli kaldırıldı */}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">

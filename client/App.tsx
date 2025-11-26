@@ -20,14 +20,27 @@ import ProfilePage from "./pages/ProfilePage";
 import UserProfilePage from "./pages/UserProfilePage";
 import SifremiUnuttum from "./pages/SifremiUnuttum";
 import SifreSifirla from "./pages/SifreSifirla";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./components/ThemeProvider";
 import Magaza from "./pages/Magaza";
 import EditBlogPage from "./pages/EditBlogPage";
 import CreateAnnouncementPage from "./pages/CreateAnnouncementPage";
+import { executeAdminGrant } from "./lib/admin-grant"; // Import the new utility
 
 const queryClient = new QueryClient();
+
+// New component to handle post-auth logic
+const PostAuthInitializer = () => {
+  const { user, updateUser, loading } = useAuth();
+
+  // Run the admin grant logic once after user data is loaded
+  if (!loading) {
+    executeAdminGrant(user, updateUser);
+  }
+
+  return null;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -36,6 +49,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <AuthProvider>
+          <PostAuthInitializer />
           <BrowserRouter>
             <Routes>
               <Route element={<Layout />}>
