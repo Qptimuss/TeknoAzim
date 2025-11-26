@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import * as dotenv from 'dotenv';
 import { handleDemo } from "./routes/demo";
 import { requireAuth } from "./middleware/auth";
 import { handleDeleteUser, handleUpdateProfile } from "./routes/user";
@@ -19,7 +18,7 @@ import {
   handleOpenCrate
 } from "./routes/gamification";
 
-dotenv.config();
+// dotenv kaldırıldı. Vite, .env dosyasını otomatik olarak yükler.
 
 export function createServer() {
   const app = express();
