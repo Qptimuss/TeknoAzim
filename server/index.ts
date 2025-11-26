@@ -19,11 +19,10 @@ import {
 } from "./routes/gamification";
 
 export function createServer(env?: Record<string, string>) {
-  // Geliştirme sırasında Vite'den gelen ortam değişkenlerini process.env'e atama mantığı kaldırıldı.
-  // process.env, hem Vite hem de Netlify ortamında kullanılabilir olmalıdır.
-  // if (env) {
-  //   Object.assign(process.env, env);
-  // }
+  // Geliştirme sırasında Vite'den gelen ortam değişkenlerini process.env'e aktar
+  if (env) {
+    Object.assign(process.env, env);
+  }
 
   const app = express();
 

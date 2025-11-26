@@ -36,7 +36,7 @@ function expressPlugin(env: Record<string, string>): Plugin {
     name: "express-plugin",
     apply: "serve", // Only apply during development (serve mode)
     configureServer(server) {
-      // Ortam değişkenlerini createServer fonksiyonuna aktar
+      // Tüm ortam değişkenlerini createServer fonksiyonuna aktar
       const app = createServer(env);
 
       // Add Express app as middleware to Vite dev server
