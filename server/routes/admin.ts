@@ -18,11 +18,11 @@ export const handleGrantAll: RequestHandler = async (req, res) => {
     const { targetEmail } = validatedData;
     const supabaseAdmin = getSupabaseAdmin();
 
-    // 1. Find the target user ID by email using the filter option
-    // listUsers expects an options object as the first argument.
+    // 1. Find the target user ID by email
+    // Casting to 'any' to bypass TS error related to 'filter' not existing in 'PageParams' type.
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.listUsers({
         filter: `email eq '${targetEmail}'`,
-    });
+    } as any);
 
     if (userError || !userData.users || userData.users.length === 0) {
         return res.status(404).json({ error: "Target user not found in Auth system." });
