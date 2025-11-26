@@ -1,0 +1,8 @@
+[build]
+  command = "npm run build"
+  publish = "dist/spa"
+
+[functions]
+  directory = "dist/serverless/netlify/functions"
+  node_bundler = "esbuild"
+  external_node_modules = [] # Force bundling all dependencies
