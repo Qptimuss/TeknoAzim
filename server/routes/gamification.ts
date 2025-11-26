@@ -24,6 +24,22 @@ const calculateLevel = (exp: number): { level: number, expForNextLevel: number, 
   return { level, expForNextLevel: getExpForNextLevel(level), currentLevelExp: cumulativeExp };
 };
 
+// Helper function to handle serverless body parsing issues
+function parseBody(req: any): any {
+    let bodyData = req.body;
+    
+    // Netlify/Serverless Fix: If Express middleware failed, req.body might be a raw string.
+    if (typeof bodyData === 'string' && bodyData.length > 0) {
+        try {
+            bodyData = JSON.parse(bodyData);
+        } catch (e) {
+            console.error("Manual JSON parsing failed:", e);
+            throw new Error("Invalid JSON payload received by server.");
+        }
+    }
+    return bodyData;
+}
+
 // --- Schemas ---
 
 const expUpdateSchema = z.object({
@@ -74,7 +90,8 @@ export const handleUpdateExp: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = expUpdateSchema.parse(req.body);
+    const bodyData = parseBody(req);
+    const validatedData = expUpdateSchema.parse(bodyData);
     const supabaseAdmin = getSupabaseAdmin();
     
     const actionKey = validatedData.actionType;
@@ -134,7 +151,8 @@ export const handleAwardBadge: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = badgeAwardSchema.parse(req.body);
+    const bodyData = parseBody(req);
+    const validatedData = badgeAwardSchema.parse(bodyData);
     const { badgeName } = validatedData;
     const supabaseAdmin = getSupabaseAdmin();
     
@@ -198,6 +216,8 @@ export const handleClaimDailyReward: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
+    // Daily reward handler does not require parsing body data, but we keep the pattern for consistency if it were to change.
+    // const bodyData = parseBody(req); // Not needed here, but keeping the pattern in mind.
     const supabaseAdmin = getSupabaseAdmin();
 
     const { data: profileData, error: fetchError } = await supabaseAdmin
@@ -265,7 +285,8 @@ export const handleOpenCrate: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = crateOpenSchema.parse(req.body);
+    const bodyData = parseBody(req);
+    const validatedData = crateOpenSchema.parse(bodyData);
     const { cost } = validatedData;
     const supabaseAdmin = getSupabaseAdmin();
 

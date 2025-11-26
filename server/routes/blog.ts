@@ -52,6 +52,22 @@ async function moderateContent(content: string): Promise<{ isModerated: boolean 
   return data as { isModerated: boolean };
 }
 
+// Helper function to handle serverless body parsing issues
+function parseBody(req: any): any {
+    let bodyData = req.body;
+    
+    // Netlify/Serverless Fix: If Express middleware failed, req.body might be a raw string.
+    if (typeof bodyData === 'string' && bodyData.length > 0) {
+        try {
+            bodyData = JSON.parse(bodyData);
+        } catch (e) {
+            console.error("Manual JSON parsing failed:", e);
+            throw new Error("Invalid JSON payload received by server.");
+        }
+    }
+    return bodyData;
+}
+
 // --- Handlers ---
 
 // POST /api/blog/post
@@ -60,7 +76,8 @@ export const handleCreatePost: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = newPostSchema.parse(req.body);
+    const bodyData = parseBody(req);
+    const validatedData = newPostSchema.parse(bodyData);
     const supabaseAdmin = getSupabaseAdmin();
 
     // --- Moderation Step for Title and Content ---
@@ -110,7 +127,8 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = updatePostSchema.parse(req.body);
+    const bodyData = parseBody(req);
+    const validatedData = updatePostSchema.parse(bodyData);
     const supabaseAdmin = getSupabaseAdmin();
 
     // --- Moderation Step for Title and Content ---
@@ -223,7 +241,8 @@ export const handleAddComment: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = newCommentSchema.parse(req.body);
+    const bodyData = parseBody(req);
+    const validatedData = newCommentSchema.parse(bodyData);
     const supabaseAdmin = getSupabaseAdmin();
 
     // --- Moderation Step ---
@@ -314,7 +333,8 @@ export const handleCastVote: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = castVoteSchema.parse(req.body);
+    const bodyData = parseBody(req);
+    const validatedData = castVoteSchema.parse(bodyData);
     const { postId, voteType } = validatedData;
     const supabaseAdmin = getSupabaseAdmin();
 

@@ -3,6 +3,22 @@ import { getSupabaseAdmin } from "../lib/supabase-admin";
 import { z } from "zod";
 import { Database } from "../lib/database.types";
 
+// Helper function to handle serverless body parsing issues
+function parseBody(req: any): any {
+    let bodyData = req.body;
+    
+    // Netlify/Serverless Fix: If Express middleware failed, req.body might be a raw string.
+    if (typeof bodyData === 'string' && bodyData.length > 0) {
+        try {
+            bodyData = JSON.parse(bodyData);
+        } catch (e) {
+            console.error("Manual JSON parsing failed:", e);
+            throw new Error("Invalid JSON payload received by server.");
+        }
+    }
+    return bodyData;
+}
+
 // --- Profil Güncelleme Mantığı ---
 
 const updateProfileSchema = z.object({
@@ -18,7 +34,8 @@ export const handleUpdateProfile: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = updateProfileSchema.partial().parse(req.body);
+    const bodyData = parseBody(req);
+    const validatedData = updateProfileSchema.partial().parse(bodyData);
     const supabaseAdmin = getSupabaseAdmin();
 
     if (Object.keys(validatedData).length === 0) {
