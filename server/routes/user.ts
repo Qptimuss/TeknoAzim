@@ -25,9 +25,10 @@ export const handleUpdateProfile: RequestHandler = async (req, res) => {
         return res.status(400).json({ error: "No valid fields provided for update." });
     }
 
-    const { data, error } = await supabaseAdmin
-      .from("profiles")
-      .update(validatedData)
+    // Tip ataması yapıldı
+    const { data, error } = await (supabaseAdmin
+      .from("profiles") as any)
+      .update(validatedData as Database['public']['Tables']['profiles']['Update'])
       .eq('id', userId) 
       .select('id, name, avatar_url, description, selected_title, selected_frame')
       .single();

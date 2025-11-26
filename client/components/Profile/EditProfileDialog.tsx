@@ -11,150 +11,128 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Profile } from '@shared/api';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { updateProfile, uploadAvatar } from '@/lib/blog-store';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import ReactCrop, { type Crop } from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
-import { getCroppedImg } from '@/lib/crop-image';
+import { User as UserIcon, Loader2 } from 'lucide-react';
+import ImageCropperDialog from '@/components/ImageCropperDialog';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface EditProfileDialogProps {
   profile: Profile;
   isOpen: boolean;
   onClose: () => void;
-  onProfileUpdate: (updatedProfile: Profile) => void;
 }
 
 export const EditProfileDialog = ({
   profile,
   isOpen,
   onClose,
-  onProfileUpdate,
 }: EditProfileDialogProps) => {
-  const [name, setName] = useState(profile.name);
+  const { saveProfileDetails } = useAuth();
+  const [name, setName] = useState(profile.name || '');
   const [description, setDescription] = useState(profile.description || '');
   const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // State for image cropping
-  const [imgSrc, setImgSrc] = useState('');
-  const [crop, setCrop] = useState<Crop>();
-  const [croppedImageBlob, setCroppedImageBlob] = useState<Blob | null>(null);
-  const imgRef = useRef<HTMLImageElement | null>(null);
+  // Cropping States
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
 
   useEffect(() => {
     if (profile) {
-      setName(profile.name);
+      setName(profile.name || '');
       setDescription(profile.description || '');
     }
   }, [profile]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setCrop(undefined); // Reset crop on new image
-      const reader = new FileReader();
-      reader.addEventListener('load', () =>
-        setImgSrc(reader.result?.toString() || '')
-      );
-      reader.readAsDataURL(e.target.files[0]);
+      const file = e.target.files[0];
+      if (file.size > 4 * 1024 * 1024) { // 4MB
+        toast.error("Resim boyutu 4MB'den küçük olmalıdır.");
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
+      }
+      const newUrl = URL.createObjectURL(file);
+      setImageToCrop(newUrl);
+      setIsCropperOpen(true);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const handleImageCrop = async () => {
-    if (imgRef.current && crop) {
-      const croppedBlob = await getCroppedImg(imgRef.current, crop, 'avatar.jpeg');
-      setCroppedImageBlob(croppedBlob);
-      setImgSrc(''); // Close the cropper modal/view
-    }
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setIsCropperOpen(false);
+    if (imageToCrop) URL.revokeObjectURL(imageToCrop);
+    setImageToCrop(null);
+
+    const croppedFile = new File([croppedBlob], `${profile.id}.jpeg`, { type: "image/jpeg" });
+    
+    await toast.promise(
+      async () => {
+        const uploadedUrl = await uploadAvatar(croppedFile, profile.id);
+        if (uploadedUrl) {
+          const cacheBustingUrl = `${uploadedUrl}?v=${Date.now()}`;
+          await saveProfileDetails({ avatar_url: cacheBustingUrl });
+        }
+      },
+      {
+        loading: "Profil fotoğrafı yükleniyor...",
+        success: "Profil fotoğrafı güncellendi!",
+        error: (e) => {
+          console.error("Avatar update failed:", e);
+          return e.message || "Profil fotoğrafı güncellenirken bir hata oluştu.";
+        },
+      }
+    );
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      let newAvatarUrl: string | undefined = undefined;
+      // Sadece isim ve açıklama güncellemelerini gönder
+      await saveProfileDetails({ name, description });
 
-      // 1. If a new image was cropped, upload it first
-      if (croppedImageBlob) {
-        const uploadedUrl = await uploadAvatar(croppedImageBlob as File, profile.id);
-        if (!uploadedUrl) {
-          throw new Error('Avatar could not be uploaded.');
-        }
-        newAvatarUrl = uploadedUrl;
-      }
-
-      // 2. Prepare profile data for update
-      const updateData: { name: string; description: string; avatar_url?: string } = {
-        name,
-        description,
-      };
-      
-      if (newAvatarUrl) {
-        updateData.avatar_url = newAvatarUrl;
-      }
-
-      // 3. Send all updates to the server
-      const updatedProfile = await updateProfile(updateData);
-
-      onProfileUpdate(updatedProfile);
-      toast({
-        title: 'Success',
-        description: 'Your profile has been updated.',
-      });
+      toast.success('Profil başarıyla güncellendi.');
       onClose();
     } catch (error: any) {
       console.error('Failed to update profile:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to update profile. Please try again.',
-        variant: 'destructive',
+      toast.error('Profil güncellenirken hata oluştu.', {
+        description: error.message || 'Lütfen tekrar deneyin.',
       });
     } finally {
       setIsSaving(false);
-      setCroppedImageBlob(null); // Reset blob after saving
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Edit Profile</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Profili Düzenle</DialogTitle>
+          </DialogHeader>
 
-        {imgSrc ? (
-          // Image Cropper View
-          <div className="flex flex-col items-center gap-4">
-            <ReactCrop
-              crop={crop}
-              onChange={(_, percentCrop) => setCrop(percentCrop)}
-              aspect={1}
-              circularCrop
-            >
-              <img
-                ref={imgRef}
-                alt="Crop me"
-                src={imgSrc}
-                style={{ maxHeight: '400px' }}
-              />
-            </ReactCrop>
-            <div className="flex gap-2">
-              <Button onClick={handleImageCrop}>Crop Image</Button>
-              <Button variant="outline" onClick={() => setImgSrc('')}>Cancel</Button>
-            </div>
-          </div>
-        ) : (
-          // Profile Form View
           <div className="grid gap-4 py-4">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
-                <AvatarImage src={croppedImageBlob ? URL.createObjectURL(croppedImageBlob) : profile.avatar_url || undefined} />
-                <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+                <AvatarImage src={profile.avatar_url || undefined} alt={profile.name || ''} />
+                <AvatarFallback>
+                  <UserIcon className="h-8 w-8" />
+                </AvatarFallback>
               </Avatar>
-              <Input id="picture" type="file" accept="image/*" onChange={handleFileChange} />
+              <Input 
+                id="picture" 
+                type="file" 
+                accept="image/png, image/jpeg, image/gif" 
+                onChange={handleFileChange} 
+                ref={fileInputRef}
+                className="file:text-foreground"
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">
-                Name
+                İsim
               </Label>
               <Input
                 id="name"
@@ -165,26 +143,45 @@ export const EditProfileDialog = ({
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">
-                Description
+                Açıklama
               </Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="col-span-3"
+                className="col-span-3 min-h-[80px]"
+                placeholder="Kısa bir açıklama..."
               />
             </div>
           </div>
-        )}
 
-        <DialogFooter>
-          {!imgSrc && (
+          <DialogFooter>
             <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Save Changes'}
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Kaydediliyor...
+                </>
+              ) : (
+                'Değişiklikleri Kaydet'
+              )}
             </Button>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {imageToCrop && (
+        <ImageCropperDialog
+          imageSrc={imageToCrop}
+          open={isCropperOpen}
+          onClose={() => {
+            setIsCropperOpen(false);
+            if (imageToCrop) URL.revokeObjectURL(imageToCrop);
+            setImageToCrop(null);
+          }}
+          onCropComplete={handleCropComplete}
+        />
+      )}
+    </>
   );
 };
