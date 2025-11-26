@@ -19,7 +19,8 @@ export const getSupabaseAdmin = () => {
 
   if (!SUPABASE_SERVICE_ROLE_KEY) {
     console.error("FATAL ERROR: SUPABASE_SERVICE_ROLE_KEY is missing from environment variables.");
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing. Please check your .env file and ensure the server is restarted.");
+    // Bu hata mesajını daha spesifik hale getiriyoruz.
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing. Server-side authentication will fail. Please check your .env file.");
   }
 
   supabaseAdminInstance = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
