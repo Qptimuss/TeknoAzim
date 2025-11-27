@@ -12,7 +12,7 @@ const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
 // --- MODERATION CONFIGURATION ---
 const HF_MODEL = 'unitary/toxic-bert';
 const TOXICITY_THRESHOLD = 0.7;
-const CHUNK_SIZE_WORDS = 150; // Modelin 512 token limitine takılmamak için kelime sayısını düşürdük
+const CHUNK_SIZE_WORDS = 100; // Token limitini kesin olarak aşmamak için kelime sayısını 100'e düşürdük.
 
 // Helper to create a regex pattern that allows for character repetitions
 function createSpammyRegex(word: string): string {
