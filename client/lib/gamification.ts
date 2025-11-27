@@ -1,18 +1,37 @@
 import { Profile } from "@shared/api";
 import { getAuthHeaders } from "./api-utils";
+import {
+  PenSquare,
+  TrendingUp,
+  Users,
+  Lightbulb,
+  Sparkles,
+  BookOpen,
+  MessageSquareQuote,
+  GraduationCap,
+  PenTool,
+  Rocket,
+  FilePlus2,
+  Award,
+  MessageSquare,
+  Zap,
+  ThumbsUp,
+  Heart,
+  Star,
+} from "lucide-react";
 
 // --- ÜNVAN SİSTEMİ ---
 export const TITLES: { [key: number]: { name: string; icon: React.ElementType } } = {
-  1: { name: "Yeni Blogger", icon: require("lucide-react").PenSquare },
-  2: { name: "Gelişen Yazar", icon: require("lucide-react").TrendingUp },
-  3: { name: "Topluluk Üyesi", icon: require("lucide-react").Users },
-  4: { name: "Fikir Lideri", icon: require("lucide-react").Lightbulb },
-  5: { name: "İçerik Ustası", icon: require("lucide-react").Sparkles },
-  6: { name: "Bilge Paylaşımcı", icon: require("lucide-react").BookOpen },
-  7: { name: "Tartışma Başlatan", icon: require("lucide-react").MessageSquareQuote },
-  8: { name: "Topluluk Mentoru", icon: require("lucide-react").GraduationCap },
-  9: { name: "Usta Kalem", icon: require("lucide-react").PenTool },
-  10: { name: "TeknoAzim Elçisi", icon: require("lucide-react").Rocket },
+  1: { name: "Yeni Blogger", icon: PenSquare },
+  2: { name: "Gelişen Yazar", icon: TrendingUp },
+  3: { name: "Topluluk Üyesi", icon: Users },
+  4: { name: "Fikir Lideri", icon: Lightbulb },
+  5: { name: "İçerik Ustası", icon: Sparkles },
+  6: { name: "Bilge Paylaşımcı", icon: BookOpen },
+  7: { name: "Tartışma Başlatan", icon: MessageSquareQuote },
+  8: { name: "Topluluk Mentoru", icon: GraduationCap },
+  9: { name: "Usta Kalem", icon: PenTool },
+  10: { name: "TeknoAzim Elçisi", icon: Rocket },
 };
 
 // --- SEVİYE ATLAMA EŞİKLERİ ---
@@ -40,14 +59,14 @@ export const calculateLevel = (exp: number): { level: number, expForNextLevel: n
 
 // --- ROZETLER ---
 export const ALL_BADGES = [
-  { name: "İlk Blog", description: "İlk blog yazını yayınla.", icon: require("lucide-react").BookOpen },
-  { name: "Hevesli Katılımcı", description: "İki blog yazısı yayınla.", icon: require("lucide-react").FilePlus2 },
-  { name: "Topluluk İnşacısı", description: "5 blog yazısı yayınla.", icon: require("lucide-react").Award },
-  { name: "İlk Yorumcu", description: "Bir gönderiye ilk yorumu yap.", icon: require("lucide-react").MessageSquare },
-  { name: "Hızlı Parmaklar", description: "Üç farklı gönderiye ilk yorumu yap.", icon: require("lucide-react").Zap },
-  { name: "Beğeni Başlangıcı", description: "Bir gönderin 2 beğeni alsın.", icon: require("lucide-react").ThumbsUp },
-  { name: "Beğeni Mıknatısı", description: "Bir gönderin 5 beğeni alsın.", icon: require("lucide-react").Heart },
-  { name: "Popüler Yazar", description: "Bir gönderin 10 beğeni alsın.", icon: require("lucide-react").Star },
+  { name: "İlk Blog", description: "İlk blog yazını yayınla.", icon: BookOpen },
+  { name: "Hevesli Katılımcı", description: "İki blog yazısı yayınla.", icon: FilePlus2 },
+  { name: "Topluluk İnşacısı", description: "5 blog yazısı yayınla.", icon: Award },
+  { name: "İlk Yorumcu", description: "Bir gönderiye ilk yorumu yap.", icon: MessageSquare },
+  { name: "Hızlı Parmaklar", description: "Üç farklı gönderiye ilk yorumu yap.", icon: Zap },
+  { name: "Beğeni Başlangıcı", description: "Bir gönderin 2 beğeni alsın.", icon: ThumbsUp },
+  { name: "Beğeni Mıknatısı", description: "Bir gönderin 5 beğeni alsın.", icon: Heart },
+  { name: "Popüler Yazar", description: "Bir gönderin 10 beğeni alsın.", icon: Star },
 ];
 
 // --- EXP KAZANIM EYLEM ANAHTARLARI (Client-side only for reference/lookup) ---
