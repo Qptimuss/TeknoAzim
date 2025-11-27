@@ -18,6 +18,7 @@ import {
   handleClaimDailyReward,
   handleOpenCrate
 } from "./routes/gamification";
+import { handleCheckEnv } from "./routes/check-env"; // Yeni import
 
 export function createServer(env?: Record<string, string>) {
   // Ortam değişkenlerini .env dosyasından yükle
@@ -34,6 +35,9 @@ export function createServer(env?: Record<string, string>) {
   app.use(cors());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+
+  // --- DIAGNOSTIC ROUTE ---
+  app.get("/api/check-env", handleCheckEnv);
 
   // Example API routes
   app.get("/api/ping", (_req, res) => {
