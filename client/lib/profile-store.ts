@@ -1,7 +1,29 @@
 import { getAuthHeaders, fetchWithAuth } from "./api-utils";
 import { Profile } from "@shared/api";
+import { supabase } from "@/integrations/supabase/client";
 
 type UpdatableProfileFields = Pick<Profile, 'name' | 'avatar_url' | 'description' | 'selected_title' | 'selected_frame'>;
+
+/**
+ * Fetches the user profile by ID.
+ * @param userId The ID of the user.
+ * @returns The profile object or null if not found.
+ */
+export const getProfile = async (userId: string): Promise<Profile | null> => {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .single();
+  
+  if (error) {
+    // Supabase'de RLS nedeniyle profil bulunamazsa hata fırlatmak yerine null döndürülür.
+    // Ancak bu fonksiyon AuthContext'te kullanıldığı için, hata durumunda null döndürmek daha güvenlidir.
+    console.error("Error fetching profile:", error);
+    return null;
+  }
+  return data as Profile;
+};
 
 /**
  * Updates non-gamification profile details via the secure server API.
