@@ -2,6 +2,7 @@ import { RequestHandler } from "express";
 import { getSupabaseAdmin } from "../lib/supabase-admin";
 import { z } from "zod";
 import { Database } from "../lib/database.types";
+import { parseBody } from "../lib/body-parser";
 
 // --- Schemas for validation ---
 
@@ -50,22 +51,6 @@ async function moderateContent(content: string): Promise<{ isModerated: boolean 
   }
   
   return data as { isModerated: boolean };
-}
-
-// Helper function to handle serverless body parsing issues
-function parseBody(req: any): any {
-    let bodyData = req.body;
-    
-    // Netlify/Serverless Fix: If Express middleware failed, req.body might be a raw string.
-    if (typeof bodyData === 'string' && bodyData.length > 0) {
-        try {
-            bodyData = JSON.parse(bodyData);
-        } catch (e) {
-            console.error("Manual JSON parsing failed:", e);
-            throw new Error("Invalid JSON payload received by server.");
-        }
-    }
-    return bodyData;
 }
 
 // --- Handlers ---

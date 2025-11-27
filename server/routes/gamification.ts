@@ -4,6 +4,7 @@ import { z } from "zod";
 import { Database } from "../lib/database.types.ts";
 import { SERVER_EXP_ACTIONS, BADGE_REWARD_GEMS } from "../lib/gamification-constants.ts";
 import { FRAMES, RARITIES } from "../lib/store-items.ts";
+import { parseBody } from "../lib/body-parser.ts";
 
 // --- Helper Functions (Crucial for server-side level calculation) ---
 
@@ -23,22 +24,6 @@ const calculateLevel = (exp: number): { level: number, expForNextLevel: number, 
   
   return { level, expForNextLevel: getExpForNextLevel(level), currentLevelExp: cumulativeExp };
 };
-
-// Helper function to handle serverless body parsing issues
-function parseBody(req: any): any {
-    let bodyData = req.body;
-    
-    // Netlify/Serverless Fix: If Express middleware failed, req.body might be a raw string.
-    if (typeof bodyData === 'string' && bodyData.length > 0) {
-        try {
-            bodyData = JSON.parse(bodyData);
-        } catch (e) {
-            console.error("Manual JSON parsing failed:", e);
-            throw new Error("Invalid JSON payload received by server.");
-        }
-    }
-    return bodyData;
-}
 
 // --- Schemas ---
 
