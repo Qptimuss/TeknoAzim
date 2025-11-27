@@ -260,7 +260,6 @@ export const handleAddComment: RequestHandler = async (req, res) => {
     const { isModerated } = await moderateContent(validatedData.content);
     
     if (!isModerated) {
-      // If the comment is toxic, reject it immediately.
       return res.status(403).json({ error: "Yorumunuz, yapay zeka tarafından uygunsuz içerik barındırdığı için reddedildi." });
     }
 
@@ -270,20 +269,31 @@ export const handleAddComment: RequestHandler = async (req, res) => {
         user_id: userId,
     };
 
-    // Server-side insertion, enforcing user_id from JWT
-    const { data: newComment, error } = await (supabaseAdmin
-      .from('comments') as any)
+    // 1. Insert comment and get its ID
+    const { data: insertedComment, error: insertError } = await supabaseAdmin
+      .from('comments')
       .insert(insertPayload)
-      .select()
+      .select('id')
       .single();
 
-    if (error) {
-      console.error("Supabase insert error:", error);
+    if (insertError || !insertedComment) {
+      console.error("Supabase insert error:", insertError);
       return res.status(500).json({ error: "Failed to add comment." });
     }
 
+    // 2. Fetch the full comment with the author's profile to return to the client
+    const { data: newCommentWithAuthor, error: fetchError } = await supabaseAdmin
+      .from('comments')
+      .select('*, profiles(*)')
+      .eq('id', insertedComment.id)
+      .single();
+
+    if (fetchError) {
+      console.error("Failed to fetch new comment with author:", fetchError);
+      return res.status(500).json({ error: "Comment was created, but could not be retrieved." });
+    }
+
     // --- Badge Logic ---
-    // Check if it's the first comment on the post. The DB trigger will have already run.
     const { count: commentCount } = await supabaseAdmin
       .from('comments')
       .select('*', { count: 'exact', head: true })
@@ -293,7 +303,6 @@ export const handleAddComment: RequestHandler = async (req, res) => {
       await awardBadgeIfMissing(userId, "İlk Yorumcu", supabaseAdmin);
     }
 
-    // Check for "Hızlı Parmaklar" badge
     const { count: firstCommenterCount } = await supabaseAdmin
       .from('first_commenters')
       .select('*', { count: 'exact', head: true })
@@ -306,7 +315,7 @@ export const handleAddComment: RequestHandler = async (req, res) => {
     // Fetch the final state of the profile and return it
     const { data: finalProfile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
 
-    res.status(201).json({ comment: newComment, profile: finalProfile });
+    res.status(201).json({ comment: newCommentWithAuthor, profile: finalProfile });
 
   } catch (e) {
     if (e instanceof z.ZodError) {
@@ -332,7 +341,6 @@ export const handleDeleteComment: RequestHandler = async (req, res) => {
       .eq("id", commentId)
       .single();
 
-    // Tip ataması yapıldı
     type CommentOwner = Pick<Database['public']['Tables']['comments']['Row'], 'user_id'>;
     const commentOwner = existingComment as CommentOwner | null;
 

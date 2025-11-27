@@ -1,76 +1,54 @@
 import { RequestHandler } from "express";
 import { getSupabaseAdmin } from "../lib/supabase-admin";
-import { z } from "zod";
-import { Database } from "../lib/database.types";
-import { parseBody } from "../lib/body-parser";
 
-// --- Profil Güncelleme Mantığı ---
-
-const updateProfileSchema = z.object({
-  name: z.string().min(2, "İsim en az 2 karakter olmalıdır.").optional(),
-  avatar_url: z.string().url("Geçerli bir URL olmalıdır.").nullable().optional(),
-  description: z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").nullable().optional(),
-  selected_title: z.string().nullable().optional(),
-  selected_frame: z.string().nullable().optional(),
-});
-
-export const handleUpdateProfile: RequestHandler = async (req, res) => {
-  const userId = req.userId;
-  if (!userId) return res.status(401).json({ error: "User ID missing." });
+// GET /api/user/profile/:id
+export const handleGetProfileById: RequestHandler = async (req, res) => {
+  const { id } = req.params;
+  if (!id) return res.status(400).json({ error: "User ID is required." });
 
   try {
-    const bodyData = parseBody(req);
-    const validatedData = updateProfileSchema.partial().parse(bodyData);
     const supabaseAdmin = getSupabaseAdmin();
-
-    if (Object.keys(validatedData).length === 0) {
-        return res.status(400).json({ error: "No valid fields provided for update." });
-    }
-
-    // Tip ataması yapıldı
-    const { data, error } = await (supabaseAdmin
-      .from("profiles") as any)
-      .update(validatedData as Database['public']['Tables']['profiles']['Update'])
-      .eq('id', userId) 
-      .select('id, name, avatar_url, description, selected_title, selected_frame')
+    const { data, error } = await supabaseAdmin
+      .from('profiles')
+      .select('*')
+      .eq('id', id)
       .single();
 
     if (error) {
-      console.error("Supabase update profile error:", error);
-      return res.status(500).json({ error: "Failed to update profile." });
+      // Supabase returns this code when no rows are found for .single()
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({ error: "Profile not found." });
+      }
+      throw error;
     }
 
+    if (!data) return res.status(404).json({ error: "Profile not found." });
+
     res.status(200).json(data);
-  } catch (e) {
-    if (e instanceof z.ZodError) {
-      return res.status(400).json({ error: "Invalid input data.", details: e.errors });
-    }
-    console.error("Error updating profile:", e);
-    res.status(500).json({ error: "Internal server error." });
+  } catch (e: any) {
+    console.error(`Error fetching profile for user ${id}:`, e);
+    res.status(500).json({ error: "Internal server error.", details: e.message });
   }
 };
 
+// GET /api/user/posts/:userId
+export const handleGetPostsByUserId: RequestHandler = async (req, res) => {
+    const { userId } = req.params;
+    if (!userId) return res.status(400).json({ error: "User ID is required." });
 
-// --- Kullanıcı Silme Mantığı ---
+    try {
+        const supabaseAdmin = getSupabaseAdmin();
+        const { data, error } = await supabaseAdmin
+            .from('blog_posts')
+            .select('*, profiles(*)')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
 
-export const handleDeleteUser: RequestHandler = async (req, res) => {
-  const userId = req.userId;
-  if (!userId) {
-    return res.status(401).json({ error: "User ID missing." });
-  }
+        if (error) throw error;
 
-  try {
-    const supabaseAdmin = getSupabaseAdmin();
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
-
-    if (error) {
-      console.error(`Error deleting user ${userId}:`, error);
-      return res.status(500).json({ error: "Failed to delete user account." });
+        res.status(200).json(data);
+    } catch (e: any) {
+        console.error(`Error fetching posts for user ${userId}:`, e);
+        res.status(500).json({ error: "Internal server error.", details: e.message });
     }
-
-    res.status(204).send();
-  } catch (e) {
-    console.error("Server error during user deletion:", e);
-    res.status(500).json({ error: "Internal server error during account deletion." });
-  }
 };
