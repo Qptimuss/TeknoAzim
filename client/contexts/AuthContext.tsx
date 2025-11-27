@@ -38,15 +38,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const SUPABASE_PROJECT_ID = 'bhfshljiqbdxgbpgmllp';
-    const oldLocalStorageKey = `sb-${SUPABASE_PROJECT_ID}-auth-token`;
-    if (typeof localStorage !== 'undefined' && localStorage.getItem(oldLocalStorageKey)) {
-      console.log("Eski oturum verisi localStorage'dan temizleniyor.");
-      localStorage.removeItem(oldLocalStorageKey);
-    }
-  }, []);
-
   const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
     const { data: profile, error } = await supabase
       .from("profiles")
@@ -88,7 +79,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // 1. Proactively fetch the session to handle initial load correctly.
+    // Clean up old local storage key if it exists
+    const SUPABASE_PROJECT_ID = 'bhfshljiqbdxgbpgmllp';
+    const oldLocalStorageKey = `sb-${SUPABASE_PROJECT_ID}-auth-token`;
+    if (typeof localStorage !== 'undefined' && localStorage.getItem(oldLocalStorageKey)) {
+      console.log("Eski oturum verisi localStorage'dan temizleniyor.");
+      localStorage.removeItem(oldLocalStorageKey);
+    }
+
+    // 1. Set initial session state
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         let profile = await fetchUserProfile(session.user);
@@ -100,12 +99,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    // 2. Listen for subsequent auth changes (e.g., sign in, sign out).
+    // 2. Listen for auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         const supabaseUser = session?.user;
         if (supabaseUser) {
           let profile = await fetchUserProfile(supabaseUser);
+          // Only claim daily reward on explicit sign-in, not on every token refresh
           if (event === 'SIGNED_IN' && profile) {
             profile = await handleDailyReward(profile);
           }
@@ -116,8 +116,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
+    // 3. Listen for tab focus/visibility changes to force a session refresh
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        // When tab becomes visible, proactively refresh the session.
+        // This handles cases where the token expired while the tab was in the background.
+        const { error } = await supabase.auth.refreshSession();
+        if (error) {
+          console.error("Error refreshing session on visibility change:", error.message);
+          // The onAuthStateChange listener will handle the sign-out if refresh fails.
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Cleanup function
     return () => {
       authListener.subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
