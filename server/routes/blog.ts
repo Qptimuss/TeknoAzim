@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "../lib/supabase-admin";
 import { z } from "zod";
 import { Database } from "../lib/database.types";
 import { parseBody } from "../lib/body-parser";
+import { SERVER_EXP_ACTIONS, BADGE_REWARD_GEMS } from "../lib/gamification-constants";
 
 // --- Schemas for validation ---
 
@@ -52,6 +53,31 @@ async function moderateContent(content: string): Promise<{ isModerated: boolean 
   
   return data as { isModerated: boolean };
 }
+
+// Helper function to award a badge if the user doesn't have it
+async function awardBadgeIfMissing(userId: string, badgeName: string, supabaseAdmin: any): Promise<boolean> {
+    const { data: profileData, error: fetchError } = await supabaseAdmin.from('profiles').select('badges, exp, gems').eq('id', userId).single();
+    
+    if (fetchError || !profileData) {
+        console.error(`Could not fetch profile for user ${userId} to award badge ${badgeName}.`, fetchError);
+        return false;
+    }
+
+    if (profileData && !profileData.badges.includes(badgeName)) {
+        const newBadges = [...profileData.badges, badgeName];
+        const newExp = profileData.exp + SERVER_EXP_ACTIONS.EARN_BADGE;
+        const newGems = profileData.gems + BADGE_REWARD_GEMS;
+        
+        const { error: updateError } = await supabaseAdmin.from('profiles').update({ badges: newBadges, exp: newExp, gems: newGems }).eq('id', userId);
+        if (updateError) {
+            console.error(`Failed to award badge ${badgeName} to user ${userId}.`, updateError);
+            return false;
+        }
+        return true;
+    }
+    return false;
+}
+
 
 // --- Handlers ---
 
@@ -242,11 +268,10 @@ export const handleAddComment: RequestHandler = async (req, res) => {
         content: validatedData.content,
         post_id: validatedData.postId,
         user_id: userId,
-        // is_moderated alanı comments tablosunda yok, bu yüzden kaldırıldı.
     };
 
     // Server-side insertion, enforcing user_id from JWT
-    const { data, error } = await (supabaseAdmin
+    const { data: newComment, error } = await (supabaseAdmin
       .from('comments') as any)
       .insert(insertPayload)
       .select()
@@ -257,7 +282,32 @@ export const handleAddComment: RequestHandler = async (req, res) => {
       return res.status(500).json({ error: "Failed to add comment." });
     }
 
-    res.status(201).json(data);
+    // --- Badge Logic ---
+    // Check if it's the first comment on the post. The DB trigger will have already run.
+    const { count: commentCount } = await supabaseAdmin
+      .from('comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', validatedData.postId);
+
+    if (commentCount === 1) {
+      await awardBadgeIfMissing(userId, "İlk Yorumcu", supabaseAdmin);
+    }
+
+    // Check for "Hızlı Parmaklar" badge
+    const { count: firstCommenterCount } = await supabaseAdmin
+      .from('first_commenters')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    if (firstCommenterCount === 3) {
+      await awardBadgeIfMissing(userId, "Hızlı Parmaklar", supabaseAdmin);
+    }
+
+    // Fetch the final state of the profile and return it
+    const { data: finalProfile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single();
+
+    res.status(201).json({ comment: newComment, profile: finalProfile });
+
   } catch (e) {
     if (e instanceof z.ZodError) {
       return res.status(400).json({ error: "Invalid input data.", details: e.errors });
