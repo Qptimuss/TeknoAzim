@@ -47,11 +47,8 @@ export const getBlogPostById = async (id: string): Promise<BlogPostWithAuthor | 
 
 export const getPostsByUserId = async (userId: string): Promise<BlogPostWithAuthor[]> => {
   try {
-    const response = await fetch(`/api/user/posts/${userId}`);
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Kullanıcının gönderileri getirilemedi' }));
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?select=*,profiles(*)&user_id=eq.${userId}&order=created_at.desc`, { headers: restHeaders });
+    await handleRestError(response, 'posts by user ID');
     return await response.json() as BlogPostWithAuthor[];
   } catch (error) {
     console.error("Caught an exception in getPostsByUserId:", error);
@@ -173,6 +170,20 @@ export const castVote = async (postId: string, userId: string, voteType: 'like' 
 };
 
 // --- Profile Functions ---
+
+export const getProfileById = async (userId: string): Promise<Profile | null> => {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&id=eq.${userId}`, {
+      headers: { ...restHeaders, 'Accept': 'application/vnd.pgrst.object+json' }
+    });
+    if (response.status === 406) return null;
+    await handleRestError(response, 'profile by ID');
+    return await response.json() as Profile;
+  } catch (error) {
+    console.error("Caught an exception in getProfileById:", error);
+    return null;
+  }
+};
 
 export const updateProfile = async (updateData: Partial<Pick<Profile, 'name' | 'description' | 'avatar_url'>>) => {
   return fetchWithAuth('/api/profile', {

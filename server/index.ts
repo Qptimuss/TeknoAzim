@@ -1,59 +1,73 @@
-import express from 'express';
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
-import { authMiddleware } from './middleware/auth';
-import { handleLogin, handleSignup, handleLogout, handlePasswordReset, handlePasswordUpdate } from './routes/auth';
-import { handleUpdateProfile } from './routes/profile';
-import { handleCreatePost, handleUpdatePost, handleDeletePost, handleAddComment, handleDeleteComment, handleCastVote } from './routes/blog';
-import { handleDailyReward, handleOpenCrate } from './routes/gamification';
-import { handleCheckEnv } from './routes/debug';
-import { handleGetProfileById, handleGetPostsByUserId } from './routes/user';
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import { handleDemo } from "./routes/demo";
+import { requireAuth } from "./middleware/auth";
+import { handleDeleteUser, handleUpdateProfile } from "./routes/user";
+import { 
+  handleCreatePost, 
+  handleUpdatePost, 
+  handleDeletePost, 
+  handleAddComment, 
+  handleDeleteComment, 
+  handleCastVote 
+} from "./routes/blog";
+import {
+  handleUpdateExp,
+  handleAwardBadge,
+  handleClaimDailyReward,
+  handleOpenCrate
+} from "./routes/gamification";
+import { handleCheckEnv } from "./routes/check-env"; // Yeni import
 
-const app = express();
-const port = process.env.PORT || 3001;
+export function createServer(env?: Record<string, string>) {
+  // Ortam değişkenlerini .env dosyasından yükle
+  dotenv.config();
 
-app.use(express.json());
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
-  credentials: true,
-}));
-app.use(cookieParser());
+  // Geliştirme sırasında Vite'den gelen ortam değişkenlerini process.env'e aktar
+  if (env) {
+    Object.assign(process.env, env);
+  }
 
-// --- Public Routes ---
-app.post('/api/auth/signup', handleSignup);
-app.post('/api/auth/login', handleLogin);
-app.post('/api/auth/request-password-reset', handlePasswordReset);
-app.post('/api/auth/update-password', handlePasswordUpdate);
-app.get('/api/check-env', handleCheckEnv);
+  const app = express();
 
-// New public GET routes for user data
-app.get('/api/user/profile/:id', handleGetProfileById);
-app.get('/api/user/posts/:userId', handleGetPostsByUserId);
+  // Middleware
+  app.use(cors());
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
-// --- Authenticated Routes ---
-app.use(authMiddleware);
+  // --- DIAGNOSTIC ROUTE ---
+  app.get("/api/check-env", handleCheckEnv);
 
-app.post('/api/auth/logout', handleLogout);
+  // Example API routes
+  app.get("/api/ping", (_req, res) => {
+    const ping = process.env.PING_MESSAGE ?? "ping";
+    res.json({ message: ping });
+  });
 
-// Profile
-app.put('/api/profile', handleUpdateProfile);
+  app.get("/api/demo", handleDemo);
 
-// Blog Posts
-app.post('/api/blog/post', handleCreatePost);
-app.put('/api/blog/post/:id', handleUpdatePost);
-app.delete('/api/blog/post/:id', handleDeletePost);
+  // User routes
+  app.delete("/api/user", requireAuth, handleDeleteUser);
+  app.put("/api/profile", requireAuth, handleUpdateProfile);
 
-// Comments
-app.post('/api/blog/comment', handleAddComment);
-app.delete('/api/blog/comment/:id', handleDeleteComment);
+  // Blog Post Routes (Requires Auth for CUD operations)
+  app.post("/api/blog/post", requireAuth, handleCreatePost);
+  app.put("/api/blog/post/:id", requireAuth, handleUpdatePost);
+  app.delete("/api/blog/post/:id", requireAuth, handleDeletePost);
 
-// Votes
-app.post('/api/blog/vote', handleCastVote);
+  // Comment Routes (Requires Auth)
+  app.post("/api/blog/comment", requireAuth, handleAddComment);
+  app.delete("/api/blog/comment/:id", requireAuth, handleDeleteComment);
 
-// Gamification
-app.post('/api/gamification/daily-reward', handleDailyReward);
-app.post('/api/gamification/open-crate', handleOpenCrate);
+  // Vote Routes (Requires Auth)
+  app.post("/api/blog/vote", requireAuth, handleCastVote);
 
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
-});
+  // Gamification Routes (Requires Auth)
+  app.post("/api/gamification/exp", requireAuth, handleUpdateExp);
+  app.post("/api/gamification/badge", requireAuth, handleAwardBadge);
+  app.post("/api/gamification/daily-reward", requireAuth, handleClaimDailyReward);
+  app.post("/api/gamification/open-crate", requireAuth, handleOpenCrate);
+
+  return app;
+}
