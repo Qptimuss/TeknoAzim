@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import dotenv from "dotenv";
 import { handleDemo } from "./routes/demo";
 import { requireAuth } from "./middleware/auth";
 import { handleDeleteUser, handleUpdateProfile } from "./routes/user";
@@ -19,6 +20,9 @@ import {
 } from "./routes/gamification";
 
 export function createServer(env?: Record<string, string>) {
+  // Ortam değişkenlerini .env dosyasından yükle
+  dotenv.config();
+
   // Geliştirme sırasında Vite'den gelen ortam değişkenlerini process.env'e aktar
   if (env) {
     Object.assign(process.env, env);
