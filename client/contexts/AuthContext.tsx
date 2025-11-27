@@ -107,34 +107,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const getSessionAndProfile = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user) {
-        let profile = await fetchUserProfile(session.user);
-        if (profile) {
-          profile = await handleDailyReward(profile);
-        }
-        setUser(profile);
-      }
-      setLoading(false);
-    };
-
-    getSessionAndProfile();
-
+    setLoading(true);
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user) {
-          let profile = await fetchUserProfile(session.user);
-          if (profile) {
-            profile = await handleDailyReward(profile);
+      async (event, session) => {
+        try {
+          if (session?.user) {
+            let profile = await fetchUserProfile(session.user);
+            // Only check for daily reward on initial sign-in or session restoration
+            if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+              if (profile) {
+                profile = await handleDailyReward(profile);
+              }
+            }
+            setUser(profile);
+          } else {
+            setUser(null);
           }
-          setUser(profile);
-        } else {
+        } catch (error) {
+          console.error("Kimlik doğrulama durumu değişikliğinde hata:", error);
           setUser(null);
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
