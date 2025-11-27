@@ -1,6 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { HfInference } from "https://esm.sh/@huggingface/inference@2.6.4";
-import { corsHeaders } from "../_shared/cors.ts";
+
+// Define CORS headers directly inside the function file
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 // Hugging Face API client'ını başlat
 const hf = new HfInference(Deno.env.get("HUGGINGFACE_API_KEY"));
