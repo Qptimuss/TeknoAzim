@@ -205,6 +205,9 @@ export default function CreateBlogPage() {
                 "Yayınla"
               )}
             </Button>
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              İçerikler yapay zeka tarafından filtrelendiğinden gönderim işleminde gecikme olabilir.
+            </p>
           </form>
         </Form>
       </div>

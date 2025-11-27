@@ -240,6 +240,9 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                   "Yorum Gönder"
                 )}
               </Button>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Yorumlar yapay zeka tarafından filtrelendiğinden gönderim işleminde gecikme olabilir.
+              </p>
             </form>
           </Form>
         ) : (
