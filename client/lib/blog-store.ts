@@ -4,18 +4,31 @@ import { fetchWithAuth } from "./api-utils";
 
 // --- Blog Post Functions ---
 
+const SUPABASE_URL = "https://bhfshljiqbdxgbpgmllp.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoZnNobGppcWJkeGdicGdtbGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjUyMDQsImV4cCI6MjA3OTc0MTIwNH0.V_g-uODQnktATni-fa_raP8G5rz7e6qO7oMUodhd3aA";
+
 export const getBlogPosts = async (): Promise<BlogPostWithAuthor[]> => {
-  const { data, error } = await supabase
-    .from("blog_posts")
-    .select("*, profiles(*)")
-    .order("created_at", { ascending: false });
-  
-  if (error) {
-    console.error("Error fetching blog posts:", error);
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?select=*,profiles(*)&order=created_at.desc`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Error fetching blog posts via REST:", errorData);
+      throw new Error(errorData.message || 'Failed to fetch blog posts');
+    }
+
+    const data = await response.json();
+    return data as BlogPostWithAuthor[];
+  } catch (error) {
+    console.error("Caught an exception in getBlogPosts:", error);
     // Hata durumunda boş bir dizi döndürerek uygulamanın çökmesini engelliyoruz.
-    return []; 
+    return [];
   }
-  return data as BlogPostWithAuthor[];
 };
 
 export const getBlogPostById = async (id: string): Promise<BlogPostWithAuthor | null> => {
