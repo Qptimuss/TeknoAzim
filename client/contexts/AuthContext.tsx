@@ -1,133 +1,163 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Session, User as SupabaseUser } from '@supabase/supabase-js';
-import { getProfile, updateProfileDetails } from '@/lib/profile-store';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Session, User as SupabaseUser } from "@supabase/supabase-js";
+import { Profile } from "@shared/api";
+import { toast } from "sonner";
+import { updateProfileDetails, claimDailyReward } from "@/lib/profile-store";
 
-export interface User {
-  id: string;
-  email?: string;
-  name?: string | null;
-  description?: string | null;
-  avatar_url?: string | null;
-  exp?: number;
-  gems: number;
-  badges?: string[];
-  selected_title?: string | null;
-  last_daily_claim?: string | null;
-  owned_frames?: string[];
-  selected_frame?: string | null;
-}
+export type User = Profile & { email?: string };
 
 interface AuthContextType {
-  session: Session | null;
   user: User | null;
   loading: boolean;
-  isSessionRefreshing: boolean;
   logout: () => Promise<void>;
-  saveProfileDetails: (details: Partial<User>) => Promise<void>;
-  updateUser: (updatedDetails: Partial<User>) => void;
-  refetchProfile: () => void;
+  updateUser: (data: Partial<User>) => void;
+  saveProfileDetails: (newUserData: Partial<User>) => Promise<void>;
+  login: (supabaseUser: SupabaseUser) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const queryClient = useQueryClient();
-  const [session, setSession] = useState<Session | null>(null);
-  const [loadingInitial, setLoadingInitial] = useState(true);
-  const [isSessionRefreshing, setIsSessionRefreshing] = useState(false);
+const isSameDay = (d1: Date, d2: Date) => {
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
+};
 
-  const { data: user, isLoading: loadingProfile, refetch: refetchProfile } = useQuery({
-    queryKey: ['userProfile', session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user) return null;
-      return getProfile(session.user.id);
-    },
-    enabled: !!session?.user,
-    staleTime: Infinity,
-    cacheTime: Infinity,
-  });
+const SAFE_PROFILE_UPDATE_KEYS: Array<keyof Profile> = [
+  'name',
+  'avatar_url',
+  'description',
+  'selected_title',
+  'selected_frame',
+];
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setLoadingInitial(false);
-    };
+    const SUPABASE_PROJECT_ID = 'bhfshljiqbdxgbpgmllp';
+    const oldLocalStorageKey = `sb-${SUPABASE_PROJECT_ID}-auth-token`;
+    if (typeof localStorage !== 'undefined' && localStorage.getItem(oldLocalStorageKey)) {
+      console.log("Eski oturum verisi localStorage'dan temizleniyor.");
+      localStorage.removeItem(oldLocalStorageKey);
+    }
+  }, []);
 
-    getInitialSession();
+  const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at")
+      .eq("id", supabaseUser.id)
+      .single();
+    if (error) {
+      console.error("Error fetching profile:", error);
+      return null;
+    }
+    return { ...profile, email: supabaseUser.email } as User;
+  };
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (_event === 'SIGNED_OUT') {
-        queryClient.setQueryData(['userProfile', user?.id], null);
-      } else if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED') {
-        queryClient.invalidateQueries({ queryKey: ['userProfile', session?.user?.id] });
+  const updateUser = (data: Partial<User>) => {
+    setUser(prevUser => (prevUser ? { ...prevUser, ...data } : null));
+  };
+
+  const handleDailyReward = async (profile: User): Promise<User> => {
+    const lastClaimed = profile.last_daily_reward_claimed_at ? new Date(profile.last_daily_reward_claimed_at) : null;
+    const today = new Date();
+    if (!lastClaimed || !isSameDay(lastClaimed, today)) {
+      try {
+        const updatedProfile = await claimDailyReward();
+        toast.success("Günlük Giriş Ödülü", { description: "Hesabına 20 Gem eklendi!" });
+        return { ...updatedProfile, email: profile.email } as User;
+      } catch (e) {
+        console.error("Error claiming daily reward via server:", e);
       }
+    }
+    return profile;
+  };
+
+  const login = async (supabaseUser: SupabaseUser) => {
+    let profile = await fetchUserProfile(supabaseUser);
+    if (profile) {
+      profile = await handleDailyReward(profile);
+    }
+    setUser(profile);
+  };
+
+  useEffect(() => {
+    // 1. Proactively fetch the session to handle initial load correctly.
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        let profile = await fetchUserProfile(session.user);
+        if (profile) {
+          profile = await handleDailyReward(profile);
+        }
+        setUser(profile);
+      }
+      setLoading(false);
     });
+
+    // 2. Listen for subsequent auth changes (e.g., sign in, sign out).
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        const supabaseUser = session?.user;
+        if (supabaseUser) {
+          let profile = await fetchUserProfile(supabaseUser);
+          if (event === 'SIGNED_IN' && profile) {
+            profile = await handleDailyReward(profile);
+          }
+          setUser(profile);
+        } else {
+          setUser(null);
+        }
+      }
+    );
 
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [queryClient, user?.id]);
+  }, []);
 
-  useEffect(() => {
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible') {
-        setIsSessionRefreshing(true);
-        try {
-          await supabase.auth.refreshSession();
-          await refetchProfile();
-        } catch (error) {
-          console.error("Error refreshing session or profile:", error);
-        } finally {
-          setIsSessionRefreshing(false);
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [refetchProfile]);
-
-  const saveProfileDetails = async (details: Partial<User>) => {
-    if (!user) throw new Error("User not found");
-    // Use the existing updateProfileDetails function
-    await updateProfileDetails(details);
-    await refetchProfile();
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
   };
 
-  const updateUser = (updatedDetails: Partial<User>) => {
-    if (user) {
-      const newUser = { ...user, ...updatedDetails };
-      queryClient.setQueryData(['userProfile', user.id], newUser);
+  const saveProfileDetails = async (newUserData: Partial<User>) => {
+    if (!user) return;
+    const safeUpdateData: Partial<Profile> = {};
+    let hasSafeFields = false;
+    SAFE_PROFILE_UPDATE_KEYS.forEach(key => {
+      if (newUserData.hasOwnProperty(key)) {
+        (safeUpdateData as any)[key] = (newUserData as any)[key];
+        hasSafeFields = true;
+      }
+    });
+    if (!hasSafeFields) return;
+    try {
+      const updatedFields = await updateProfileDetails(safeUpdateData);
+      updateUser(updatedFields);
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
     }
   };
 
-  const value = {
-    session,
-    user: user ?? null,
-    loading: loadingInitial || (!!session && loadingProfile),
-    isSessionRefreshing,
-    logout: async () => {
-      await supabase.auth.signOut();
-      queryClient.clear();
-    },
-    saveProfileDetails,
-    updateUser,
-    refetchProfile,
-  };
+  const value = { user, loading, logout, updateUser, saveProfileDetails, login };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
+}
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-};
+}

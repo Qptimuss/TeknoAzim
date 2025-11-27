@@ -30,12 +30,7 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
 
     if (error || !data.user) {
       console.error("JWT verification failed:", error?.message);
-      
-      // Supabase Auth hatasını doğrudan döndür
-      return res.status(401).json({ 
-        error: "Unauthorized: Invalid token or session expired.",
-        details: error?.message || "Token verification failed."
-      });
+      return res.status(401).json({ error: "Unauthorized: Invalid token." });
     }
 
     // Attach the authenticated user's ID to the request
@@ -45,14 +40,13 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
     // Catch errors from getSupabaseAdmin (e.g., missing service key) or JWT verification issues
     console.error("Error during token verification or admin client initialization:", e);
     
-    // Eğer hata bir Error nesnesiyse, mesajını döndür.
-    const errorMessage = e instanceof Error ? e.message : "Internal server error during authentication.";
-    
-    // Eğer hata Supabase Admin Client'ın başlatılmasıyla ilgiliyse (ki check-env true dediği için bu düşük ihtimal)
-    if (errorMessage.includes("SUPABASE_SERVICE_ROLE_KEY is missing")) {
+    // Check if the error is related to missing service key
+    if (e instanceof Error && e.message.includes("SUPABASE_SERVICE_ROLE_KEY is missing")) {
       return res.status(500).json({ error: "Server configuration error: Supabase Service Role Key is missing." });
     }
 
+    // Return the error message if it's a standard Error, otherwise the generic message.
+    const errorMessage = e instanceof Error ? e.message : "Internal server error during authentication.";
     res.status(500).json({ error: errorMessage });
   }
 };

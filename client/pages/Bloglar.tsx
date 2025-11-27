@@ -1,28 +1,24 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getBlogPosts } from "@/lib/blog-store";
+import { BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useQuery } from "@tanstack/react-query";
 
 export default function Bloglar() {
-  const { data: posts, isLoading, isError, error } = useQuery({
-    queryKey: ["blogPosts"],
-    queryFn: getBlogPosts,
-    // React Query, pencere odaklandığında otomatik olarak yenileme yapar.
-    // Bu, arka plandan dönüldüğünde verilerin güncel olmasını sağlar.
-    staleTime: 1000 * 60 * 5, // 5 dakika boyunca veriyi taze kabul et
-  });
+  const [posts, setPosts] = useState<BlogPostWithAuthor[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (isError) {
-    console.error("Blogları çekerken hata oluştu:", error);
-    return (
-      <div className="container mx-auto px-5 py-12 text-center">
-        <h1 className="text-4xl font-bold text-destructive">Hata</h1>
-        <p className="text-muted-foreground">Bloglar yüklenirken bir sorun oluştu.</p>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setLoading(true);
+      const allPosts = await getBlogPosts();
+      setPosts(allPosts);
+      setLoading(false);
+    };
+    fetchPosts();
+  }, []);
 
   return (
     <div className="container mx-auto px-5 py-12">
@@ -35,7 +31,7 @@ export default function Bloglar() {
         </Button>
       </div>
 
-      {isLoading ? (
+      {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="flex flex-col space-y-3">
@@ -49,7 +45,7 @@ export default function Bloglar() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {posts?.map((post) => (
+          {posts.map((post) => (
             <BlogCard key={post.id} post={post} />
           ))}
         </div>
