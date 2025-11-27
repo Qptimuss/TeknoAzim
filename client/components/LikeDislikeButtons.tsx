@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { awardBadge } from "@/lib/gamification";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface LikeDislikeButtonsProps {
   postId: string;
@@ -14,107 +15,159 @@ interface LikeDislikeButtonsProps {
 
 export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) {
   const { user, updateUser } = useAuth();
-  const [likes, setLikes] = useState(0);
-  const [dislikes, setDislikes] = useState(0);
-  const [userAction, setUserAction] = useState<'liked' | 'disliked' | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const fetchVotes = useCallback(async () => {
-    const counts = await getVoteCounts(postId);
-    setLikes(counts.likes);
-    setDislikes(counts.dislikes);
-    if (user) {
-      const vote = await getUserVote(postId, user.id);
-      setUserAction(vote);
+  // 1. Oy Sayılarını Çekme (Likes/Dislikes)
+  const { data: voteCounts, isLoading: isCountsLoading } = useQuery({
+    queryKey: ["postVotes", postId],
+    queryFn: () => getVoteCounts(postId),
+    staleTime: 1000 * 60, // 1 dakika taze kal
+  });
+
+  // 2. Kullanıcının Oyunu Çekme
+  const { data: userAction, isLoading: isUserVoteLoading } = useQuery({
+    queryKey: ["userVote", postId, user?.id],
+    queryFn: () => (user ? getUserVote(postId, user.id) : Promise.resolve(null)),
+    enabled: !!user, // Sadece kullanıcı varsa çalıştır
+    staleTime: Infinity, // Kullanıcının oyu değişene kadar taze kalmalı
+  });
+
+  // 3. Oy Verme Mutasyonu
+  const voteMutation = useMutation({
+    mutationFn: ({ voteType }: { voteType: 'like' | 'dislike' | null }) => 
+      castVote(postId, user!.id, voteType),
+    
+    onMutate: async ({ voteType }) => {
+      if (!user) return;
+
+      // Optimistic Update: Mevcut sorguları iptal et
+      await queryClient.cancelQueries({ queryKey: ["postVotes", postId] });
+      await queryClient.cancelQueries({ queryKey: ["userVote", postId, user.id] });
+
+      // Snapshot al
+      const previousCounts = queryClient.getQueryData(["postVotes", postId]);
+      const previousUserAction = queryClient.getQueryData(["userVote", postId, user.id]);
+
+      // Yeni durumu hesapla
+      let newLikes = previousCounts?.likes ?? 0;
+      let newDislikes = previousCounts?.dislikes ?? 0;
+      let newUserAction: 'liked' | 'disliked' | null = null;
+
+      if (voteType === 'like') {
+        if (previousUserAction === 'liked') {
+          newLikes -= 1;
+          newUserAction = null;
+        } else {
+          newLikes += 1;
+          if (previousUserAction === 'disliked') newDislikes -= 1;
+          newUserAction = 'liked';
+        }
+      } else if (voteType === 'dislike') {
+        if (previousUserAction === 'disliked') {
+          newDislikes -= 1;
+          newUserAction = null;
+        } else {
+          newDislikes += 1;
+          if (previousUserAction === 'liked') newLikes -= 1;
+          newUserAction = 'disliked';
+        }
+      } else { // voteType === null
+        if (previousUserAction === 'liked') newLikes -= 1;
+        if (previousUserAction === 'disliked') newDislikes -= 1;
+        newUserAction = null;
+      }
+
+      // Optimistic olarak cache'i güncelle
+      queryClient.setQueryData(["postVotes", postId], { likes: newLikes, dislikes: newDislikes });
+      queryClient.setQueryData(["userVote", postId, user.id], newUserAction);
+
+      // Context'e geri dönmek için snapshot'ı döndür
+      return { previousCounts, previousUserAction };
+    },
+
+    onError: (err, variables, context) => {
+      // Hata durumunda eski duruma geri dön
+      toast.error("Oy verilirken bir hata oluştu.");
+      if (context?.previousCounts) {
+        queryClient.setQueryData(["postVotes", postId], context.previousCounts);
+      }
+      if (context?.previousUserAction) {
+        queryClient.setQueryData(["userVote", postId, user!.id], context.previousUserAction);
+      }
+    },
+
+    onSettled: (data, error, variables) => {
+      // Başarılı veya hatalı olsun, sunucudan gelen veriyi doğrulamak için yenile
+      queryClient.invalidateQueries({ queryKey: ["postVotes", postId] });
+      queryClient.invalidateQueries({ queryKey: ["userVote", postId, user!.id] });
+      
+      // Rozet kontrolü (Sadece like atıldığında ve like sayısı arttığında)
+      if (variables.voteType === 'like' && user) {
+        checkBadges(user.id);
+      }
+    },
+  });
+
+  const checkBadges = useCallback(async (currentUserId: string) => {
+    // Bu fonksiyonu sadece başarılı bir like işleminden sonra çağırıyoruz.
+    try {
+      const { likes: newLikes } = await getVoteCounts(postId);
+      
+      const { data: post, error: postError } = await supabase
+        .from('blog_posts')
+        .select('user_id')
+        .eq('id', postId)
+        .single();
+      
+      if (postError || !post || !post.user_id) {
+        console.error("Error fetching post author for badge:", postError);
+        return;
+      }
+
+      const postAuthorId = post.user_id;
+      let profileAfterUpdate = null;
+
+      // YENİ ROZET KONTROLÜ: 2, 5, 10 beğeni
+      if (newLikes === 2) {
+        const badgeUpdate = await awardBadge(postAuthorId, "Beğeni Başlangıcı");
+        if (badgeUpdate) profileAfterUpdate = badgeUpdate;
+      } else if (newLikes === 5) {
+        const badgeUpdate = await awardBadge(postAuthorId, "Beğeni Mıknatısı");
+        if (badgeUpdate) profileAfterUpdate = badgeUpdate;
+      } else if (newLikes === 10) {
+        const badgeUpdate = await awardBadge(postAuthorId, "Popüler Yazar");
+        if (badgeUpdate) profileAfterUpdate = badgeUpdate;
+      }
+
+      // If the badge earner is the current user, update context
+      if (profileAfterUpdate && postAuthorId === currentUserId) {
+        updateUser(profileAfterUpdate);
+      }
+    } catch (error) {
+      console.error("Badge check failed:", error);
     }
-    setIsLoading(false);
-  }, [postId, user]);
+  }, [postId, updateUser]);
 
-  useEffect(() => {
-    fetchVotes();
-  }, [fetchVotes]);
 
-  const handleVote = async (action: 'like' | 'dislike') => {
+  const handleVote = (action: 'like' | 'dislike') => {
     if (!user) {
       toast.error("Oy vermek için giriş yapmalısınız.");
       return;
     }
 
-    // Optimistic UI update
-    const isLiking = action === 'like' && userAction !== 'liked';
-    let newUserAction: 'liked' | 'disliked' | null = null;
+    let newVoteType: 'like' | 'dislike' | null = action;
 
-    if (action === 'like') {
-      if (userAction === 'liked') {
-        setLikes(l => l - 1);
-        newUserAction = null;
-      } else {
-        setLikes(l => l + 1);
-        if (userAction === 'disliked') setDislikes(d => d - 1);
-        newUserAction = 'liked';
-      }
-    } else {
-      if (userAction === 'disliked') {
-        setDislikes(d => d - 1);
-        newUserAction = null;
-      } else {
-        setDislikes(d => d + 1);
-        if (userAction === 'liked') setLikes(l => l - 1);
-        newUserAction = 'disliked';
-      }
+    // Eğer aynı oyu tekrar veriyorsa, oyu kaldır
+    if ((action === 'like' && userAction === 'liked') || (action === 'dislike' && userAction === 'disliked')) {
+      newVoteType = null;
     }
     
-    setUserAction(newUserAction);
-    
-    try {
-      const apiVoteType = newUserAction === 'liked' ? 'like' : newUserAction === 'disliked' ? 'dislike' : null;
-      await castVote(postId, user.id, apiVoteType);
-
-      if (isLiking) {
-        // Fetch the actual new like count after the vote is cast
-        const { likes: newLikes } = await getVoteCounts(postId);
-        
-        const { data: post, error: postError } = await supabase
-          .from('blog_posts')
-          .select('user_id')
-          .eq('id', postId)
-          .single();
-        
-        if (postError) {
-          console.error("Error fetching post author for badge:", postError);
-          return;
-        }
-
-        if (post && post.user_id) {
-          let profileAfterUpdate = null;
-
-          // YENİ ROZET KONTROLÜ: 2 beğeni
-          if (newLikes === 2) {
-            const badgeUpdate = await awardBadge(post.user_id, "Beğeni Başlangıcı");
-            if (badgeUpdate) profileAfterUpdate = badgeUpdate;
-          }
-
-          if (newLikes === 5) {
-            const badgeUpdate = await awardBadge(post.user_id, "Beğeni Mıknatısı");
-            if (badgeUpdate) profileAfterUpdate = badgeUpdate;
-          }
-          
-          if (newLikes === 10) {
-            const badgeUpdate = await awardBadge(post.user_id, "Popüler Yazar");
-            if (badgeUpdate) profileAfterUpdate = badgeUpdate;
-          }
-
-          // If the badge earner is the current user, update context
-          if (profileAfterUpdate && post.user_id === user.id) {
-            updateUser(profileAfterUpdate);
-          }
-        }
-      }
-    } catch (error) {
-      toast.error("Oy verilirken bir hata oluştu.");
-      fetchVotes(); // Revert to actual state on error
-    }
+    voteMutation.mutate({ voteType: newVoteType });
   };
+
+  const likes = voteCounts?.likes ?? 0;
+  const dislikes = voteCounts?.dislikes ?? 0;
+  const isLoading = isCountsLoading || isUserVoteLoading || voteMutation.isPending;
 
   if (isLoading) {
     return <div className="flex items-center gap-4 h-8 w-24"><div className="h-4 bg-muted rounded w-full animate-pulse"></div></div>;
@@ -126,7 +179,7 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
         variant="ghost" 
         size="sm" 
         onClick={() => handleVote('like')} 
-        disabled={!user}
+        disabled={!user || voteMutation.isPending}
         className={cn(
           "flex items-center gap-2 text-muted-foreground hover:text-foreground",
           userAction === 'liked' && "text-blue-500 hover:text-blue-400"
@@ -139,7 +192,7 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
         variant="ghost" 
         size="sm" 
         onClick={() => handleVote('dislike')} 
-        disabled={!user}
+        disabled={!user || voteMutation.isPending}
         className={cn(
           "flex items-center gap-2 text-muted-foreground hover:text-foreground",
           userAction === 'disliked' && "text-red-500 hover:text-red-400"
