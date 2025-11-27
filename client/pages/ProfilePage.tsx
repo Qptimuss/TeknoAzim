@@ -38,7 +38,7 @@ import ImageViewerDialog from "@/components/ImageViewerDialog";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 
 export default function ProfilePage() {
-  const { user, saveProfileDetails, updateUser, loading, logout } = useAuth();
+  const { user, saveProfileDetails, updateUser, loading, logout, isSessionRefreshing } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
@@ -272,22 +272,22 @@ export default function ProfilePage() {
                     )}
                   </button>
                   <div className="flex flex-col gap-1">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleAvatarEditClick} title="Fotoğrafı Değiştir"><Pencil className="h-4 w-4" /></Button>
-                    {user.avatar_url && <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500 hover:bg-red-500/10" onClick={() => setShowDeleteAvatarDialog(true)} title="Fotoğrafı Sil"><Trash2 className="h-4 w-4" /></Button>}
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleAvatarEditClick} title="Fotoğrafı Değiştir" disabled={isSessionRefreshing}><Pencil className="h-4 w-4" /></Button>
+                    {user.avatar_url && <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500 hover:bg-red-500/10" onClick={() => setShowDeleteAvatarDialog(true)} title="Fotoğrafı Sil" disabled={isSessionRefreshing}><Trash2 className="h-4 w-4" /></Button>}
                   </div>
                 </div>
                 <Input type="file" accept="image/png, image/jpeg, image/gif" ref={fileInputRef} onChange={(e) => handleFileChange(e.target.files)} className="hidden" />
                 <div className="flex min-h-[40px] items-center justify-center gap-2">
                   {isEditingName ? (
                     <>
-                      <Input value={nameValue} onChange={(e) => setNameValue(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleNameSave(); }} autoFocus className="w-48 text-center text-2xl font-bold font-outfit h-auto" disabled={profileDetailsMutation.isPending} />
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={handleNameSave} disabled={profileDetailsMutation.isPending}>{profileDetailsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}</Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleNameCancel} disabled={profileDetailsMutation.isPending}><X className="h-4 w-4" /></Button>
+                      <Input value={nameValue} onChange={(e) => setNameValue(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleNameSave(); }} autoFocus className="w-48 text-center text-2xl font-bold font-outfit h-auto" disabled={profileDetailsMutation.isPending || isSessionRefreshing} />
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={handleNameSave} disabled={profileDetailsMutation.isPending || isSessionRefreshing}>{profileDetailsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}</Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleNameCancel} disabled={profileDetailsMutation.isPending || isSessionRefreshing}><X className="h-4 w-4" /></Button>
                     </>
                   ) : (
                     <>
                       <h2 className="text-card-foreground text-2xl font-outfit font-bold">{user.name}</h2>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingName(true)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingName(true)} disabled={isSessionRefreshing}><Pencil className="h-4 w-4" /></Button>
                     </>
                   )}
                 </div>
@@ -296,16 +296,16 @@ export default function ProfilePage() {
                 <div className="flex w-full items-start justify-center gap-2">
                   {isEditingDescription ? (
                     <>
-                      <Textarea value={descriptionValue} onChange={(e) => setDescriptionValue(e.target.value)} autoFocus placeholder="Kendinizden bahsedin..." className="w-full max-w-xs text-sm text-center min-h-[80px]" disabled={profileDetailsMutation.isPending} />
+                      <Textarea value={descriptionValue} onChange={(e) => setDescriptionValue(e.target.value)} autoFocus placeholder="Kendinizden bahsedin..." className="w-full max-w-xs text-sm text-center min-h-[80px]" disabled={profileDetailsMutation.isPending || isSessionRefreshing} />
                       <div className="flex flex-col gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={handleDescriptionSave} disabled={profileDetailsMutation.isPending}>{profileDetailsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}</Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleDescriptionCancel} disabled={profileDetailsMutation.isPending}><X className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={handleDescriptionSave} disabled={profileDetailsMutation.isPending || isSessionRefreshing}>{profileDetailsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}</Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" onClick={handleDescriptionCancel} disabled={profileDetailsMutation.isPending || isSessionRefreshing}><X className="h-4 w-4" /></Button>
                       </div>
                     </>
                   ) : (
                     <>
                       <p className="text-card-foreground text-sm text-center min-h-[24px] max-w-xs">{user.description || <span className="text-muted-foreground italic">Açıklama ekle...</span>}</p>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingDescription(true)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingDescription(true)} disabled={isSessionRefreshing}><Pencil className="h-4 w-4" /></Button>
                     </>
                   )}
                 </div>
@@ -317,7 +317,7 @@ export default function ProfilePage() {
               </div>
               <div className="mb-6 border-t border-border pt-6">
                 <h3 className="text-card-foreground text-xl font-outfit font-bold mb-4">Ünvanlar</h3>
-                <RadioGroup value={user.selected_title || 'none'} onValueChange={handleTitleChange} className="space-y-2">
+                <RadioGroup value={user.selected_title || 'none'} onValueChange={handleTitleChange} className="space-y-2" disabled={isSessionRefreshing}>
                   <div className="flex items-center space-x-3"><RadioGroupItem value="none" id="title-none" /><Label htmlFor="title-none" className="italic text-muted-foreground">Ünvan Yok</Label></div>
                   {Object.entries(TITLES).map(([levelKey, titleObject]) => {
                     const { name: title, icon: Icon } = titleObject;
@@ -325,7 +325,7 @@ export default function ProfilePage() {
                     const isUnlocked = level >= levelRequired;
                     return (
                       <div key={title} className="flex items-center space-x-3">
-                        <RadioGroupItem value={title} id={`title-${levelKey}`} disabled={!isUnlocked} />
+                        <RadioGroupItem value={title} id={`title-${levelKey}`} disabled={!isUnlocked || isSessionRefreshing} />
                         <Label htmlFor={`title-${levelKey}`} className={cn("flex items-center gap-2 w-full", !isUnlocked && "text-muted-foreground opacity-60 cursor-not-allowed")}><Icon className="h-4 w-4" /><span>{title}</span>{!isUnlocked && <span className="ml-auto flex items-center gap-1 text-xs"><Lock className="h-3 w-3" />Seviye {levelRequired}</span>}</Label>
                       </div>
                     );
@@ -351,7 +351,7 @@ export default function ProfilePage() {
               <div className="border-t border-border pt-6 mt-6">
                 <h3 className="text-destructive text-xl font-outfit font-bold mb-4">Tehlikeli Bölge</h3>
                 <p className="text-sm text-muted-foreground mb-4">Hesabınızı silmek kalıcı bir eylemdir ve geri alınamaz. Tüm blog yazılarınız ve verileriniz silinecektir.</p>
-                <Button variant="destructive" className="w-full" onClick={() => setShowDeleteAccountDialog(true)}>Hesabımı Sil</Button>
+                <Button variant="destructive" className="w-full" onClick={() => setShowDeleteAccountDialog(true)} disabled={isSessionRefreshing}>Hesabımı Sil</Button>
               </div>
             </div>
           </div>
@@ -371,7 +371,7 @@ export default function ProfilePage() {
                   const isSelected = user.selected_frame === frame.name;
                   return (
                     <div key={frame.name} className="flex flex-col items-center gap-2">
-                      <Button variant="ghost" className={cn("w-28 h-28 p-0 rounded-lg border-2 flex items-center justify-center relative transition-all", isSelected ? "border-primary ring-2 ring-primary" : "border-border", !isOwned && "opacity-50 grayscale cursor-not-allowed")} onClick={() => isOwned && handleFrameSelect(frame.name)} disabled={!isOwned}>
+                      <Button variant="ghost" className={cn("w-28 h-28 p-0 rounded-lg border-2 flex items-center justify-center relative transition-all", isSelected ? "border-primary ring-2 ring-primary" : "border-border", !isOwned && "opacity-50 grayscale cursor-not-allowed")} onClick={() => isOwned && handleFrameSelect(frame.name)} disabled={!isOwned || isSessionRefreshing}>
                         {frame.name === 'Nova' ? <div className="w-24 h-24 flex items-center justify-center"><NovaFrame><AvatarPreview sizeClass="h-20 w-20" /></NovaFrame></div> : <div className={cn("w-24 h-24 flex items-center justify-center", frame.className)}><AvatarPreview sizeClass="h-20 w-20" /></div>}
                         {!isOwned && <Lock className="absolute bottom-1 right-1 h-4 w-4 text-foreground bg-background rounded-full p-0.5" />}
                         {isSelected && <CheckCircle className="absolute top-1 right-1 h-5 w-5 text-primary bg-background rounded-full" />}

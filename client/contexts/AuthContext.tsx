@@ -1,195 +1,132 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Session, User as SupabaseUser } from "@supabase/supabase-js";
-import { Profile } from "@shared/api";
-import { toast } from "sonner";
-import { updateProfileDetails, claimDailyReward } from "@/lib/profile-store";
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Session, User as SupabaseUser } from '@supabase/supabase-js';
+import { getProfile, saveProfile } from '@/lib/profile-store';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-export type User = Profile & { email?: string };
+export interface User {
+  id: string;
+  email?: string;
+  name?: string | null;
+  description?: string | null;
+  avatar_url?: string | null;
+  exp?: number;
+  gems: number;
+  badges?: string[];
+  selected_title?: string | null;
+  last_daily_claim?: string | null;
+  owned_frames?: string[];
+  selected_frame?: string | null;
+}
 
 interface AuthContextType {
+  session: Session | null;
   user: User | null;
   loading: boolean;
+  isSessionRefreshing: boolean;
   logout: () => Promise<void>;
-  updateUser: (data: Partial<User>) => void;
-  saveProfileDetails: (newUserData: Partial<User>) => Promise<void>;
-  login: (supabaseUser: SupabaseUser) => Promise<void>;
-  refetchProfile: () => Promise<void>; // Yeni eklendi
+  saveProfileDetails: (details: Partial<User>) => Promise<void>;
+  updateUser: (updatedDetails: Partial<User>) => void;
+  refetchProfile: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const isSameDay = (d1: Date, d2: Date) => {
-  return (
-    d1.getFullYear() === d2.getFullYear() &&
-    d1.getMonth() === d2.getMonth() &&
-    d1.getDate() === d2.getDate()
-  );
-};
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const queryClient = useQueryClient();
+  const [session, setSession] = useState<Session | null>(null);
+  const [loadingInitial, setLoadingInitial] = useState(true);
+  const [isSessionRefreshing, setIsSessionRefreshing] = useState(false);
 
-const SAFE_PROFILE_UPDATE_KEYS: Array<keyof Profile> = [
-  'name',
-  'avatar_url',
-  'description',
-  'selected_title',
-  'selected_frame',
-];
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
-    const { data: profile, error } = await supabase
-      .from("profiles")
-      .select("id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at")
-      .eq("id", supabaseUser.id)
-      .single();
-    if (error) {
-      console.error("Error fetching profile:", error);
-      return null;
-    }
-    return { ...profile, email: supabaseUser.email } as User;
-  };
-
-  const updateUser = (data: Partial<User>) => {
-    setUser(prevUser => (prevUser ? { ...prevUser, ...data } : null));
-  };
-
-  const handleDailyReward = async (profile: User): Promise<User> => {
-    const lastClaimed = profile.last_daily_reward_claimed_at ? new Date(profile.last_daily_reward_claimed_at) : null;
-    const today = new Date();
-    if (!lastClaimed || !isSameDay(lastClaimed, today)) {
-      try {
-        const updatedProfile = await claimDailyReward();
-        toast.success("Günlük Giriş Ödülü", { description: "Hesabına 20 Gem eklendi!" });
-        return { ...updatedProfile, email: profile.email } as User;
-      } catch (e) {
-        console.error("Error claiming daily reward via server:", e);
-      }
-    }
-    return profile;
-  };
-
-  const login = async (supabaseUser: SupabaseUser) => {
-    let profile = await fetchUserProfile(supabaseUser);
-    if (profile) {
-      profile = await handleDailyReward(profile);
-    }
-    setUser(profile);
-  };
-  
-  // Yeni eklenen fonksiyon: Profili manuel olarak yeniden çek
-  const refetchProfile = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      const profile = await fetchUserProfile(session.user);
-      if (profile) {
-        setUser(profile);
-      }
-    }
-  };
+  const { data: user, isLoading: loadingProfile, refetch: refetchProfile } = useQuery({
+    queryKey: ['userProfile', session?.user?.id],
+    queryFn: async () => {
+      if (!session?.user) return null;
+      return getProfile(session.user.id);
+    },
+    enabled: !!session?.user,
+    staleTime: Infinity,
+    cacheTime: Infinity,
+  });
 
   useEffect(() => {
-    // Clean up old local storage key if it exists
-    const SUPABASE_PROJECT_ID = 'bhfshljiqbdxgbpgmllp';
-    const oldLocalStorageKey = `sb-${SUPABASE_PROJECT_ID}-auth-token`;
-    if (typeof localStorage !== 'undefined' && localStorage.getItem(oldLocalStorageKey)) {
-      console.log("Eski oturum verisi localStorage'dan temizleniyor.");
-      localStorage.removeItem(oldLocalStorageKey);
-    }
+    const getInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      setLoadingInitial(false);
+    };
 
-    // 1. Set initial session state
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        let profile = await fetchUserProfile(session.user);
-        if (profile) {
-          profile = await handleDailyReward(profile);
-        }
-        setUser(profile);
+    getInitialSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (_event === 'SIGNED_OUT') {
+        queryClient.setQueryData(['userProfile', user?.id], null);
+      } else if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED') {
+        queryClient.invalidateQueries({ queryKey: ['userProfile', session?.user?.id] });
       }
-      setLoading(false);
     });
 
-    // 2. Listen for auth state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        const supabaseUser = session?.user;
-        if (supabaseUser) {
-          let profile = await fetchUserProfile(supabaseUser);
-          // Only claim daily reward on explicit sign-in, not on every token refresh
-          if (event === 'SIGNED_IN' && profile) {
-            profile = await handleDailyReward(profile);
-          }
-          setUser(profile);
-        } else {
-          setUser(null);
-        }
-      }
-    );
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [queryClient, user?.id]);
 
-    // 3. Listen for tab focus/visibility changes to force a session refresh
+  useEffect(() => {
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible') {
-        // When tab becomes visible, proactively refresh the session.
-        // This handles cases where the token expired while the tab was in the background.
-        const { error } = await supabase.auth.refreshSession();
-        if (error) {
-          console.error("Error refreshing session on visibility change:", error.message);
-          // The onAuthStateChange listener will handle the sign-out if refresh fails.
+        setIsSessionRefreshing(true);
+        try {
+          await supabase.auth.refreshSession();
+          await refetchProfile();
+        } catch (error) {
+          console.error("Error refreshing session or profile:", error);
+        } finally {
+          setIsSessionRefreshing(false);
         }
-        
-        // Ek olarak, profil verilerini de yenilemeyi zorla (özellikle gem/exp gibi dinamik veriler için)
-        await refetchProfile();
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Cleanup function
     return () => {
-      authListener.subscription.unsubscribe();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [refetchProfile]);
 
-  const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
+  const saveProfileDetails = async (details: Partial<User>) => {
+    if (!user) throw new Error("User not found");
+    await saveProfile(user.id, details);
+    await refetchProfile();
   };
 
-  const saveProfileDetails = async (newUserData: Partial<User>) => {
-    if (!user) return;
-    const safeUpdateData: Partial<Profile> = {};
-    let hasSafeFields = false;
-    SAFE_PROFILE_UPDATE_KEYS.forEach(key => {
-      if (newUserData.hasOwnProperty(key)) {
-        (safeUpdateData as any)[key] = (newUserData as any)[key];
-        hasSafeFields = true;
-      }
-    });
-    if (!hasSafeFields) return;
-    try {
-      const updatedFields = await updateProfileDetails(safeUpdateData);
-      updateUser(updatedFields);
-    } catch (e) {
-      throw e instanceof Error ? e : new Error(String(e));
+  const updateUser = (updatedDetails: Partial<User>) => {
+    if (user) {
+      const newUser = { ...user, ...updatedDetails };
+      queryClient.setQueryData(['userProfile', user.id], newUser);
     }
   };
 
-  const value = { user, loading, logout, updateUser, saveProfileDetails, login, refetchProfile };
+  const value = {
+    session,
+    user: user ?? null,
+    loading: loadingInitial || (!!session && loadingProfile),
+    isSessionRefreshing,
+    logout: async () => {
+      await supabase.auth.signOut();
+      queryClient.clear();
+    },
+    saveProfileDetails,
+    updateUser,
+    refetchProfile,
+  };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
-}
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
+};

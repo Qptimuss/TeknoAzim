@@ -14,7 +14,7 @@ const CRATE_COST = 10;
 
 export default function Magaza() {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, isSessionRefreshing } = useAuth();
   const navigate = useNavigate();
   
   const [isCrateDialogOpen, setIsCrateDialogOpen] = useState(false);
@@ -125,7 +125,7 @@ export default function Magaza() {
               </CardDescription>
             </CardContent>
             <CardFooter>
-              <Button className="w-full" onClick={handleOpenCrate} disabled={crateMutation.isPending}>
+              <Button className="w-full" onClick={handleOpenCrate} disabled={crateMutation.isPending || isSessionRefreshing}>
                 <div className="flex items-center justify-center gap-2">
                   <span>Sandığı Aç</span>
                   <div className="flex items-center gap-1 bg-background/20 rounded-full px-2 py-0.5">
