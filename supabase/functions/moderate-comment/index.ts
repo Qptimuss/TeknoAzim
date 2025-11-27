@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { HfInference } from 'https://esm.sh/@huggingface/inference';
+import { HfInference } from 'https://esm.sh/@huggingface/inference@2.7.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
