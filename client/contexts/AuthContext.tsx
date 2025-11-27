@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
-import { getProfile, saveProfile } from '@/lib/profile-store';
+import { getProfile, updateProfileDetails } from '@/lib/profile-store';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export interface User {
@@ -95,7 +95,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const saveProfileDetails = async (details: Partial<User>) => {
     if (!user) throw new Error("User not found");
-    await saveProfile(user.id, details);
+    // Use the existing updateProfileDetails function
+    await updateProfileDetails(details);
     await refetchProfile();
   };
 
