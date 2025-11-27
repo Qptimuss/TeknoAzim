@@ -1,6 +1,5 @@
 import "./global.css";
 
-import { Toaster } from "@/components/ui/toaster";
 import { createRoot } from "react-dom/client";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -33,7 +32,6 @@ const App = () => (
     <TooltipProvider>
       {/* ThemeProvider'ı sadece dark mode kullanacak şekilde ayarladık */}
       <ThemeProvider attribute="class" defaultTheme="dark">
-        <Toaster />
         <Sonner />
         <AuthProvider>
           <BrowserRouter>
