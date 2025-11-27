@@ -40,6 +40,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // One-time effect to clean up old localStorage data from previous session management
+  useEffect(() => {
+    const SUPABASE_PROJECT_ID = 'bhfshljiqbdxgbpgmllp';
+    const oldLocalStorageKey = `sb-${SUPABASE_PROJECT_ID}-auth-token`;
+    
+    if (typeof localStorage !== 'undefined') {
+      const oldToken = localStorage.getItem(oldLocalStorageKey);
+      if (oldToken) {
+        console.log("Eski oturum verisi localStorage'dan temizleniyor.");
+        localStorage.removeItem(oldLocalStorageKey);
+      }
+    }
+  }, []);
+
   const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
     const { data: profile, error } = await supabase
       .from("profiles")
