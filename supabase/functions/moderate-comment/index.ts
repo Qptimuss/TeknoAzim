@@ -12,7 +12,7 @@ const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
 // --- MODERATION CONFIGURATION ---
 const HF_MODEL = 'unitary/toxic-bert';
 const TOXICITY_THRESHOLD = 0.7;
-const CHUNK_SIZE_WORDS = 250; // Modelin 512 token limitine takılmamak için güvenli bir kelime sayısı
+const CHUNK_SIZE_WORDS = 150; // Modelin 512 token limitine takılmamak için kelime sayısını düşürdük
 
 // Helper to create a regex pattern that allows for character repetitions
 function createSpammyRegex(word: string): string {
@@ -95,7 +95,7 @@ serve(async (req) => {
       });
     }
     
-    // --- YENİ: Metni parçalara ayırma (Chunking) ---
+    // --- Metni parçalara ayırma (Chunking) ---
     const words = content.split(/\s+/); // Metni kelimelere ayır
     const chunks: string[] = [];
     for (let i = 0; i < words.length; i += CHUNK_SIZE_WORDS) {
