@@ -46,6 +46,7 @@ export default function Magaza() {
     try {
       const { updatedProfile, itemWon, alreadyOwned, refundAmount } = await openCrate(CRATE_COST);
       
+      // Profil verilerini AuthContext üzerinden güncelliyoruz.
       updateUser(updatedProfile);
 
       setWonFrame(itemWon);

@@ -14,6 +14,7 @@ interface AuthContextType {
   updateUser: (data: Partial<User>) => void;
   saveProfileDetails: (newUserData: Partial<User>) => Promise<void>;
   login: (supabaseUser: SupabaseUser) => Promise<void>;
+  refetchProfile: () => Promise<void>; // Yeni eklendi
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -77,6 +78,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setUser(profile);
   };
+  
+  // Yeni eklenen fonksiyon: Profili manuel olarak yeniden çek
+  const refetchProfile = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const profile = await fetchUserProfile(session.user);
+      if (profile) {
+        setUser(profile);
+      }
+    }
+  };
 
   useEffect(() => {
     // Clean up old local storage key if it exists
@@ -126,6 +138,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error("Error refreshing session on visibility change:", error.message);
           // The onAuthStateChange listener will handle the sign-out if refresh fails.
         }
+        
+        // Ek olarak, profil verilerini de yenilemeyi zorla (özellikle gem/exp gibi dinamik veriler için)
+        await refetchProfile();
       }
     };
 
@@ -162,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const value = { user, loading, logout, updateUser, saveProfileDetails, login };
+  const value = { user, loading, logout, updateUser, saveProfileDetails, login, refetchProfile };
 
   return (
     <AuthContext.Provider value={value}>
