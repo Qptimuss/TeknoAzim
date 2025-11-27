@@ -17,12 +17,24 @@ import {
   handleClaimDailyReward,
   handleOpenCrate
 } from "./routes/gamification";
+import { handleCheckEnv } from "./routes/check-env";
 
-export function createServer(env?: Record<string, string>) {
-  // Geliştirme sırasında Vite'den gelen ortam değişkenlerini process.env'e aktar
+export function createServer(env?: Record<string, string | undefined>) {
+  // If an env object is passed (from the Netlify function handler),
+  // robustly merge it into the current process.env. This ensures the variables
+  // are available throughout the server's lifecycle.
   if (env) {
-    Object.assign(process.env, env);
+    console.log("[createServer] Merging environment variables from function handler...");
+    for (const key in env) {
+      if (env[key]) {
+        process.env[key] = env[key];
+      }
+    }
   }
+
+  console.log("Creating Express server...");
+  console.log(`[createServer] After merge, SUPABASE_URL is set: ${!!process.env.SUPABASE_URL}`);
+  console.log(`[createServer] After merge, SUPABASE_SERVICE_ROLE_KEY is set: ${!!process.env.SUPABASE_SERVICE_ROLE_KEY}`);
 
   const app = express();
 
@@ -30,6 +42,9 @@ export function createServer(env?: Record<string, string>) {
   app.use(cors());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+
+  // --- DIAGNOSTIC ROUTE ---
+  app.get("/api/check-env", handleCheckEnv);
 
   // Example API routes
   app.get("/api/ping", (_req, res) => {
