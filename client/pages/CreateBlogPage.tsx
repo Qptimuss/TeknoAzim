@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/form";
 import { toast } from "sonner";
 import { addBlogPost, uploadBlogImage, getPostsByUserId } from "@/lib/blog-store";
-import { useAuth } from "@/contexts/AuthContext";
-import { addExp, awardBadge, EXP_ACTIONS } from "@/lib/gamification";
+import { useAuth, User } from "@/contexts/AuthContext";
+import { addExp, awardBadge, EXP_ACTIONS, calculateLevel } from "@/lib/gamification";
 import { Loader2 } from "lucide-react"; // Import Loader2
 
 const blogSchema = z.object({
@@ -69,22 +69,19 @@ export default function CreateBlogPage() {
     }
 
     try {
-      // Yeni gönderiyi eklemeden ÖNCE kullanıcının gönderi sayısını kontrol et
       const userPosts = await getPostsByUserId(user.id);
       const postCountBeforeCreating = userPosts.length;
+      const levelBefore = user.level;
+      let latestProfileState: User | null = { ...user };
 
       let imageUrl: string | undefined = undefined;
-      // Resim seçildiyse yükle
       if (values.imageFile && values.imageFile.length > 0) {
         toast.info("Resim yükleniyor...");
         const file = values.imageFile[0];
         const uploadedUrl = await uploadBlogImage(file, user.id);
-        if (uploadedUrl) {
-          imageUrl = uploadedUrl;
-        }
+        if (uploadedUrl) imageUrl = uploadedUrl;
       }
 
-      // Blog gönderisini veritabanına ekle
       await addBlogPost({ 
         title: values.title,
         content: values.content,
@@ -92,30 +89,32 @@ export default function CreateBlogPage() {
         imageUrl,
       });
 
-      // --- Oyunlaştırma Mantığı ---
+      // --- Gamification Logic ---
       
       // 1. Blog yayınladığı için EXP ver.
-      let latestProfileState = await addExp(user.id, EXP_ACTIONS.CREATE_POST);
+      const profileAfterPost = await addExp(EXP_ACTIONS.CREATE_POST);
+      if (profileAfterPost) latestProfileState = profileAfterPost;
       
       // 2. Rozetleri kontrol et
-      if (postCountBeforeCreating === 0) {
-        const badgeUpdate = await awardBadge(user.id, "İlk Blog");
-        if (badgeUpdate) latestProfileState = badgeUpdate;
-      }
-      
-      if (postCountBeforeCreating === 1) {
-        const badgeUpdate = await awardBadge(user.id, "Hevesli Katılımcı");
-        if (badgeUpdate) latestProfileState = badgeUpdate;
-      }
-      
-      if (postCountBeforeCreating === 4) {
-        const badgeUpdate = await awardBadge(user.id, "Topluluk İnşacısı");
-        if (badgeUpdate) latestProfileState = badgeUpdate;
+      let awardedBadgeName: string | null = null;
+      if (postCountBeforeCreating === 0) awardedBadgeName = "İlk Blog";
+      if (postCountBeforeCreating === 1) awardedBadgeName = "Hevesli Katılımcı";
+      if (postCountBeforeCreating === 4) awardedBadgeName = "Topluluk İnşacısı";
+
+      if (awardedBadgeName) {
+        const profileAfterBadge = await awardBadge(awardedBadgeName);
+        if (profileAfterBadge) latestProfileState = profileAfterBadge;
+        toast.success("Yeni Rozet Kazandın!", {
+          description: `"${awardedBadgeName}" rozetini kazandın, 50 EXP ve 30 Gem elde ettin!`,
+        });
       }
 
-      // 4. Auth Context'i en güncel ve nihai profil durumuyla güncelle.
+      // 3. Auth Context'i en güncel ve nihai profil durumuyla güncelle ve seviye atlama bildirimi göster.
       if (latestProfileState) {
         updateUser(latestProfileState);
+        if (latestProfileState.level > levelBefore) {
+          toast.success(`Tebrikler! Seviye ${latestProfileState.level} oldun!`);
+        }
       }
 
       toast.success("Blog yazınız başarıyla oluşturuldu!");

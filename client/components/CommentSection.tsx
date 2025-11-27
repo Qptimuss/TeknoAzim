@@ -65,12 +65,28 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
     }
 
     try {
+      const levelBefore = user.level;
+      const badgesBefore = user.badges || [];
+
       // Sunucu artık yorumu ekleyip, rozetleri kontrol edip güncel profili döndürecek.
-      const { profile } = await addComment({ postId, content: values.content });
+      const { profile: updatedProfile } = await addComment({ postId, content: values.content });
       
       // Sunucudan gelen güncel profil ile AuthContext'i güncelle
-      if (profile) {
-        updateUser(profile);
+      if (updatedProfile) {
+        updateUser(updatedProfile);
+
+        // Check for level up
+        if (updatedProfile.level > levelBefore) {
+          toast.success(`Tebrikler! Seviye ${updatedProfile.level} oldun!`);
+        }
+
+        // Check for new badge
+        const newBadges = updatedProfile.badges.filter(b => !badgesBefore.includes(b));
+        if (newBadges.length > 0) {
+          toast.success("Yeni Rozet Kazandın!", {
+            description: `"${newBadges[0]}" rozetini kazandın, 50 EXP ve 30 Gem elde ettin!`,
+          });
+        }
       }
 
       toast.success("Yorumunuz eklendi!");

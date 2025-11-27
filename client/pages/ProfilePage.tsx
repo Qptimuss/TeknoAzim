@@ -101,9 +101,22 @@ export default function ProfilePage() {
   const postDeleteMutation = useMutation({
     mutationFn: async (post: { id: string; imageUrl?: string | null }) => {
       if (!user) throw new Error("Kullanıcı bulunamadı");
+      
+      const levelBefore = user.level;
+      const selectedTitleBefore = user.selected_title;
+
       await deleteBlogPost(post.id, post.imageUrl);
-      const updatedProfile = await removeExp(user.id, EXP_ACTIONS.REMOVE_POST);
-      if (updatedProfile) updateUser(updatedProfile);
+      const updatedProfile = await removeExp(EXP_ACTIONS.REMOVE_POST);
+      
+      if (updatedProfile) {
+        updateUser(updatedProfile);
+        if (updatedProfile.level < levelBefore) {
+          toast.warning(`Seviye ${levelBefore}'den Seviye ${updatedProfile.level}'e düştün!`);
+          if (selectedTitleBefore && updatedProfile.selected_title === null) {
+            toast.info("Seviyen düştüğü için ünvanın kaldırıldı.");
+          }
+        }
+      }
     },
     onSuccess: () => {
       toast.success("Blog yazısı başarıyla silindi.");

@@ -78,6 +78,43 @@ async function awardBadgeIfMissing(userId: string, badgeName: string, supabaseAd
     return false;
 }
 
+// Helper function to check and award badges based on like counts
+async function checkAndAwardLikeBadges(postId: string, supabaseAdmin: any) {
+    try {
+        // 1. Get total like count
+        const { count: likeCount, error: countError } = await supabaseAdmin
+            .from('post_votes')
+            .select('*', { count: 'exact', head: true })
+            .eq('post_id', postId)
+            .eq('vote_type', 1);
+
+        if (countError) throw countError;
+
+        // 2. Get post author
+        const { data: post, error: postError } = await supabaseAdmin
+            .from('blog_posts')
+            .select('user_id')
+            .eq('id', postId)
+            .single();
+
+        if (postError || !post) throw postError || new Error("Post not found");
+
+        const postAuthorId = post.user_id;
+
+        // 3. Check for badge milestones
+        if (likeCount === 2) {
+            await awardBadgeIfMissing(postAuthorId, "Beğeni Başlangıcı", supabaseAdmin);
+        } else if (likeCount === 5) {
+            await awardBadgeIfMissing(postAuthorId, "Beğeni Mıknatısı", supabaseAdmin);
+        } else if (likeCount === 10) {
+            await awardBadgeIfMissing(postAuthorId, "Popüler Yazar", supabaseAdmin);
+        }
+    } catch (error) {
+        console.error(`Error checking for like badges on post ${postId}:`, error);
+        // We don't re-throw, as this is a non-critical side effect. The main vote operation succeeded.
+    }
+}
+
 
 // --- Handlers ---
 
@@ -393,6 +430,11 @@ export const handleCastVote: RequestHandler = async (req, res) => {
         .from('post_votes') as any)
         .upsert(upsertPayload, { onConflict: 'user_id, post_id' });
       if (error) throw error;
+
+      // If it was a 'like', check for badges
+      if (voteType === 'like') {
+        await checkAndAwardLikeBadges(postId, supabaseAdmin);
+      }
     }
 
     res.status(204).send();

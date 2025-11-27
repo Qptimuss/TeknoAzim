@@ -1,20 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { ThumbsUp, ThumbsDown } from "lucide-react";
-import { getVoteCounts, getUserVote, castVote } from "@/lib/blog-store";
-import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { castVote, getVoteCounts, getUserVote } from "@/lib/blog-store";
+import { cn } from "@/lib/utils";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { awardBadge } from "@/lib/gamification";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 
 interface LikeDislikeButtonsProps {
   postId: string;
 }
 
 export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   // 1. Oy Sayılarını Çekme (Likes/Dislikes)
@@ -45,8 +42,8 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
       await queryClient.cancelQueries({ queryKey: ["userVote", postId, user.id] });
 
       // Snapshot al
-      const previousCounts = queryClient.getQueryData(["postVotes", postId]);
-      const previousUserAction = queryClient.getQueryData(["userVote", postId, user.id]);
+      const previousCounts: { likes: number; dislikes: number } | undefined = queryClient.getQueryData(["postVotes", postId]);
+      const previousUserAction: 'liked' | 'disliked' | null | undefined = queryClient.getQueryData(["userVote", postId, user.id]);
 
       // Yeni durumu hesapla
       let newLikes = previousCounts?.likes ?? 0;
@@ -96,58 +93,14 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
       }
     },
 
-    onSettled: (data, error, variables) => {
-      // Başarılı veya hatalı olsun, sunucudan gelen veriyi doğrulamak için yenile
+    onSettled: () => {
+      // Sunucudan gelen veriyi doğrulamak için ilgili sorguları geçersiz kıl
       queryClient.invalidateQueries({ queryKey: ["postVotes", postId] });
-      queryClient.invalidateQueries({ queryKey: ["userVote", postId, user!.id] });
-      
-      // Rozet kontrolü (Sadece like atıldığında ve like sayısı arttığında)
-      if (variables.voteType === 'like' && user) {
-        checkBadges(user.id);
-      }
+      queryClient.invalidateQueries({ queryKey: ["userVote", postId, user?.id] });
+      // Yazarın profilini de geçersiz kıl, çünkü bir rozet kazanmış olabilir.
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
     },
   });
-
-  const checkBadges = useCallback(async (currentUserId: string) => {
-    // Bu fonksiyonu sadece başarılı bir like işleminden sonra çağırıyoruz.
-    try {
-      const { likes: newLikes } = await getVoteCounts(postId);
-      
-      const { data: post, error: postError } = await supabase
-        .from('blog_posts')
-        .select('user_id')
-        .eq('id', postId)
-        .single();
-      
-      if (postError || !post || !post.user_id) {
-        console.error("Error fetching post author for badge:", postError);
-        return;
-      }
-
-      const postAuthorId = post.user_id;
-      let profileAfterUpdate = null;
-
-      // YENİ ROZET KONTROLÜ: 2, 5, 10 beğeni
-      if (newLikes === 2) {
-        const badgeUpdate = await awardBadge(postAuthorId, "Beğeni Başlangıcı");
-        if (badgeUpdate) profileAfterUpdate = badgeUpdate;
-      } else if (newLikes === 5) {
-        const badgeUpdate = await awardBadge(postAuthorId, "Beğeni Mıknatısı");
-        if (badgeUpdate) profileAfterUpdate = badgeUpdate;
-      } else if (newLikes === 10) {
-        const badgeUpdate = await awardBadge(postAuthorId, "Popüler Yazar");
-        if (badgeUpdate) profileAfterUpdate = badgeUpdate;
-      }
-
-      // If the badge earner is the current user, update context
-      if (profileAfterUpdate && postAuthorId === currentUserId) {
-        updateUser(profileAfterUpdate);
-      }
-    } catch (error) {
-      console.error("Badge check failed:", error);
-    }
-  }, [postId, updateUser]);
-
 
   const handleVote = (action: 'like' | 'dislike') => {
     if (!user) {
