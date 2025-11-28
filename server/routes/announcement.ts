@@ -130,3 +130,31 @@ export const handleGetAnnouncements: RequestHandler = async (_req, res) => {
     res.status(500).json({ error: "Internal server error." });
   }
 };
+
+// GET /api/announcement/:id (Public access)
+export const handleGetAnnouncementById: RequestHandler = async (req, res) => {
+  const announcementId = req.params.id;
+
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+
+    const { data, error } = await supabaseAdmin
+      .from("announcements")
+      .select("*")
+      .eq("id", announcementId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') { // No rows found
+        return res.status(404).json({ error: "Announcement not found." });
+      }
+      console.error("Supabase fetch announcement by ID error:", error);
+      return res.status(500).json({ error: "Failed to fetch announcement." });
+    }
+
+    res.status(200).json(data);
+  } catch (e) {
+    console.error("Error fetching announcement by ID:", e);
+    res.status(500).json({ error: "Internal server error." });
+  }
+};

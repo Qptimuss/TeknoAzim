@@ -34,6 +34,7 @@ import {
 } from "./routes/announcement";
 
 import { handleCheckEnv } from "./routes/check-env"; // Kaybolmaması için eklendi
+import { handleGetAnnouncementById } from "./routes/announcement"; // Yeni import
 
 export function createServer(env?: Record<string, string | undefined>) {
   // Load .env variables
@@ -98,6 +99,7 @@ export function createServer(env?: Record<string, string | undefined>) {
   // Announcements
   app.post("/api/announcement", requireAuth, requireAdmin, handleCreateAnnouncement);
   app.get("/api/announcement", handleGetAnnouncements);
+  app.get("/api/announcement/:id", handleGetAnnouncementById); // Yeni Rota
   app.put("/api/announcement/:id", requireAuth, requireAdmin, handleUpdateAnnouncement);
   app.delete("/api/announcement/:id", requireAuth, requireAdmin, handleDeleteAnnouncement);
 
