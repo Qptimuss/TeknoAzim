@@ -122,9 +122,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     const safeUpdateData: Partial<Profile> = {};
     SAFE_PROFILE_UPDATE_KEYS.forEach((key) => {
-      if (newUserData.hasOwnProperty(key)) {
-        // Fix 1: Asserting the value type to resolve TS2322
-        safeUpdateData[key] = newUserData[key] as Profile[typeof key];
+      if (Object.prototype.hasOwnProperty.call(newUserData, key) && newUserData[key] !== undefined) {
+        // Fix: Using 'as any' to bypass strict index signature check during iteration.
+        (safeUpdateData as any)[key] = newUserData[key];
       }
     });
     if (Object.keys(safeUpdateData).length === 0) return;
