@@ -2,44 +2,49 @@ import { supabase } from "@/integrations/supabase/client";
 import { BlogPostWithAuthor, CommentWithAuthor, Profile } from "@shared/api";
 import { fetchWithAuth } from "./api-utils";
 
-// --- Blog Post Functions ---
+const SUPABASE_URL = "https://bhfshljiqbdxgbpgmllp.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoZnNobGppcWJkeGdicGdtbGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjUyMDQsImV4cCI6MjA3OTc0MTIwNH0.V_g-uODQnktATni-fa_raP8G5rz7e6qO7oMUodhd3aA";
 
-export const getBlogPosts = async (): Promise<BlogPostWithAuthor[]> => {
-  const { data, error } = await supabase
-    .from("blog_posts")
-    .select("*, profiles(*)")
-    .order("created_at", { ascending: false });
-  
-  if (error) {
-    console.error("Error fetching blog posts:", error);
-    return []; // Hata durumunda boş dizi döndür
+const restHeaders = {
+  'apikey': SUPABASE_ANON_KEY,
+  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+};
+
+const handleRestError = async (response: Response, context: string) => {
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: 'Bilinmeyen bir ağ hatası oluştu.' }));
+    console.error(`Error fetching ${context} via REST:`, errorData);
+    throw new Error(errorData.message || `Failed to fetch ${context}`);
   }
-  return data as BlogPostWithAuthor[];
+};
+
+// --- Blog Posts ---
+export const getBlogPosts = async (): Promise<BlogPostWithAuthor[]> => {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?select=*,profiles(*)&order=created_at.desc`, { headers: restHeaders });
+    await handleRestError(response, 'blog posts');
+    return await response.json() as BlogPostWithAuthor[];
+  } catch (error) {
+    console.error("Caught an exception in getBlogPosts:", error);
+    return [];
+  }
 };
 
 export const getBlogPostById = async (id: string): Promise<BlogPostWithAuthor | null> => {
-  const { data, error } = await supabase
-    .from("blog_posts")
-    .select("*, profiles(*)")
-    .eq("id", id)
-    .single();
-  if (error) {
-    console.error("Error fetching post by ID:", error);
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts?select=*,profiles(*)&id=eq.${id}`, { 
+      headers: { ...restHeaders, 'Accept': 'application/vnd.pgrst.object+json' }
+    });
+    if (response.status === 406) return null;
+    await handleRestError(response, 'post by ID');
+    return await response.json() as BlogPostWithAuthor;
+  } catch (error) {
+    console.error("Caught an exception in getBlogPostById:", error);
     return null;
   }
-  return data as BlogPostWithAuthor;
 };
 
-export const getPostsByUserId = async (userId: string): Promise<BlogPostWithAuthor[]> => {
-  const { data, error } = await supabase
-    .from("blog_posts")
-    .select("*, profiles(*)")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-  if (error) throw new Error(error.message);
-  return data as BlogPostWithAuthor[];
-};
-
+// --- Other blog functions ---
 export const addBlogPost = async (post: { title: string; content: string; userId: string; imageUrl?: string }) => {
   return fetchWithAuth('/api/blog/post', {
     method: 'POST',
@@ -86,25 +91,22 @@ export const uploadBlogImage = async (file: File, userId: string): Promise<strin
   return data.publicUrl;
 };
 
-// --- Comment Functions ---
-
+// --- Comments ---
 export const getCommentsForPost = async (postId: string): Promise<CommentWithAuthor[]> => {
-  const { data, error } = await supabase
-    .from("comments")
-    .select("*, profiles(*)")
-    .eq("post_id", postId)
-    .order("created_at", { ascending: true });
-  if (error) throw new Error(error.message);
-  return data as CommentWithAuthor[];
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/comments?select=*,profiles(*)&post_id=eq.${postId}&order=created_at.asc`, { headers: restHeaders });
+    await handleRestError(response, 'comments for post');
+    return await response.json() as CommentWithAuthor[];
+  } catch (error) {
+    console.error("Caught an exception in getCommentsForPost:", error);
+    return [];
+  }
 };
 
-export const addComment = async (comment: { postId: string; userId: string; content: string }) => {
+export const addComment = async (comment: { postId: string; content: string }): Promise<{ comment: CommentWithAuthor, profile: Profile }> => {
   return fetchWithAuth('/api/blog/comment', {
     method: 'POST',
-    body: JSON.stringify({
-      postId: comment.postId,
-      content: comment.content,
-    }),
+    body: JSON.stringify(comment),
   });
 };
 
@@ -112,29 +114,34 @@ export const deleteComment = async (commentId: string) => {
   return fetchWithAuth(`/api/blog/comment/${commentId}`, { method: 'DELETE' });
 };
 
-// --- Vote Functions ---
-
+// --- Votes ---
 export const getVoteCounts = async (postId: string): Promise<{ likes: number; dislikes: number }> => {
-  const { data, error } = await supabase
-    .from('post_votes')
-    .select('vote_type')
-    .eq('post_id', postId);
-  if (error) throw new Error(error.message);
-  
-  const likes = data.filter(v => v.vote_type === 1).length;
-  const dislikes = data.filter(v => v.vote_type === -1).length;
-  return { likes, dislikes };
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/post_votes?select=vote_type&post_id=eq.${postId}`, { headers: restHeaders });
+    await handleRestError(response, 'vote counts');
+    const data = await response.json();
+    const likes = data.filter((v: { vote_type: number }) => v.vote_type === 1).length;
+    const dislikes = data.filter((v: { vote_type: number }) => v.vote_type === -1).length;
+    return { likes, dislikes };
+  } catch (error) {
+    console.error("Caught an exception in getVoteCounts:", error);
+    return { likes: 0, dislikes: 0 };
+  }
 };
 
 export const getUserVote = async (postId: string, userId: string): Promise<'liked' | 'disliked' | null> => {
-  const { data, error } = await supabase
-    .from('post_votes')
-    .select('vote_type')
-    .eq('post_id', postId)
-    .eq('user_id', userId)
-    .single();
-  if (error || !data) return null;
-  return data.vote_type === 1 ? 'liked' : 'disliked';
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/post_votes?select=vote_type&post_id=eq.${postId}&user_id=eq.${userId}`, {
+      headers: { ...restHeaders, 'Accept': 'application/vnd.pgrst.object+json' }
+    });
+    if (response.status === 406) return null;
+    await handleRestError(response, 'user vote');
+    const data = await response.json();
+    return data.vote_type === 1 ? 'liked' : 'disliked';
+  } catch (error) {
+    console.error("Caught an exception in getUserVote:", error);
+    return null;
+  }
 };
 
 export const castVote = async (postId: string, userId: string, voteType: 'like' | 'dislike' | null) => {
@@ -144,27 +151,41 @@ export const castVote = async (postId: string, userId: string, voteType: 'like' 
   });
 };
 
-// --- Profile Functions ---
-
+// --- Profiles ---
 export const getProfileById = async (userId: string): Promise<Profile | null> => {
-  const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single();
-  if (error) {
-    console.error("Error fetching profile by ID:", error);
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&id=eq.${userId}`, {
+      headers: { ...restHeaders, 'Accept': 'application/vnd.pgrst.object+json' }
+    });
+    if (response.status === 406) return null;
+    await handleRestError(response, 'profile by ID');
+    return await response.json() as Profile;
+  } catch (error) {
+    console.error("Caught an exception in getProfileById:", error);
     return null;
   }
-  return data as Profile;
 };
 
 export const updateProfile = async (updateData: Partial<Pick<Profile, 'name' | 'description' | 'avatar_url'>>) => {
-  return fetchWithAuth('/api/profile', { method: 'PUT', body: JSON.stringify(updateData) });
+  return fetchWithAuth('/api/profile', {
+    method: 'PUT',
+    body: JSON.stringify(updateData),
+  });
 };
 
 export const uploadAvatar = async (file: File, userId: string): Promise<string> => {
   const fileExt = file.name.split('.').pop();
   const filePath = `avatars/${userId}.${fileExt}`;
 
-  const { error } = await supabase.storage.from('images').upload(filePath, file, { cacheControl: '3600', upsert: true });
-  if (error) throw new Error(`Avatar yüklenemedi: ${error.message}`);
+  const { error } = await supabase.storage.from('images').upload(filePath, file, {
+    cacheControl: '3600',
+    upsert: true,
+  });
+
+  if (error) {
+    console.error('Supabase Storage Error:', error);
+    throw new Error(`Avatar yüklenemedi: ${error.message}`);
+  }
 
   const { data } = supabase.storage.from('images').getPublicUrl(filePath);
   return `${data.publicUrl}?t=${new Date().getTime()}`;

@@ -1,200 +1,101 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Session, User as SupabaseUser } from "@supabase/supabase-js";
-import { Profile } from "@shared/api";
-import { toast } from "sonner";
-import { updateProfileDetails, claimDailyReward } from "@/lib/profile-store";
+import { getProfile, updateProfileDetails } from "@/lib/profile-store";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 
-export type User = Profile & { email?: string };
+export interface User {
+  id: string;
+  email?: string;
+  name?: string | null;
+  description?: string | null;
+  avatar_url?: string | null;
+  exp?: number;
+  gems?: number;
+  badges?: string[];
+  selected_title?: string | null;
+  last_daily_claim?: string | null;
+  owned_frames?: string[];
+  selected_frame?: string | null;
+}
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   logout: () => Promise<void>;
-  updateUser: (data: Partial<User>) => void;
-  saveProfileDetails: (newUserData: Partial<User>) => Promise<void>;
-  login: (supabaseUser: SupabaseUser) => Promise<void>;
+  updateUser: (updatedDetails: Partial<User>) => void;
+  saveProfileDetails: (details: Partial<User>) => Promise<void>;
+  refetchProfile: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Helper to check if the last reward was claimed today
-const isSameDay = (d1: Date, d2: Date) => {
-  return (
-    d1.getFullYear() === d2.getFullYear() &&
-    d1.getMonth() === d2.getMonth() &&
-    d1.getDate() === d2.getDate()
-  );
-};
-
-// Define the keys that are safe for client-initiated updates via the /api/profile endpoint.
-const SAFE_PROFILE_UPDATE_KEYS: Array<keyof Profile> = [
-  'name',
-  'avatar_url',
-  'description',
-  'selected_title',
-  'selected_frame',
-];
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const queryClient = useQueryClient();
+  const [session, setSession] = useState(supabase.auth.session());
   const [loading, setLoading] = useState(true);
 
-  const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
-    const { data: profile, error } = await supabase
-      .from("profiles")
-      .select(
-        "id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at"
-      )
-      .eq("id", supabaseUser.id)
-      .single();
+  const userQueryKey = session?.user?.id ? ["userProfile", session.user.id] : ["userProfile", "unknown"];
 
-    if (error) {
-      console.error("Error fetching profile:", error);
-      return null;
-    }
-
-    return {
-      ...profile,
-      email: supabaseUser.email,
-    } as User;
-  };
-
-  // This function is for merging state that has already been updated on the server
-  const updateUser = (data: Partial<User>) => {
-    setUser(prevUser => {
-      if (!prevUser) return null;
-      return {
-        ...prevUser,
-        ...data,
-      };
-    });
-  };
-
-  // Server-side daily reward handling
-  const handleDailyReward = async (profile: User): Promise<User> => {
-    const lastClaimed = profile.last_daily_reward_claimed_at
-      ? new Date(profile.last_daily_reward_claimed_at)
-      : null;
-    const today = new Date();
-
-    if (!lastClaimed || !isSameDay(lastClaimed, today)) {
-      try {
-        const updatedProfile = await claimDailyReward();
-        toast.success("Günlük Giriş Ödülü", {
-          description: "Hesabına 20 Gem eklendi!",
-        });
-        return { ...updatedProfile, email: profile.email } as User;
-      } catch (e) {
-        if (e instanceof Error && e.message.includes("Daily reward already claimed today.")) {
-             // This case should ideally not happen if isSameDay check passes, but good to handle.
-        } else {
-            console.error("Error claiming daily reward via server:", e);
-        }
-        return profile;
-      }
-    }
-
-    return profile;
-  };
-
-  const login = async (supabaseUser: SupabaseUser) => {
-    let profile = await fetchUserProfile(supabaseUser);
-    if (profile) {
-      profile = await handleDailyReward(profile);
-    }
-    setUser(profile);
-  };
+  const { data: user, refetch: refetchProfile } = useQuery<User | null>({
+    queryKey: userQueryKey,
+    queryFn: async () => {
+      if (!session?.user) return null;
+      return getProfile(session.user.id);
+    },
+    enabled: !!session?.user,
+    staleTime: Infinity,
+    cacheTime: Infinity,
+  });
 
   useEffect(() => {
-    const getSessionAndProfile = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user) {
-        let profile = await fetchUserProfile(session.user);
-        if (profile) {
-          profile = await handleDailyReward(profile);
-        }
-        setUser(profile);
-      }
+    const getSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      setSession(data.session);
       setLoading(false);
     };
 
-    getSessionAndProfile();
+    getSession();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user) {
-          let profile = await fetchUserProfile(session.user);
-          if (profile) {
-            profile = await handleDailyReward(profile);
-          }
-          setUser(profile);
-        } else {
-          setUser(null);
-        }
-        setLoading(false);
-      }
-    );
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
-  const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-  };
-
-  // This function is for client-initiated updates of profile details (name, description, etc.)
-  const saveProfileDetails = async (newUserData: Partial<User>) => {
-    if (!user) return;
-
-    const safeUpdateData: Partial<Profile> = {};
-    let hasSafeFields = false;
-
-    SAFE_PROFILE_UPDATE_KEYS.forEach(key => {
-      if (newUserData.hasOwnProperty(key)) {
-        (safeUpdateData as any)[key] = (newUserData as any)[key];
-        hasSafeFields = true;
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      if (_event === "SIGNED_OUT") {
+        if (user?.id) queryClient.setQueryData(["userProfile", user.id], null);
+      } else if (_event === "SIGNED_IN" || _event === "TOKEN_REFRESHED") {
+        if (newSession?.user?.id) queryClient.invalidateQueries(["userProfile", newSession.user.id]);
       }
     });
 
-    if (!hasSafeFields) {
-      console.warn("saveProfileDetails called with no updatable fields.");
-      return;
-    }
+    return () => authListener.subscription.unsubscribe();
+  }, [queryClient, user?.id]);
 
-    try {
-      const updatedFields = await updateProfileDetails(safeUpdateData);
-      updateUser(updatedFields); // Use the state merger to update context
-    } catch (e) {
-      throw e instanceof Error ? e : new Error(String(e));
-    }
+  const updateUser = (updatedDetails: Partial<User>) => {
+    if (!user?.id) return;
+    const currentUser = queryClient.getQueryData<User>(["userProfile", user.id]);
+    if (!currentUser) return;
+    const newUser: User = { ...currentUser, ...updatedDetails };
+    queryClient.setQueryData(["userProfile", user.id], newUser);
   };
 
-  const value = {
-    user,
-    loading,
-    logout,
-    updateUser,
-    saveProfileDetails,
-    login,
+  const saveProfileDetails = async (details: Partial<User>) => {
+    if (!user?.id) throw new Error("User not found");
+    await updateProfileDetails(details);
+    await refetchProfile();
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    queryClient.clear();
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user: user ?? null, loading, logout, updateUser, saveProfileDetails, refetchProfile }}>
       {!loading && children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
-}
+};

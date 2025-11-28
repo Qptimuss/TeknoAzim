@@ -1,4 +1,4 @@
-import 'dotenv/config'; // .env dosyasını yüklemek için en üste ekle
+import "dotenv/config"; // .env dosyasını yükle
 import path from "path";
 import { createServer } from "./index";
 import * as express from "express";
@@ -15,7 +15,7 @@ app.use(express.static(distPath));
 
 // Handle React Router - serve index.html for all non-API routes
 app.get("*", (req, res) => {
-  // Don't serve index.html for API routes
+  // API routes için index gönderme
   if (req.path.startsWith("/api/") || req.path.startsWith("/health")) {
     return res.status(404).json({ error: "API endpoint not found" });
   }

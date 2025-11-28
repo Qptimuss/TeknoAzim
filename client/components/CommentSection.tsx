@@ -22,8 +22,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Link } from "react-router-dom";
-import { awardBadge } from "@/lib/gamification";
-import { supabase } from "@/integrations/supabase/client";
 import ProfileAvatar from "./ProfileAvatar";
 import {
   DropdownMenu,
@@ -61,53 +59,24 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
       return;
     }
     
+    if (!postId || typeof postId !== 'string') {
+      toast.error("Yorum yapılacak gönderi ID'si eksik veya geçersiz.");
+      return;
+    }
+
     try {
-      const { count, error: countError } = await supabase
-        .from('comments')
-        .select('*', { count: 'exact', head: true })
-        .eq('post_id', postId);
-
-      if (countError) {
-        console.error("Error checking comment count:", countError);
-      }
-
-      const isFirstComment = count === 0;
-
-      // Use the updated addComment which calls the server API for moderation
-      await addComment({ postId, userId: user.id, content: values.content });
+      // Sunucu artık yorumu ekleyip, rozetleri kontrol edip güncel profili döndürecek.
+      const { profile } = await addComment({ postId, content: values.content });
       
-      let finalProfileState = null;
-
-      if (isFirstComment) {
-        const badgeUpdate = await awardBadge(user.id, "İlk Yorumcu");
-        if (badgeUpdate) {
-          finalProfileState = badgeUpdate;
-        }
-      }
-
-      const { count: firstCommentCount, error: firstCommentError } = await supabase
-        .from('first_commenters')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
-
-      if (firstCommentError) {
-        console.error("Error checking first comment count:", firstCommentError);
-      } else if (firstCommentCount === 3) {
-        const badgeUpdate = await awardBadge(user.id, "Hızlı Parmaklar");
-        if (badgeUpdate) {
-          finalProfileState = badgeUpdate;
-        }
-      }
-
-      if (finalProfileState) {
-        updateUser(finalProfileState);
+      // Sunucudan gelen güncel profil ile AuthContext'i güncelle
+      if (profile) {
+        updateUser(profile);
       }
 
       toast.success("Yorumunuz eklendi!");
       form.reset();
-      onCommentsChange();
+      onCommentsChange(); // Yorum listesini yenilemek için
     } catch (error) {
-      // Check for specific moderation error message from the server
       if (error instanceof Error && error.message.includes("Yorumunuz, yapay zeka tarafından uygunsuz içerik barındırdığı için reddedildi.")) {
         toast.error("Yorum Reddedildi", { description: "Yorumunuz uygunsuz içerik barındırdığı için yayınlanmadı. Lütfen içeriği düzenleyiniz." });
       } else {
@@ -165,7 +134,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                                 <span className="sr-only">Seçenekler</span>
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent> {/* onClick={(e) => e.stopPropagation()} kaldırıldı */}
+                            <DropdownMenuContent>
                               <DropdownMenuItem asChild>
                                 <Link to={`/kullanici/${comment.profiles.id}`}>Kullanıcının profiline bak</Link>
                               </DropdownMenuItem>
@@ -234,6 +203,9 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                   "Yorum Gönder"
                 )}
               </Button>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Yorumlar yapay zeka tarafından filtrelendiğinden gönderim işleminde gecikme olabilir.
+              </p>
             </form>
           </Form>
         ) : (

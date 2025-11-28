@@ -2,12 +2,12 @@ import { defineConfig, Plugin, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { createServer } from "./server";
-import dyadComponentTagger from '@dyad-sh/react-vite-component-tagger';
+import dyadComponentTagger from "@dyad-sh/react-vite-component-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // Ortam değişkenlerini .env dosyasından yükle
-  const env = loadEnv(mode, process.cwd(), '');
+  const env = loadEnv(mode, process.cwd(), "");
 
   return {
     server: {
@@ -34,12 +34,12 @@ export default defineConfig(({ mode }) => {
 function expressPlugin(env: Record<string, string>): Plugin {
   return {
     name: "express-plugin",
-    apply: "serve", // Only apply during development (serve mode)
+    apply: "serve", // Only apply during development
     configureServer(server) {
-      // Ortam değişkenlerini createServer fonksiyonuna aktar
+      // Ortam değişkenlerini Express sunucusuna aktar
       const app = createServer(env);
 
-      // Add Express app as middleware to Vite dev server
+      // Express uygulamasını Vite dev server middleware zincirine ekle
       server.middlewares.use(app);
     },
   };

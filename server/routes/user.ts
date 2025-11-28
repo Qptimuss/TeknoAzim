@@ -2,6 +2,7 @@ import { RequestHandler } from "express";
 import { getSupabaseAdmin } from "../lib/supabase-admin";
 import { z } from "zod";
 import { Database } from "../lib/database.types";
+import { parseBody } from "../lib/body-parser";
 
 const updateProfileSchema = z.object({
   name: z.string().min(2).optional(),
@@ -16,7 +17,10 @@ export const handleUpdateProfile: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = updateProfileSchema.partial().parse(req.body);
+    // body'yi her zaman parseBody ile alıyoruz
+    const bodyData = await parseBody(req);
+
+    const validatedData = updateProfileSchema.partial().parse(bodyData);
 
     if (Object.keys(validatedData).length === 0) {
       return res.status(400).json({ error: "No valid fields provided for update." });
@@ -24,12 +28,12 @@ export const handleUpdateProfile: RequestHandler = async (req, res) => {
 
     const supabaseAdmin = getSupabaseAdmin();
 
-    // Explicitly cast to the correct Supabase Update type
-    const updatePayload = validatedData as Database['public']['Tables']['profiles']['Update'];
+    // Cast gerekli — Supabase types ile uyum için
+    const updatePayload = validatedData as Database["public"]["Tables"]["profiles"]["Update"];
 
-    const { data, error } = await (supabaseAdmin
-      .from("profiles") as any)        
-      .update(updatePayload) 
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .update(updatePayload)
       .eq("id", userId)
       .select("id, name, avatar_url, description, selected_title, selected_frame")
       .single();
@@ -56,7 +60,6 @@ export const handleDeleteUser: RequestHandler = async (req, res) => {
   try {
     const supabaseAdmin = getSupabaseAdmin();
 
-    // Delete the user from the auth system. This should cascade to the profiles table.
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (error) {
@@ -64,7 +67,6 @@ export const handleDeleteUser: RequestHandler = async (req, res) => {
       return res.status(500).json({ error: "Failed to delete user account." });
     }
 
-    // Note: Supabase automatically handles session invalidation upon user deletion.
     res.status(204).send();
   } catch (e) {
     console.error("Error deleting user:", e);

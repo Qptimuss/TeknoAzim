@@ -1,6 +1,6 @@
 import "./global.css";
 
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "@/components/ui/sonner";
 import { createRoot } from "react-dom/client";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -26,16 +26,15 @@ import { ThemeProvider } from "./components/ThemeProvider";
 import Magaza from "./pages/Magaza";
 import EditBlogPage from "./pages/EditBlogPage";
 import CreateAnnouncementPage from "./pages/CreateAnnouncementPage";
-import EditAnnouncementPage from "./pages/EditAnnouncementPage"; // Import new page
+import EditAnnouncementPage from "./pages/EditAnnouncementPage";
 import { executeAdminGrant } from "./lib/admin-grant";
 
 const queryClient = new QueryClient();
 
-// New component to handle post-auth logic
+// Post-auth işlemleri için component
 const PostAuthInitializer = () => {
   const { user, updateUser, loading } = useAuth();
 
-  // Run the admin grant logic once after user data is loaded
   if (!loading) {
     executeAdminGrant(user, updateUser);
   }
@@ -69,7 +68,7 @@ const App = () => (
                   <Route path="/profil" element={<ProfilePage />} />
                   <Route path="/bloglar/:id/duzenle" element={<EditBlogPage />} />
                   <Route path="/duyuru-olustur" element={<CreateAnnouncementPage />} />
-                  <Route path="/duyuru/:id/duzenle" element={<EditAnnouncementPage />} /> {/* New route */}
+                  <Route path="/duyuru/:id/duzenle" element={<EditAnnouncementPage />} />
                 </Route>
               </Route>
 

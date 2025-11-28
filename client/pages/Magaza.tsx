@@ -8,12 +8,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import CrateOpeningDialog from "@/components/CrateOpeningDialog";
 import { openCrate } from "@/lib/profile-store";
+import { useMutation } from "@tanstack/react-query";
 
 const CRATE_COST = 10;
 
 export default function Magaza() {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, isSessionRefreshing } = useAuth();
   const navigate = useNavigate();
   
   const [isCrateDialogOpen, setIsCrateDialogOpen] = useState(false);
@@ -22,7 +23,22 @@ export default function Magaza() {
   const [alreadyOwned, setAlreadyOwned] = useState(false);
   const [refundAmount, setRefundAmount] = useState(0);
 
-  const handleOpenCrate = async () => {
+  const crateMutation = useMutation({
+    mutationFn: () => openCrate(CRATE_COST),
+    onSuccess: ({ updatedProfile, itemWon, alreadyOwned, refundAmount }) => {
+      updateUser(updatedProfile);
+      setWonFrame(itemWon);
+      setAlreadyOwned(alreadyOwned);
+      setRefundAmount(refundAmount);
+    },
+    onError: (error: Error) => {
+      toast.error("Bir hata oluştu", { description: error.message });
+      setIsCrateDialogOpen(false);
+    },
+    onSettled: () => setIsProcessing(false),
+  });
+
+  const handleOpenCrate = () => {
     if (!user) {
       toast.error("Önce giriş yapmanız gerekiyor.", {
         action: { label: "Giriş Yap", onClick: () => navigate('/giris') },
@@ -43,20 +59,7 @@ export default function Magaza() {
     setAlreadyOwned(false);
     setRefundAmount(0);
 
-    try {
-      const { updatedProfile, itemWon, alreadyOwned, refundAmount } = await openCrate(CRATE_COST);
-      
-      updateUser(updatedProfile);
-
-      setWonFrame(itemWon);
-      setAlreadyOwned(alreadyOwned);
-      setRefundAmount(refundAmount);
-    } catch (error) {
-      toast.error("Bir hata oluştu", { description: error instanceof Error ? error.message : "Sandık açma işlemi başarısız." });
-      setIsCrateDialogOpen(false);
-    } finally {
-      setIsProcessing(false);
-    }
+    crateMutation.mutate();
   };
 
   const handleCloseDialog = () => {
@@ -120,7 +123,7 @@ export default function Magaza() {
               </CardDescription>
             </CardContent>
             <CardFooter>
-              <Button className="w-full" onClick={handleOpenCrate} disabled={isProcessing}>
+              <Button className="w-full" onClick={handleOpenCrate} disabled={crateMutation.isPending || isSessionRefreshing}>
                 <div className="flex items-center justify-center gap-2">
                   <span>Sandığı Aç</span>
                   <div className="flex items-center gap-1 bg-background/20 rounded-full px-2 py-0.5">

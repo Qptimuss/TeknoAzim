@@ -1,9 +1,0 @@
-.vscode
-.github
-README.md
-AGENTS.md
-AI_RULES.md
-*.spec.ts
-netlify.toml
-vite.config.netlify.ts
-netlify/

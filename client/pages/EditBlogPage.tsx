@@ -22,14 +22,12 @@ import { ArrowLeft } from "lucide-react";
 const blogSchema = z.object({
   title: z.string().min(5, "Başlık en az 5 karakter olmalıdır."),
   content: z.string().min(20, "İçerik en az 20 karakter olmalıdır."),
-  // We use a separate field for the existing image URL to display it, 
-  // and imageFile for new uploads.
   existingImageUrl: z.string().optional().nullable(),
   imageFile: z
     .instanceof(FileList)
     .optional()
     .refine(
-      (files) => !files || files.length === 0 || files[0].size <= 4 * 1024 * 1024, // 4MB
+      (files) => !files || files.length === 0 || files[0].size <= 4 * 1024 * 1024,
       `Resim boyutu 4MB'den küçük olmalıdır.`
     ),
 });
@@ -53,7 +51,6 @@ export default function EditBlogPage() {
   const imageFileRef = form.register("imageFile");
   const { isSubmitting } = form.formState;
 
-  // 1. Fetch existing post data
   useEffect(() => {
     if (!id || authLoading) return;
 
@@ -66,7 +63,6 @@ export default function EditBlogPage() {
         return;
       }
 
-      // Check ownership
       if (user?.id !== post.user_id) {
         toast.error("Bu yazıyı düzenleme yetkiniz yok.");
         navigate(`/bloglar/${id}`);
@@ -90,15 +86,12 @@ export default function EditBlogPage() {
     let newImageUrl: string | null | undefined = values.existingImageUrl;
 
     try {
-      // 1. Handle new image upload
       if (values.imageFile && values.imageFile.length > 0) {
         toast.info("Yeni resim yükleniyor...");
         const file = values.imageFile[0];
-        const uploadedUrl = await uploadBlogImage(file, user.id);
-        newImageUrl = uploadedUrl;
+        newImageUrl = await uploadBlogImage(file, user.id);
       }
 
-      // 2. Update blog post
       await updateBlogPost(id, { 
         title: values.title,
         content: values.content,
@@ -109,26 +102,21 @@ export default function EditBlogPage() {
       navigate(`/bloglar/${id}`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.";
-      
-      if (errorMessage.includes("uygunsuz içerik barındırdığı için reddedildi")) {
-        toast.error("İçerik Reddedildi", { description: errorMessage });
-      } else {
-        toast.error("Blog yazısı güncellenirken bir hata oluştu.", { description: errorMessage });
-      }
+      toast.error("Blog yazısı güncellenirken bir hata oluştu.", { description: errorMessage });
       console.error(error);
     }
   }
 
   return (
     <div className="container mx-auto px-5 py-12 max-w-3xl">
-      <Link to={`/bloglar/${id}`} className="text-white hover:underline flex items-center gap-2 mb-8">
+      <Link to={`/bloglar/${id}`} className="text-foreground hover:underline flex items-center gap-2 mb-8">
         <ArrowLeft size={20} />
         Geri Dön
       </Link>
-      <h1 className="text-white text-4xl md:text-5xl font-outfit font-bold mb-8">
+      <h1 className="text-foreground text-4xl md:text-5xl font-outfit font-bold mb-8">
         Blog Yazısını Düzenle
       </h1>
-      <div className="bg-[#090a0c] border border-[#2a2d31] rounded-lg p-8">
+      <div className="bg-card border border-border rounded-lg p-8">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -136,28 +124,28 @@ export default function EditBlogPage() {
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white">Başlık</FormLabel>
+                  <FormLabel>Başlık</FormLabel>
                   <FormControl>
-                    <Input placeholder="Blog Başlığı" {...field} className="bg-[#151313] border-[#42484c] text-white" />
+                    <Input placeholder="Blog Başlığı" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             {form.watch('existingImageUrl') && (
-                <div className="space-y-2">
-                    <FormLabel className="text-white">Mevcut Kapak Resmi</FormLabel>
-                    <img src={form.watch('existingImageUrl')!} alt="Mevcut Resim" className="w-full h-40 object-cover rounded-md" />
-                    <Button 
-                        variant="destructive" 
-                        size="sm" 
-                        type="button"
-                        onClick={() => form.setValue('existingImageUrl', null)}
-                    >
-                        Resmi Kaldır
-                    </Button>
-                </div>
+              <div className="space-y-2">
+                <FormLabel>Mevcut Kapak Resmi</FormLabel>
+                <img src={form.watch('existingImageUrl')!} alt="Mevcut Resim" className="w-full h-40 object-cover rounded-md" />
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  type="button"
+                  onClick={() => form.setValue('existingImageUrl', null)}
+                >
+                  Resmi Kaldır
+                </Button>
+              </div>
             )}
 
             <FormField
@@ -165,33 +153,35 @@ export default function EditBlogPage() {
               name="imageFile"
               render={() => (
                 <FormItem>
-                  <FormLabel className="text-white">Yeni Kapak Resmi (Maks 4MB)</FormLabel>
+                  <FormLabel>Yeni Kapak Resmi (Maks 4MB)</FormLabel>
                   <FormControl>
                     <Input 
                       type="file" 
                       accept="image/*"
                       {...imageFileRef}
-                      className="bg-[#151313] border-[#42484c] text-white file:text-white"
+                      className="file:text-foreground"
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="content"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white">İçerik</FormLabel>
+                  <FormLabel>İçerik</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Blog içeriğini buraya yazın..." {...field} className="bg-[#151313] border-[#42484c] text-white min-h-[200px]" />
+                    <Textarea placeholder="Blog içeriğini buraya yazın..." {...field} className="min-h-[200px]" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" size="lg" disabled={isSubmitting} className="w-full bg-[#151313]/95 border border-[#42484c] hover:bg-[#151313] text-white text-lg">
+
+            <Button type="submit" size="lg" disabled={isSubmitting} className="w-full text-lg">
               {isSubmitting ? "Güncelleniyor..." : "Güncelle"}
             </Button>
           </form>

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { Database } from "../lib/database.types.ts";
 import { SERVER_EXP_ACTIONS, BADGE_REWARD_GEMS } from "../lib/gamification-constants.ts";
 import { FRAMES, RARITIES } from "../lib/store-items.ts";
+import { parseBody } from "../lib/body-parser.ts";
 
 // --- Helper Functions (Crucial for server-side level calculation) ---
 
@@ -74,7 +75,8 @@ export const handleUpdateExp: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = expUpdateSchema.parse(req.body);
+    const bodyData = parseBody(req);
+    const validatedData = expUpdateSchema.parse(bodyData);
     const supabaseAdmin = getSupabaseAdmin();
     
     const actionKey = validatedData.actionType;
@@ -134,7 +136,8 @@ export const handleAwardBadge: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = badgeAwardSchema.parse(req.body);
+    const bodyData = parseBody(req);
+    const validatedData = badgeAwardSchema.parse(bodyData);
     const { badgeName } = validatedData;
     const supabaseAdmin = getSupabaseAdmin();
     
@@ -198,6 +201,8 @@ export const handleClaimDailyReward: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
+    // Daily reward handler does not require parsing body data, but we keep the pattern for consistency if it were to change.
+    // const bodyData = parseBody(req); // Not needed here, but keeping the pattern in mind.
     const supabaseAdmin = getSupabaseAdmin();
 
     const { data: profileData, error: fetchError } = await supabaseAdmin
@@ -265,7 +270,8 @@ export const handleOpenCrate: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = crateOpenSchema.parse(req.body);
+    const bodyData = parseBody(req);
+    const validatedData = crateOpenSchema.parse(bodyData);
     const { cost } = validatedData;
     const supabaseAdmin = getSupabaseAdmin();
 
