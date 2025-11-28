@@ -31,8 +31,8 @@ export const handleUpdateProfile: RequestHandler = async (req, res) => {
     // Cast gerekli — Supabase types ile uyum için
     const updatePayload = validatedData as Database["public"]["Tables"]["profiles"]["Update"];
 
-    const { data, error } = await supabaseAdmin
-      .from("profiles")
+    const { data, error } = await (supabaseAdmin
+      .from("profiles") as any) // Fix 2
       .update(updatePayload)
       .eq("id", userId)
       .select("id, name, avatar_url, description, selected_title, selected_frame")

@@ -122,7 +122,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     const safeUpdateData: Partial<Profile> = {};
     SAFE_PROFILE_UPDATE_KEYS.forEach((key) => {
-      if (newUserData.hasOwnProperty(key)) safeUpdateData[key] = newUserData[key];
+      if (newUserData.hasOwnProperty(key)) {
+        // Fix 1: Asserting the value type to resolve TS2322
+        safeUpdateData[key] = newUserData[key] as Profile[typeof key];
+      }
     });
     if (Object.keys(safeUpdateData).length === 0) return;
     try {

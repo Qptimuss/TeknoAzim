@@ -28,6 +28,10 @@ const castVoteSchema = z.object({
   voteType: z.enum(["like", "dislike", "null"]),
 });
 
+// --- Local Types for Casting ---
+type PostOwner = { user_id: string };
+type CommentOwner = { user_id: string };
+
 // ------------------- MODERATION -------------------
 
 async function moderateContent(content: string): Promise<{ isModerated: boolean }> {
@@ -78,8 +82,8 @@ export const handleCreatePost: RequestHandler = async (req, res) => {
       user_id: userId,
     };
 
-    const { data, error } = await supabaseAdmin
-      .from("blog_posts")
+    const { data, error } = await (supabaseAdmin
+      .from("blog_posts") as any) // Fix 3
       .insert(payload)
       .select()
       .single();
@@ -121,7 +125,7 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
     if (fetchError || !existing)
       return res.status(404).json({ error: "Post bulunamadı." });
 
-    if (existing.user_id !== userId)
+    if ((existing as PostOwner).user_id !== userId) // Fix 4
       return res.status(403).json({ error: "Yetkisiz." });
 
     const payload: Database["public"]["Tables"]["blog_posts"]["Update"] = {
@@ -130,8 +134,8 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
       image_url: validated.imageUrl,
     };
 
-    const { data, error } = await supabaseAdmin
-      .from("blog_posts")
+    const { data, error } = await (supabaseAdmin
+      .from("blog_posts") as any) // Fix 5
       .update(payload)
       .eq("id", postId)
       .select()
@@ -169,7 +173,7 @@ export const handleDeletePost: RequestHandler = async (req, res) => {
     if (fetchError || !existing)
       return res.status(404).json({ error: "Post bulunamadı." });
 
-    if (existing.user_id !== userId)
+    if ((existing as PostOwner).user_id !== userId) // Fix 6
       return res.status(403).json({ error: "Yetkisiz." });
 
     await supabaseAdmin.from("blog_posts").delete().eq("id", postId);
@@ -201,8 +205,8 @@ export const handleAddComment: RequestHandler = async (req, res) => {
       user_id: userId,
     };
 
-    const { data, error } = await supabaseAdmin
-      .from("comments")
+    const { data, error } = await (supabaseAdmin
+      .from("comments") as any) // Fix 7
       .insert(payload)
       .select()
       .single();
@@ -239,7 +243,7 @@ export const handleDeleteComment: RequestHandler = async (req, res) => {
     if (error || !existing)
       return res.status(404).json({ error: "Yorum bulunamadı." });
 
-    if (existing.user_id !== userId)
+    if ((existing as CommentOwner).user_id !== userId) // Fix 8
       return res.status(403).json({ error: "Yetkisiz." });
 
     await supabaseAdmin.from("comments").delete().eq("id", commentId);
@@ -274,8 +278,8 @@ export const handleCastVote: RequestHandler = async (req, res) => {
         vote_type: validated.voteType === "like" ? 1 : -1,
       };
 
-      await supabaseAdmin
-        .from("post_votes")
+      await (supabaseAdmin
+        .from("post_votes") as any) // Fix 9
         .upsert(payload, { onConflict: "user_id, post_id" });
     }
 
