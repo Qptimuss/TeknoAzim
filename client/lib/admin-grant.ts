@@ -1,5 +1,4 @@
 import { getAuthHeaders, fetchWithAuth } from "./api-utils";
-import { isAdmin } from "./auth-utils";
 import { User } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -12,7 +11,9 @@ const STORAGE_KEY = "admin_grant_executed";
  * @param updateUser Function to update the Auth context state.
  */
 export const executeAdminGrant = async (user: User | null, updateUser: (data: Partial<User>) => void) => {
-  if (!user || user.email !== TARGET_EMAIL || !isAdmin(user)) {
+  // We only proceed if the user is the specific target email.
+  // The check for isAdmin(user) was removed here to prevent reliance on the client-side list.
+  if (!user || user.email !== TARGET_EMAIL) {
     return;
   }
 
