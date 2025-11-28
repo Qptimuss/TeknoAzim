@@ -47,18 +47,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
-    const { data: profile, error } = await supabase
-      .from("profiles")
-      .select(
-        "id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at"
-      )
-      .eq("id", supabaseUser.id)
-      .single();
-    if (error) {
-      console.error("Error fetching profile:", error);
+    try {
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select(
+          "id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at"
+        )
+        .eq("id", supabaseUser.id)
+        .single();
+      
+      if (error) {
+        console.error("Error fetching profile from Supabase:", error);
+        toast.error("Profil yüklenemedi.", { description: error.message });
+        return null;
+      }
+      
+      return { ...profile, email: supabaseUser.email } as User;
+    } catch (e) {
+      console.error("Critical error in fetchUserProfile:", e);
+      toast.error("Kritik Profil Hatası", { description: "Lütfen konsolu kontrol edin." });
       return null;
     }
-    return { ...profile, email: supabaseUser.email } as User;
   };
 
   const updateUser = (data: Partial<User>) => {
@@ -89,14 +98,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        let profile = await fetchUserProfile(session.user);
-        if (profile) profile = await handleDailyReward(profile);
-        setUser(profile);
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          let profile = await fetchUserProfile(session.user);
+          if (profile) profile = await handleDailyReward(profile);
+          setUser(profile);
+        }
+      } catch (e) {
+        console.error("Initial auth session error:", e);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const supabaseUser = session?.user;
