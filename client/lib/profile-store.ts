@@ -1,37 +1,34 @@
 import { getAuthHeaders, fetchWithAuth } from "./api-utils";
 import { Profile } from "@shared/api";
+import { supabase } from "@/integrations/supabase/client"; // Merkezi istemciyi import et
 
 type UpdatableProfileFields = Pick<Profile, 'name' | 'avatar_url' | 'description' | 'selected_title' | 'selected_frame'>;
 
-const SUPABASE_URL = "https://bhfshljiqbdxgbpgmllp.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoZnNobGppcWJkeGdicGdtbGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNjUyMDQsImV4cCI6MjA3OTc0MTIwNH0.V_g-uODQnktATni-fa_raP8G5rz7e6qO7oMUodhd3aA";
-
 /**
- * Fetches the user profile by ID using the REST API.
+ * Fetches the user profile by ID using the Supabase client.
  * @param userId The ID of the user.
  * @returns The profile object or null if not found.
  */
 export const getProfile = async (userId: string): Promise<Profile | null> => {
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&id=eq.${userId}`, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Accept': 'application/vnd.pgrst.object+json', // Tek bir nesne döndürmesini sağlar
-      },
-    });
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
 
-    if (response.status === 404 || response.status === 406) return null;
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch profile');
+    if (error) {
+      // Eğer RLS hatası veya 404 (kayıt bulunamadı) varsa
+      if (error.code === 'PGRST116' || error.message.includes('Row not found')) {
+        return null;
+      }
+      console.error("Error fetching profile via Supabase client:", error);
+      throw new Error(error.message || 'Failed to fetch profile');
     }
 
-    const data = await response.json();
     return data as Profile;
   } catch (error) {
-    console.error("Error fetching profile via REST:", error);
+    console.error("Error fetching profile:", error);
     return null;
   }
 };
