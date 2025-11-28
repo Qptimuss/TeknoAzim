@@ -31,7 +31,6 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
 
     if (error || !data.user) {
       console.error("JWT verification failed:", error?.message);
-
       return res.status(401).json({
         error: "Unauthorized: Session is invalid or expired. Please log in again.",
       });

@@ -12,29 +12,37 @@ import { cn } from "@/lib/utils";
 import { FRAMES } from "@/lib/store-items";
 import NovaFrame from "@/components/frames/NovaFrame";
 import ImageViewerDialog from "@/components/ImageViewerDialog";
-import { useQuery } from "@tanstack/react-query";
 
 export default function UserProfilePage() {
   const { userId } = useParams<{ userId: string }>();
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [userPosts, setUserPosts] = useState<BlogPostWithAuthor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [postsLoading, setPostsLoading] = useState(true);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
 
-  // Fetch User Profile
-  const { data: userProfile, isLoading: isProfileLoading } = useQuery({
-    queryKey: ["userProfile", userId],
-    queryFn: () => (userId ? getProfileById(userId) : Promise.resolve(null)),
-    enabled: !!userId,
-    staleTime: 1000 * 60 * 5,
-  });
+  useEffect(() => {
+    if (!userId) return;
 
-  // Fetch User Posts
-  const { data: userPosts, isLoading: isPostsLoading } = useQuery({
-    queryKey: ["userPosts", userId],
-    queryFn: () => (userId ? getPostsByUserId(userId) : Promise.resolve([])),
-    enabled: !!userId,
-    staleTime: 1000 * 60 * 5,
-  });
+    const fetchData = async () => {
+      setLoading(true);
+      const profile = await getProfileById(userId);
+      setUserProfile(profile);
+      setLoading(false);
+    };
 
-  if (isProfileLoading) {
+    const fetchUserPosts = async () => {
+      setPostsLoading(true);
+      const posts = await getPostsByUserId(userId);
+      setUserPosts(posts);
+      setPostsLoading(false);
+    };
+
+    fetchData();
+    fetchUserPosts();
+  }, [userId]);
+
+  if (loading) {
     return <div className="text-foreground text-center p-12">Profil yükleniyor...</div>;
   }
 
@@ -150,12 +158,12 @@ export default function UserProfilePage() {
           </div>
 
           <div className="lg:col-span-2">
-            <h2 className="text-foreground text-2xl font-outfit font-bold mb-4">{userProfile.name} Blogları ({userPosts?.length || 0})</h2>
-            {isPostsLoading ? (
+            <h2 className="text-foreground text-2xl font-outfit font-bold mb-4">{userProfile.name} Blogları ({userPosts.length})</h2>
+            {postsLoading ? (
                <p className="text-muted-foreground">Bloglar yükleniyor...</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {userPosts?.map(post => (
+                {userPosts.map(post => (
                   <BlogCard key={post.id} post={post} hideProfileLink={true} />
                 ))}
               </div>

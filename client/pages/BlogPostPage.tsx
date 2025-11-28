@@ -23,46 +23,32 @@ import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { removeExp, EXP_ACTIONS } from "@/lib/gamification";
 import OtherPostsCarousel from "@/components/OtherPostsCarousel";
-import { useQuery, useQueryClient } from "@tanstack/react-query"; // Import useQueryClient
 
 export default function BlogPostPage() {
   const { id } = useParams<{ id: string }>();
-  const { user, updateUser } = useAuth();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient(); // Initialize query client
-
+  const [post, setPost] = useState<BlogPostWithAuthor | null>(null);
+  const [comments, setComments] = useState<CommentWithAuthor[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { user, updateUser } = useAuth();
+  const navigate = useNavigate();
 
-  // Fetch Post Details
-  const { data: post, isLoading: isPostLoading } = useQuery({
-    queryKey: ["blogPost", id],
-    queryFn: () => (id ? getBlogPostById(id) : Promise.resolve(null)),
-    enabled: !!id,
-    staleTime: 1000 * 60 * 5,
-  });
+  const fetchPostAndComments = useCallback(async () => {
+    if (!id) return;
+    setLoading(true);
+    const [postData, commentsData] = await Promise.all([
+      getBlogPostById(id),
+      getCommentsForPost(id),
+    ]);
+    setPost(postData);
+    setComments(commentsData);
+    setLoading(false);
+  }, [id]);
 
-  // Fetch Comments
-  const { data: comments, isLoading: isCommentsLoading, refetch: refetchComments } = useQuery({
-    queryKey: ["postComments", id],
-    queryFn: () => (id ? getCommentsForPost(id) : Promise.resolve([])),
-    enabled: !!id,
-    staleTime: 1000 * 60 * 5,
-  });
-
-  // Redirect if post is not found after loading
   useEffect(() => {
-    if (!isPostLoading && !post && id) {
-      toast.error("Blog yazısı bulunamadı.");
-      navigate("/bloglar");
-    }
-  }, [isPostLoading, post, id, navigate]);
-
-  const handleCommentAction = () => {
-    // Yorum eklendiğinde/silindiğinde yorumları ve blog listesini yenile
-    refetchComments();
-    queryClient.invalidateQueries({ queryKey: ["blogPosts"] });
-  };
+    fetchPostAndComments();
+  }, [fetchPostAndComments]);
 
   const handleDelete = async () => {
     if (!post || !user || user.id !== post.profiles?.id) return;
@@ -76,10 +62,6 @@ export default function BlogPostPage() {
         updateUser(updatedProfile);
       }
 
-      // Blog listesini ve post detayını geçersiz kıl
-      queryClient.invalidateQueries({ queryKey: ["blogPosts"] });
-      queryClient.invalidateQueries({ queryKey: ["blogPost", post.id] });
-
       toast.success("Blog yazısı başarıyla silindi.");
       navigate("/bloglar");
     } catch (error) {
@@ -91,7 +73,7 @@ export default function BlogPostPage() {
     }
   };
 
-  if (isPostLoading) {
+  if (loading) {
     return (
       <div className="container mx-auto px-5 py-12 max-w-4xl">
         <Skeleton className="h-8 w-48 mb-8" />
@@ -106,8 +88,16 @@ export default function BlogPostPage() {
   }
 
   if (!post) {
-    // Redirect handled by useEffect, show nothing while waiting
-    return null;
+    return (
+      <div className="container mx-auto px-5 py-12 text-center">
+        <h1 className="text-foreground text-4xl font-bold mb-4">Blog Yazısı Bulunamadı</h1>
+        <p className="text-muted-foreground mb-8">Aradığınız blog yazısı mevcut değil veya silinmiş olabilir.</p>
+        <Link to="/bloglar" className="text-foreground hover:underline flex items-center justify-center gap-2">
+          <ArrowLeft size={20} />
+          Tüm Bloglara Geri Dön
+        </Link>
+      </div>
+    );
   }
 
   const formattedDate = new Date(post.created_at).toLocaleDateString("tr-TR", {
@@ -171,7 +161,6 @@ export default function BlogPostPage() {
               {post.title}
             </h1>
             <div className="flex flex-wrap items-center justify-end gap-4 text-sm text-muted-foreground mb-6">
-              {/* LikeDislikeButtons'a post ID'sini gönderiyoruz */}
               <LikeDislikeButtons postId={post.id} />
             </div>
             <div className="text-card-foreground text-lg leading-relaxed whitespace-pre-wrap">
@@ -208,13 +197,9 @@ export default function BlogPostPage() {
           </div>
         </article>
 
-        {/* CommentSection'a yorumları ve yenileme fonksiyonunu gönderiyoruz */}
-        <CommentSection 
-          postId={post.id} 
-          comments={comments || []} 
-          onCommentAdded={handleCommentAction} 
-        />
+        <CommentSection postId={post.id} comments={comments} onCommentAdded={fetchPostAndComments} />
         
+        {/* Yeni Eklenen Bölüm */}
         <OtherPostsCarousel currentPostId={post.id} />
       </div>
 

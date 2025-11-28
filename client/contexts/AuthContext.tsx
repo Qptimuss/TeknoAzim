@@ -1,101 +1,145 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getProfile, updateProfileDetails } from "@/lib/profile-store";
+import { Session, User as SupabaseUser } from "@supabase/supabase-js";
+import { Profile } from "@shared/api";
+import { toast } from "sonner";
+import { updateProfileDetails, claimDailyReward } from "@/lib/profile-store";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 
-export interface User {
-  id: string;
-  email?: string;
-  name?: string | null;
-  description?: string | null;
-  avatar_url?: string | null;
-  exp?: number;
-  gems?: number;
-  badges?: string[];
-  selected_title?: string | null;
-  last_daily_claim?: string | null;
-  owned_frames?: string[];
-  selected_frame?: string | null;
-}
+export type User = Profile & { email?: string };
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   logout: () => Promise<void>;
-  updateUser: (updatedDetails: Partial<User>) => void;
-  saveProfileDetails: (details: Partial<User>) => Promise<void>;
-  refetchProfile: () => void;
+  updateUser: (data: Partial<User>) => void;
+  saveProfileDetails: (newUserData: Partial<User>) => Promise<void>;
+  login: (supabaseUser: SupabaseUser) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+const isSameDay = (d1: Date, d2: Date) =>
+  d1.getFullYear() === d2.getFullYear() &&
+  d1.getMonth() === d2.getMonth() &&
+  d1.getDate() === d2.getDate();
+
+const SAFE_PROFILE_UPDATE_KEYS: Array<keyof Profile> = [
+  "name",
+  "avatar_url",
+  "description",
+  "selected_title",
+  "selected_frame",
+];
+
+export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
-  const [session, setSession] = useState(supabase.auth.session());
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const userQueryKey = session?.user?.id ? ["userProfile", session.user.id] : ["userProfile", "unknown"];
+  useEffect(() => {
+    const SUPABASE_PROJECT_ID = "bhfshljiqbdxgbpgmllp";
+    const oldLocalStorageKey = `sb-${SUPABASE_PROJECT_ID}-auth-token`;
+    if (typeof localStorage !== "undefined" && localStorage.getItem(oldLocalStorageKey)) {
+      console.log("Eski oturum verisi localStorage'dan temizleniyor.");
+      localStorage.removeItem(oldLocalStorageKey);
+    }
+  }, []);
 
-  const { data: user, refetch: refetchProfile } = useQuery<User | null>({
-    queryKey: userQueryKey,
-    queryFn: async () => {
-      if (!session?.user) return null;
-      return getProfile(session.user.id);
-    },
-    enabled: !!session?.user,
-    staleTime: Infinity,
-    cacheTime: Infinity,
-  });
+  const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select(
+        "id, name, avatar_url, description, level, exp, badges, selected_title, owned_frames, selected_frame, gems, last_daily_reward_claimed_at"
+      )
+      .eq("id", supabaseUser.id)
+      .single();
+    if (error) {
+      console.error("Error fetching profile:", error);
+      return null;
+    }
+    return { ...profile, email: supabaseUser.email } as User;
+  };
+
+  const updateUser = (data: Partial<User>) => {
+    setUser((prevUser) => (prevUser ? { ...prevUser, ...data } : null));
+  };
+
+  const handleDailyReward = async (profile: User): Promise<User> => {
+    const lastClaimed = profile.last_daily_reward_claimed_at
+      ? new Date(profile.last_daily_reward_claimed_at)
+      : null;
+    const today = new Date();
+    if (!lastClaimed || !isSameDay(lastClaimed, today)) {
+      try {
+        const updatedProfile = await claimDailyReward();
+        toast.success("Günlük Giriş Ödülü", { description: "Hesabına 20 Gem eklendi!" });
+        return { ...updatedProfile, email: profile.email } as User;
+      } catch (e) {
+        console.error("Error claiming daily reward via server:", e);
+      }
+    }
+    return profile;
+  };
+
+  const login = async (supabaseUser: SupabaseUser) => {
+    let profile = await fetchUserProfile(supabaseUser);
+    if (profile) profile = await handleDailyReward(profile);
+    setUser(profile);
+  };
 
   useEffect(() => {
-    const getSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setSession(data.session);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        let profile = await fetchUserProfile(session.user);
+        if (profile) profile = await handleDailyReward(profile);
+        setUser(profile);
+      }
       setLoading(false);
-    };
+    });
 
-    getSession();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-      if (_event === "SIGNED_OUT") {
-        if (user?.id) queryClient.setQueryData(["userProfile", user.id], null);
-      } else if (_event === "SIGNED_IN" || _event === "TOKEN_REFRESHED") {
-        if (newSession?.user?.id) queryClient.invalidateQueries(["userProfile", newSession.user.id]);
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const supabaseUser = session?.user;
+      if (supabaseUser) {
+        let profile = await fetchUserProfile(supabaseUser);
+        if (_event === "SIGNED_IN" && profile) profile = await handleDailyReward(profile);
+        setUser(profile);
+      } else {
+        setUser(null);
       }
     });
 
     return () => authListener.subscription.unsubscribe();
-  }, [queryClient, user?.id]);
-
-  const updateUser = (updatedDetails: Partial<User>) => {
-    if (!user?.id) return;
-    const currentUser = queryClient.getQueryData<User>(["userProfile", user.id]);
-    if (!currentUser) return;
-    const newUser: User = { ...currentUser, ...updatedDetails };
-    queryClient.setQueryData(["userProfile", user.id], newUser);
-  };
-
-  const saveProfileDetails = async (details: Partial<User>) => {
-    if (!user?.id) throw new Error("User not found");
-    await updateProfileDetails(details);
-    await refetchProfile();
-  };
+  }, []);
 
   const logout = async () => {
     await supabase.auth.signOut();
+    setUser(null);
     queryClient.clear();
   };
 
-  return (
-    <AuthContext.Provider value={{ user: user ?? null, loading, logout, updateUser, saveProfileDetails, refetchProfile }}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
-};
+  const saveProfileDetails = async (newUserData: Partial<User>) => {
+    if (!user) return;
+    const safeUpdateData: Partial<Profile> = {};
+    SAFE_PROFILE_UPDATE_KEYS.forEach((key) => {
+      if (newUserData.hasOwnProperty(key)) safeUpdateData[key] = newUserData[key];
+    });
+    if (Object.keys(safeUpdateData).length === 0) return;
+    try {
+      const updatedFields = await updateProfileDetails(safeUpdateData);
+      updateUser(updatedFields);
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
+    }
+  };
 
-export const useAuth = () => {
+  const value = { user, loading, logout, updateUser, saveProfileDetails, login };
+
+  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
-};
+}

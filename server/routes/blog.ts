@@ -3,7 +3,6 @@ import { getSupabaseAdmin } from "../lib/supabase-admin";
 import { z } from "zod";
 import { Database } from "../lib/database.types";
 import { parseBody } from "../lib/body-parser";
-import { SERVER_EXP_ACTIONS, BADGE_REWARD_GEMS } from "../lib/gamification-constants";
 
 // ------------------- VALIDATION SCHEMAS -------------------
 
@@ -51,44 +50,7 @@ async function moderateContent(content: string): Promise<{ isModerated: boolean 
   return data as { isModerated: boolean };
 }
 
-// ------------------- BADGE SYSTEM -------------------
-
-async function awardBadgeIfMissing(userId: string, badgeName: string, supabaseAdmin: any): Promise<boolean> {
-  const { data: profile, error } = await supabaseAdmin
-    .from("profiles")
-    .select("badges, exp, gems")
-    .eq("id", userId)
-    .single();
-
-  if (error || !profile) {
-    console.error("Profil bulunamadı:", error);
-    return false;
-  }
-
-  if (!profile.badges.includes(badgeName)) {
-    const updatedBadges = [...profile.badges, badgeName];
-
-    const { error: updateError } = await supabaseAdmin
-      .from("profiles")
-      .update({
-        badges: updatedBadges,
-        exp: profile.exp + SERVER_EXP_ACTIONS.EARN_BADGE,
-        gems: profile.gems + BADGE_REWARD_GEMS,
-      })
-      .eq("id", userId);
-
-    if (updateError) {
-      console.error("Badge verilemedi:", updateError);
-      return false;
-    }
-
-    return true;
-  }
-
-  return false;
-}
-
-// ------------------- CONTROLLERS -------------------
+// ------------------- POST HANDLERS -------------------
 
 // CREATE POST
 export const handleCreatePost: RequestHandler = async (req, res) => {

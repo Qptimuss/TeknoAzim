@@ -35,12 +35,23 @@ import {
 
 import { handleCheckEnv } from "./routes/check-env"; // Kaybolmaması için eklendi
 
-export function createServer(env?: Record<string, string>) {
+export function createServer(env?: Record<string, string | undefined>) {
+  // Load .env variables
   dotenv.config();
 
+  // Merge passed env variables into process.env
   if (env) {
-    Object.assign(process.env, env);
+    console.log("[createServer] Merging environment variables from function handler...");
+    for (const key in env) {
+      if (env[key]) {
+        process.env[key] = env[key];
+      }
+    }
   }
+
+  console.log("Creating Express server...");
+  console.log(`[createServer] After merge, SUPABASE_URL is set: ${!!process.env.SUPABASE_URL}`);
+  console.log(`[createServer] After merge, SUPABASE_SERVICE_ROLE_KEY is set: ${!!process.env.SUPABASE_SERVICE_ROLE_KEY}`);
 
   const app = express();
 

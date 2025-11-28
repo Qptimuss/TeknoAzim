@@ -1,6 +1,5 @@
 import { getAuthHeaders, fetchWithAuth } from "./api-utils";
 import { Profile } from "@shared/api";
-import { supabase } from "@/integrations/supabase/client";
 
 type UpdatableProfileFields = Pick<Profile, 'name' | 'avatar_url' | 'description' | 'selected_title' | 'selected_frame'>;
 
@@ -22,9 +21,7 @@ export const getProfile = async (userId: string): Promise<Profile | null> => {
       },
     });
 
-    if (response.status === 404 || response.status === 406) {
-      return null;
-    }
+    if (response.status === 404 || response.status === 406) return null;
 
     if (!response.ok) {
       const errorData = await response.json();

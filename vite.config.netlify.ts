@@ -22,6 +22,7 @@ export default defineConfig({
         "serverless-http",
         "zod",
         "@supabase/supabase-js",
+        "dotenv",
       ],
       output: {
         format: "es",

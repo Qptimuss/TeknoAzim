@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth, User } from "@/contexts/AuthContext";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { getPostsByUserId, uploadAvatar, deleteBlogPost, deleteAvatar } from "@/lib/blog-store";
 import { calculateLevel, ALL_BADGES, TITLES, removeExp, EXP_ACTIONS } from "@/lib/gamification";
 import { FRAMES } from "@/lib/store-items";
@@ -16,6 +15,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { User as UserIcon, CheckCircle, Pencil, Check, X, Lock, Trash2, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -30,102 +31,45 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { User as UserIcon, CheckCircle, Pencil, Check, X, Lock, Trash2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function ProfilePage() {
-  const { user, saveProfileDetails, updateUser, loading, logout, isSessionRefreshing } = useAuth();
+  const { user, saveProfileDetails, updateUser, loading, logout } = useAuth();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // State
-  const [nameValue, setNameValue] = useState("");
-  const [descriptionValue, setDescriptionValue] = useState("");
+  const [userPosts, setUserPosts] = useState<any[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [postToDelete, setPostToDelete] = useState<{id: string, imageUrl?: string | null} | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [isSavingName, setIsSavingName] = useState(false);
+  const [isSavingDescription, setIsSavingDescription] = useState(false);
+  const [nameValue, setNameValue] = useState("");
+  const [descriptionValue, setDescriptionValue] = useState("");
+
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [isCropperOpen, setIsCropperOpen] = useState(false);
-  const [postToDelete, setPostToDelete] = useState<{ id: string; imageUrl?: string | null } | null>(null);
+
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showDeleteAvatarDialog, setShowDeleteAvatarDialog] = useState(false);
+  const [isDeletingAvatar, setIsDeletingAvatar] = useState(false);
 
-  // --- Queries ---
-  const { data: userPosts, isLoading: postsLoading } = useQuery({
-    queryKey: ["userPosts", user?.id],
-    queryFn: () => user ? getPostsByUserId(user.id) : Promise.resolve([]),
-    enabled: !!user,
-    staleTime: 1000 * 60 * 5,
-  });
-
-  // --- Mutations ---
-  const profileDetailsMutation = useMutation({
-    mutationFn: (data: Partial<User>) => saveProfileDetails(data),
-    onError: (error: Error) => toast.error("Güncelleme Hatası", { description: error.message }),
-  });
-
-  const avatarUploadMutation = useMutation({
-    mutationFn: async (file: File) => {
-      if (!user) throw new Error("Kullanıcı bulunamadı");
-      const uploadedUrl = await uploadAvatar(file, user.id);
-      if (!uploadedUrl) throw new Error("Yükleme başarısız oldu");
-      const cacheBustingUrl = `${uploadedUrl}?v=${Date.now()}`;
-      await saveProfileDetails({ avatar_url: cacheBustingUrl });
-    },
-    onSuccess: () => toast.success("Profil fotoğrafı güncellendi!"),
-    onError: (error: Error) => toast.error("Profil fotoğrafı güncellenirken hata oluştu", { description: error.message }),
-  });
-
-  const avatarDeleteMutation = useMutation({
-    mutationFn: async () => {
-      if (!user || !user.avatar_url) throw new Error("Kullanıcı veya avatar bulunamadı");
-      await deleteAvatar(user.avatar_url);
-      await saveProfileDetails({ avatar_url: null });
-    },
-    onSuccess: () => {
-      toast.success("Profil fotoğrafı silindi.");
-      setShowDeleteAvatarDialog(false);
-    },
-    onError: (error: Error) => toast.error("Profil fotoğrafı silinirken hata oluştu", { description: error.message }),
-  });
-
-  const postDeleteMutation = useMutation({
-    mutationFn: async (post: { id: string; imageUrl?: string | null }) => {
-      if (!user) throw new Error("Kullanıcı bulunamadı");
-      await deleteBlogPost(post.id, post.imageUrl);
-      const updatedProfile = await removeExp(user.id, EXP_ACTIONS.REMOVE_POST);
-      if (updatedProfile) updateUser(updatedProfile);
-    },
-    onSuccess: () => {
-      toast.success("Blog yazısı silindi.");
-      queryClient.invalidateQueries(["userPosts", user?.id]);
-      queryClient.invalidateQueries(["blogPosts"]);
-    },
-    onError: (error: Error) => toast.error("Blog yazısı silinirken hata oluştu", { description: error.message }),
-    onSettled: () => setPostToDelete(null),
-  });
-
-  const accountDeleteMutation = useMutation({
-    mutationFn: async () => {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (!session || sessionError) throw new Error("Oturum bulunamadı.");
-      const res = await fetch('/api/user', { method: 'DELETE', headers: { Authorization: `Bearer ${session.access_token}` } });
-      if (!res.ok) throw new Error(await res.text());
-    },
-    onSuccess: async () => {
-      toast.success("Hesabınız silindi.");
-      await logout();
-      navigate('/');
-    },
-    onError: (error: Error) => toast.error("Hesap silinirken hata oluştu.", { description: error.message }),
-    onSettled: () => setShowDeleteAccountDialog(false),
-  });
-
-  // --- Effects ---
   useEffect(() => {
     if (user) {
       setNameValue(user.name || "");
       setDescriptionValue(user.description || "");
+      const fetchUserPosts = async () => {
+        setPostsLoading(true);
+        const posts = await getPostsByUserId(user.id);
+        setUserPosts(posts);
+        setPostsLoading(false);
+      };
+      fetchUserPosts();
     }
   }, [user]);
 
@@ -133,35 +77,144 @@ export default function ProfilePage() {
     return () => { if (imageToCrop) URL.revokeObjectURL(imageToCrop); };
   }, [imageToCrop]);
 
-  // --- Handlers ---
+  const handleTitleChange = async (newTitle: string) => {
+    if (!user) return;
+    const updateData = { selected_title: newTitle === 'none' ? null : newTitle };
+    await toast.promise(saveProfileDetails(updateData), {
+      loading: 'Ünvan kaydediliyor...',
+      success: 'Ünvan güncellendi.',
+      error: 'Hata oluştu.',
+    });
+  };
+
+  const handleFrameSelect = async (frameName: string) => {
+    if (!user) return;
+    let updateData: Partial<User>;
+    let successMessage: string;
+    if (user.selected_frame === frameName) {
+      updateData = { selected_frame: null };
+      successMessage = 'Çerçeve kaldırıldı.';
+    } else {
+      updateData = { selected_frame: frameName };
+      successMessage = 'Çerçeve güncellendi!';
+    }
+    await toast.promise(saveProfileDetails(updateData), {
+      loading: 'İşleniyor...',
+      success: successMessage,
+      error: 'Hata oluştu.',
+    });
+  };
+
+  const handleNameSave = async () => {
+    if (!user || nameValue === user.name) {
+      setIsEditingName(false);
+      return;
+    }
+    setIsSavingName(true);
+    try {
+      await saveProfileDetails({ name: nameValue });
+      toast.success('İsim güncellendi!');
+    } catch (error) {
+      toast.error("İsim Güncelleme Hatası", { description: error instanceof Error ? error.message : "Bilinmeyen hata" });
+      setNameValue(user.name || "");
+    } finally {
+      setIsSavingName(false);
+      setIsEditingName(false);
+    }
+  };
+
+  const handleNameCancel = () => { setIsEditingName(false); setNameValue(user?.name || ""); };
+
+  const handleDescriptionSave = async () => {
+    if (!user || descriptionValue === user.description) {
+      setIsEditingDescription(false);
+      return;
+    }
+    setIsSavingDescription(true);
+    try {
+      await saveProfileDetails({ description: descriptionValue });
+      toast.success('Açıklama güncellendi!');
+    } catch (error) {
+      toast.error("Açıklama Güncelleme Hatası", { description: error instanceof Error ? error.message : "Bilinmeyen hata" });
+      setDescriptionValue(user.description || "");
+    } finally {
+      setIsSavingDescription(false);
+      setIsEditingDescription(false);
+    }
+  };
+
+  const handleDescriptionCancel = () => { setIsEditingDescription(false); setDescriptionValue(user?.description || ""); };
+
+  const handleAvatarEditClick = () => { fileInputRef.current?.click(); };
+
   const handleFileChange = (files: FileList | null) => {
     if (files && files[0]) {
       const file = files[0];
-      if (file.size > 4 * 1024 * 1024) return toast.error("Resim 4MB'den küçük olmalı.");
-      const url = URL.createObjectURL(file);
-      setImageToCrop(url);
+      if (file.size > 4 * 1024 * 1024) { toast.error("Resim boyutu 4MB'den küçük olmalıdır."); return; }
+      setImageToCrop(URL.createObjectURL(file));
       setIsCropperOpen(true);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const handleCropComplete = (croppedBlob: Blob) => {
+  const handleCropComplete = async (croppedBlob: Blob) => {
     setIsCropperOpen(false);
     if (imageToCrop) URL.revokeObjectURL(imageToCrop);
     setImageToCrop(null);
     if (!user) return;
-    const file = new File([croppedBlob], `${user.id}.jpeg`, { type: "image/jpeg" });
-    avatarUploadMutation.mutate(file);
+    const croppedFile = new File([croppedBlob], `${user.id}.jpeg`, { type: "image/jpeg" });
+    await toast.promise(
+      async () => {
+        const uploadedUrl = await uploadAvatar(croppedFile, user.id);
+        if (uploadedUrl) {
+          const cacheBustingUrl = `${uploadedUrl}?v=${Date.now()}`;
+          await saveProfileDetails({ avatar_url: cacheBustingUrl });
+        }
+      },
+      { loading: "Profil fotoğrafı yükleniyor...", success: "Profil fotoğrafı güncellendi!", error: (e) => e.message || "Hata oluştu." }
+    );
   };
 
-  const handleNameSave = () => {
-    if (!user || nameValue === user.name) return setIsEditingName(false);
-    profileDetailsMutation.mutate({ name: nameValue }, { onSuccess: () => setIsEditingName(false) });
+  const handleDeleteAvatar = async () => {
+    if (!user) return;
+    setIsDeletingAvatar(true);
+    try {
+      await deleteAvatar(user.avatar_url || "");
+      await saveProfileDetails({ avatar_url: null });
+      toast.success("Profil fotoğrafı silindi.");
+    } catch { toast.error("Silme hatası."); } 
+    finally { setIsDeletingAvatar(false); setShowDeleteAvatarDialog(false); }
   };
 
-  const handleDescriptionSave = () => {
-    if (!user || descriptionValue === user.description) return setIsEditingDescription(false);
-    profileDetailsMutation.mutate({ description: descriptionValue }, { onSuccess: () => setIsEditingDescription(false) });
+  const handleDeleteRequest = (postId: string, imageUrl?: string | null) => { setPostToDelete({ id: postId, imageUrl }); };
+
+  const handleDeleteConfirm = async () => {
+    if (!postToDelete || !user) return;
+    setIsDeleting(true);
+    try {
+      await deleteBlogPost(postToDelete.id, postToDelete.imageUrl);
+      setUserPosts(prev => prev.filter(p => p.id !== postToDelete.id));
+      const updatedProfile = await removeExp(user.id, EXP_ACTIONS.REMOVE_POST);
+      if (updatedProfile) updateUser(updatedProfile);
+      toast.success("Blog yazısı silindi.");
+    } catch { toast.error("Silme hatası."); }
+    finally { setIsDeleting(false); setPostToDelete(null); }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    setIsDeletingAccount(true);
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) throw new Error("Oturum yok.");
+      const res = await fetch('/api/user', { method: 'DELETE', headers: { Authorization: `Bearer ${session.access_token}` } });
+      if (!res.ok) throw new Error("Silinemedi.");
+      toast.success("Hesap silindi.");
+      await logout();
+      navigate('/');
+    } catch (error) {
+      toast.error("Hesap silinirken hata.", { description: error instanceof Error ? error.message : "Bilinmeyen hata" });
+    } finally { setIsDeletingAccount(false); setShowDeleteAccountDialog(false); }
   };
 
   if (loading) return <div className="text-center p-12">Yükleniyor...</div>;
@@ -171,6 +224,10 @@ export default function ProfilePage() {
   const expInCurrentLevel = (user.exp || 0) - currentLevelExp;
   const expProgress = expForNextLevel === 0 ? 100 : (expInCurrentLevel / expForNextLevel) * 100;
 
+  const selectedTitleObject = Object.values(TITLES).find(t => t.name === user.selected_title);
+  const SelectedTitleIcon = selectedTitleObject ? selectedTitleObject.icon : CheckCircle;
+  const selectedFrame = FRAMES.find(f => f.name === user.selected_frame);
+
   const AvatarPreview = ({ sizeClass = "h-20 w-20" }: { sizeClass?: string }) => (
     <Avatar className={sizeClass}>
       <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
@@ -179,15 +236,11 @@ export default function ProfilePage() {
   );
 
   return (
-    <div className="container mx-auto px-5 py-12">
-      <h1 className="text-4xl font-bold mb-8">Profilim</h1>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Sol Panel: Profil Bilgileri */}
-        {/* Sağ Panel: Bloglar, Çerçeveler */}
-        {/* Dialoglar: Avatar Crop, Silme */}
-        {/* Kod uzun olduğu için B sürümü mantığını koruyarak UI eklemeye devam edebilirsin */}
+    <>
+      <div className="container mx-auto px-5 py-12">
+        {/* UI kodu burada devam eder... */}
       </div>
-      {imageToCrop && <ImageCropperDialog imageSrc={imageToCrop} open={isCropperOpen} onClose={() => { setIsCropperOpen(false); setImageToCrop(null); }} onCropComplete={handleCropComplete} />}
-    </div>
+      {imageToCrop && <ImageCropperDialog imageSrc={imageToCrop} open={isCropperOpen} onClose={() => { setIsCropperOpen(false); if (imageToCrop) URL.revokeObjectURL(imageToCrop); setImageToCrop(null); }} onCropComplete={handleCropComplete} />}
+    </>
   );
 }
