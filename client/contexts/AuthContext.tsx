@@ -58,7 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (error) {
         console.error("Error fetching profile from Supabase:", error);
-        toast.error("Profil yüklenemedi.", { description: error.message });
+        // RLS hatası veya profilin olmaması durumunda kullanıcıya bilgi ver
+        if (error.code === 'PGRST116' || error.message.includes('Row not found')) {
+            toast.error("Profil verisi bulunamadı.", { description: "Lütfen Supabase'de 'profiles' tablonuzun ve RLS ayarlarınızın doğru olduğundan emin olun." });
+        } else {
+            toast.error("Profil yüklenemedi.", { description: error.message });
+        }
         return null;
       }
       
@@ -85,6 +90,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast.success("Günlük Giriş Ödülü", { description: "Hesabına 20 Gem eklendi!" });
         return { ...updatedProfile, email: profile.email } as User;
       } catch (e) {
+        // Eğer hata zaten ödülün alındığına dairse, sessiz kal
+        if (e instanceof Error && e.message.includes("Daily reward already claimed today")) {
+            return profile;
+        }
         console.error("Error claiming daily reward via server:", e);
       }
     }
