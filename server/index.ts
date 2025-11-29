@@ -39,6 +39,8 @@ import { handleGetAnnouncementById } from "./routes/announcement"; // Yeni impor
 export function createServer(env?: Record<string, string | undefined>) {
   // Load .env variables
   dotenv.config();
+  console.log(`[createServer] After initial dotenv.config(), ADMIN_EMAILS: ${process.env.ADMIN_EMAILS ? 'Set' : 'Not Set'}`);
+
 
   // Merge passed env variables into process.env
   if (env) {
@@ -48,11 +50,14 @@ export function createServer(env?: Record<string, string | undefined>) {
         process.env[key] = env[key];
       }
     }
+    console.log(`[createServer] After merge, ADMIN_EMAILS: ${process.env.ADMIN_EMAILS ? 'Set' : 'Not Set'}`);
   }
 
   console.log("Creating Express server...");
-  console.log(`[createServer] After merge, SUPABASE_URL is set: ${!!process.env.SUPABASE_URL}`);
-  console.log(`[createServer] After merge, SUPABASE_SERVICE_ROLE_KEY is set: ${!!process.env.SUPABASE_SERVICE_ROLE_KEY}`);
+  console.log(`[createServer] Final check, SUPABASE_URL is set: ${!!process.env.SUPABASE_URL}`);
+  console.log(`[createServer] Final check, SUPABASE_SERVICE_ROLE_KEY is set: ${!!process.env.SUPABASE_SERVICE_ROLE_KEY}`);
+  console.log(`[createServer] Final check, ADMIN_EMAILS value: ${process.env.ADMIN_EMAILS}`); // ADMIN_EMAILS'in tam değerini göster
+
 
   const app = express();
 
