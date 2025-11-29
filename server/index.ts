@@ -6,7 +6,7 @@ import { handleDemo } from "./routes/demo";
 import { requireAuth } from "./middleware/auth";
 import { requireAdmin } from "./middleware/admin";
 
-import { handleDeleteUser, handleUpdateProfile } from "./routes/user";
+import { handleDeleteUser, handleUpdateProfile, handleAdminDeleteUser } from "./routes/user"; // handleAdminDeleteUser eklendi
 
 import {
   handleCreatePost,
@@ -77,17 +77,17 @@ export function createServer(env?: Record<string, string | undefined>) {
   app.get("/api/demo", handleDemo);
 
   // User routes
-  app.delete("/api/user", requireAuth, handleDeleteUser);
+  app.delete("/api/user", requireAuth, handleDeleteUser); // Kullanıcının kendi hesabını silmesi
   app.put("/api/profile", requireAuth, handleUpdateProfile);
 
   // Blog routes
   app.post("/api/blog/post", requireAuth, handleCreatePost);
   app.put("/api/blog/post/:id", requireAuth, handleUpdatePost);
-  app.delete("/api/blog/post/:id", requireAuth, handleDeletePost);
+  app.delete("/api/blog/post/:id", requireAuth, handleDeletePost); // Adminler de silebilir
 
   // Comment
   app.post("/api/blog/comment", requireAuth, handleAddComment);
-  app.delete("/api/blog/comment/:id", requireAuth, handleDeleteComment);
+  app.delete("/api/blog/comment/:id", requireAuth, handleDeleteComment); // Adminler de silebilir
 
   // Vote
   app.post("/api/blog/vote", requireAuth, handleCastVote);
@@ -100,6 +100,7 @@ export function createServer(env?: Record<string, string | undefined>) {
 
   // Admin
   app.post("/api/admin/grant-all", requireAuth, requireAdmin, handleGrantAll);
+  app.delete("/api/admin/user/:id", requireAuth, requireAdmin, handleAdminDeleteUser); // Adminlerin herhangi bir hesabı silmesi
 
   // Announcements
   app.post("/api/announcement", requireAuth, requireAdmin, handleCreateAnnouncement);
