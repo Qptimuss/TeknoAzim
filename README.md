@@ -7,7 +7,11 @@ Projenin ilk aşamasında sitenin oluşturulması adına, bu alanla ilgili terim
 Projenin yapımında Dyad platformu ile Gemini 2.5 Pro, Gemini 2.5 Flash, Qwen3 Coder free gibi yapay zeka modelleri kullanılmıştır. Sitenin metin filtreleme sistemi için Hugging Face'deki "unitary/toxic-bert" toxicity modeli kulanılmıştır. Site TÜBİTAK araştırma projeleri için hazırlanmıştır.
 
 Dyad Platformu:
+
 https://www.dyad.sh/
+
 Metin Filtreleme Modeli:
+
 https://huggingface.co/unitary/toxic-bert
+
 
