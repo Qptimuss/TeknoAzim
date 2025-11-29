@@ -1,11 +1,11 @@
 import { Gem, Star, Zap, Shield } from 'lucide-react';
 
 export const RARITIES = {
-  SIRADAN: { name: 'Sıradan', color: 'text-gray-400', chance: '48.5%' }, // %0.5 düşürüldü
+  SIRADAN: { name: 'Sıradan', color: 'text-gray-400', chance: '49%' }, // %0.5 artırıldı
   SIRADISI: { name: 'Sıradışı', color: 'text-blue-400', chance: '30%' },
-  ENDER: { name: 'Ender', color: 'text-purple-500', chance: '15%' },
+  ENDER: { name: 'Ender', color: 'text-purple-500', chance: '15.5%' }, // %0.5 artırıldı
   EFSANEVI: { name: 'Efsanevi', color: 'text-yellow-400', chance: '5%' },
-  ÖZEL: { name: 'Özel', color: 'text-fuchsia-400', chance: '0.5%' }, // %0.5 olarak güncellendi
+  ÖZEL: { name: 'Özel', color: 'text-fuchsia-400', chance: '0.5%' },
 };
 
 export const FRAMES = [
@@ -24,6 +24,7 @@ export const FRAMES = [
   // Ender
   { name: 'Kraliyet Moru', rarity: RARITIES.ENDER.name, className: 'border-4 border-purple-600 rounded-full p-1 bg-gradient-to-br from-purple-400 to-purple-800' },
   { name: 'Galaktik Halka', rarity: RARITIES.ENDER.name, className: 'border-2 border-indigo-500 rounded-full shadow-[0_0_15px_theme(colors.indigo.400)] animate-pulse' },
+  { name: 'Kristal Kenar', rarity: RARITIES.ENDER.name, className: 'border-4 border-sky-300 rounded-full p-1 bg-gradient-to-br from-blue-200 to-cyan-400 shadow-[0_0_10px_theme(colors.sky.300)]' },
 
   // Efsanevi
   { 
