@@ -53,11 +53,11 @@ const selectRandomFrame = () => {
   const rand = Math.random() * 100;
   let selectedRarityName: string;
 
-  if (rand < 0.5) selectedRarityName = RARITIES.ÖZEL.name; // %0.5 şans
-  else if (rand < 2.5) selectedRarityName = RARITIES.EFSANEVI.name; // %2 şans (2.5 - 0.5)
-  else if (rand < 12.5) selectedRarityName = RARITIES.ENDER.name; // %10 şans (12.5 - 2.5)
-  else if (rand < 42.5) selectedRarityName = RARITIES.SIRADISI.name; // %30 şans (42.5 - 12.5)
-  else selectedRarityName = RARITIES.SIRADAN.name; // %57.5 şans (100 - 42.5)
+  if (rand < 0.2) selectedRarityName = RARITIES.ÖZEL.name; // %0.2 şans
+  else if (rand < 2.2) selectedRarityName = RARITIES.EFSANEVI.name; // %2 şans (2.2 - 0.2)
+  else if (rand < 12.2) selectedRarityName = RARITIES.ENDER.name; // %10 şans (12.2 - 2.2)
+  else if (rand < 42.2) selectedRarityName = RARITIES.SIRADISI.name; // %30 şans (42.2 - 12.2)
+  else selectedRarityName = RARITIES.SIRADAN.name; // %57.8 şans (100 - 42.2)
 
   const framesInRarity = FRAMES.filter(frame => frame.rarity === selectedRarityName);
   if (framesInRarity.length === 0) {
@@ -152,7 +152,7 @@ export const handleAwardBadge: RequestHandler = async (req, res) => {
     const profile = profileData as BadgeProfile | null;
 
     if (fetchError || !profile) {
-      return res.status(404).json({ error: "Profile not found." });
+      return res.status(404).json({ error: "Profile not null." });
     }
 
     const currentBadges = profile.badges || [];
