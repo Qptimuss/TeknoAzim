@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { Github } from "lucide-react";
 
 const projectText1 = "Bu TÜBİTAK projesi, öğrencilerin kendilerini ifade etme becerilerini geliştirmelerini, spor, bilim ve sanat gibi alanlardaki bilgilerini paylaşmalarını ve temel makale yazım tekniklerini öğrenerek mini makaleler yayımlamalarını amaçlamaktadır. Proje kapsamında öğrenciler yazılar hazırlayarak deneyim kazanacak, diğer öğrenciler bu yazıları okuyup yorumlayarak genel kültürlerini ve eleştirel düşünme becerilerini geliştirecektir. Böylece üretim ve tüketim arasında bir öğrenme döngüsü oluşturulacaktır.";
-const projectText2 = "Projenin uygulanmasında önce HTML/CSS ve JavaScript ile temel web geliştirme öğrenilmiş, ardından UI/UX tasarımı ve Figma kullanımı ile site tasarımı oluşturulmuştur. Öğrenci blog siteleri incelenerek oyunlaştırma, mini-makaleler ve yapay zeka desteği gibi özgün özellikler belirlenmiştir. Site prototipi, Next.js, React.js ve Shadcn ile front-end, Tailwind ile tasarım, Typescript ile işlevsellik, PostgreSQL ve Supabase ile veri yönetimi kullanılarak Dyad platformu üzerinden geliştirilmiştir. İlerleyen aşamalarda prototipten elde edilen geri bildirimlerle site kullanıcıya sunulacak, kaynak kodları GitHub’da paylaşılacaktır.";
+
+const projectText2 = "Projenin uygulanmasında önce HTML/CSS ve JavaScript ile temel web geliştirme öğrenilmiş, ardından UI/UX tasarımı ve Figma kullanımı ile site tasarımı oluşturulmuştur. Öğrenci blog siteleri incelenerek oyunlaştırma, yapay zeka desteği gibi özgün özellikler belirlenmiştir. Site prototipi, Next.js, React.js ve Shadcn ile front-end, Tailwind ile tasarım, Typescript ile işlevsellik, PostgreSQL ve Supabase ile veri yönetimi kullanılarak Dyad platformu üzerinden geliştirilmiştir. Site Netlify'dan herkese açık hale getirilmiştir.";
 
 const githubLinks = [
   { url: "https://github.com/Qptimuss/TeknoAzim", label: "TeknoAzim GitHub Repo" },
