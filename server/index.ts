@@ -6,7 +6,7 @@ import { handleDemo } from "./routes/demo";
 import { requireAuth } from "./middleware/auth";
 import { requireAdmin } from "./middleware/admin";
 
-import { handleDeleteUser, handleUpdateProfile } from "./routes/user";
+import { handleDeleteUser, handleUpdateProfile, handleAdminDeleteUser } from "./routes/user";
 
 import {
   handleCreatePost,
@@ -24,7 +24,7 @@ import {
   handleOpenCrate,
 } from "./routes/gamification";
 
-import { handleGrantAll } from "./routes/admin";
+// import { handleGrantAll } from "./routes/admin"; // Kaldırıldı
 
 import {
   handleCreateAnnouncement,
@@ -33,12 +33,14 @@ import {
   handleDeleteAnnouncement,
 } from "./routes/announcement";
 
-import { handleCheckEnv } from "./routes/check-env"; // Kaybolmaması için eklendi
-import { handleGetAnnouncementById } from "./routes/announcement"; // Yeni import
+import { handleCheckEnv } from "./routes/check-env";
+import { handleGetAnnouncementById } from "./routes/announcement";
 
 export function createServer(env?: Record<string, string | undefined>) {
   // Load .env variables
   dotenv.config();
+  console.log(`[createServer] After initial dotenv.config(), ADMIN_EMAILS: ${process.env.ADMIN_EMAILS ? 'Set' : 'Not Set'}`);
+
 
   // Merge passed env variables into process.env
   if (env) {
@@ -48,11 +50,14 @@ export function createServer(env?: Record<string, string | undefined>) {
         process.env[key] = env[key];
       }
     }
+    console.log(`[createServer] After merge, ADMIN_EMAILS: ${process.env.ADMIN_EMAILS ? 'Set' : 'Not Set'}`);
   }
 
   console.log("Creating Express server...");
-  console.log(`[createServer] After merge, SUPABASE_URL is set: ${!!process.env.SUPABASE_URL}`);
-  console.log(`[createServer] After merge, SUPABASE_SERVICE_ROLE_KEY is set: ${!!process.env.SUPABASE_SERVICE_ROLE_KEY}`);
+  console.log(`[createServer] Final check, SUPABASE_URL is set: ${!!process.env.SUPABASE_URL}`);
+  console.log(`[createServer] Final check, SUPABASE_SERVICE_ROLE_KEY is set: ${!!process.env.SUPABASE_SERVICE_ROLE_KEY}`);
+  console.log(`[createServer] Final check, ADMIN_EMAILS value: ${process.env.ADMIN_EMAILS}`);
+
 
   const app = express();
 
@@ -94,12 +99,13 @@ export function createServer(env?: Record<string, string | undefined>) {
   app.post("/api/gamification/open-crate", requireAuth, handleOpenCrate);
 
   // Admin
-  app.post("/api/admin/grant-all", requireAuth, requireAdmin, handleGrantAll);
+  // app.post("/api/admin/grant-all", requireAuth, requireAdmin, handleGrantAll); // Kaldırıldı
+  app.delete("/api/admin/user/:id", requireAuth, requireAdmin, handleAdminDeleteUser);
 
   // Announcements
   app.post("/api/announcement", requireAuth, requireAdmin, handleCreateAnnouncement);
   app.get("/api/announcement", handleGetAnnouncements);
-  app.get("/api/announcement/:id", handleGetAnnouncementById); // Yeni Rota
+  app.get("/api/announcement/:id", handleGetAnnouncementById);
   app.put("/api/announcement/:id", requireAuth, requireAdmin, handleUpdateAnnouncement);
   app.delete("/api/announcement/:id", requireAuth, requireAdmin, handleDeleteAnnouncement);
 

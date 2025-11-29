@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "../lib/supabase-admin";
 import { z } from "zod";
 import { Database } from "../lib/database.types";
 import { parseBody } from "../lib/body-parser";
+import { isRequesterAdmin } from "../lib/auth-helpers"; // Yeni import
 
 // ------------------- VALIDATION SCHEMAS -------------------
 
@@ -156,13 +157,14 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
 
 // DELETE POST
 export const handleDeletePost: RequestHandler = async (req, res) => {
-  const userId = req.userId;
+  const userId = req.userId; // İsteği yapan kullanıcı
   const postId = req.params.id;
 
   if (!userId) return res.status(401).json({ error: "Unauthorized." });
 
   try {
     const supabaseAdmin = getSupabaseAdmin();
+    const requesterIsAdmin = await isRequesterAdmin(userId); // Admin kontrolü
 
     const { data: existing, error: fetchError } = await supabaseAdmin
       .from("blog_posts")
@@ -173,8 +175,9 @@ export const handleDeletePost: RequestHandler = async (req, res) => {
     if (fetchError || !existing)
       return res.status(404).json({ error: "Post bulunamadı." });
 
-    if ((existing as PostOwner).user_id !== userId) // Fix 6
-      return res.status(403).json({ error: "Yetkisiz." });
+    // Eğer istek yapan admin değilse VE postun sahibi değilse, yetkisiz hatası ver
+    if (!requesterIsAdmin && (existing as PostOwner).user_id !== userId)
+      return res.status(403).json({ error: "Forbidden: You can only delete your own posts." });
 
     await supabaseAdmin.from("blog_posts").delete().eq("id", postId);
 
@@ -226,13 +229,14 @@ export const handleAddComment: RequestHandler = async (req, res) => {
 
 // DELETE COMMENT
 export const handleDeleteComment: RequestHandler = async (req, res) => {
-  const userId = req.userId;
+  const userId = req.userId; // İsteği yapan kullanıcı
   const commentId = req.params.id;
 
   if (!userId) return res.status(401).json({ error: "Unauthorized." });
 
   try {
     const supabaseAdmin = getSupabaseAdmin();
+    const requesterIsAdmin = await isRequesterAdmin(userId); // Admin kontrolü
 
     const { data: existing, error } = await supabaseAdmin
       .from("comments")
@@ -243,8 +247,9 @@ export const handleDeleteComment: RequestHandler = async (req, res) => {
     if (error || !existing)
       return res.status(404).json({ error: "Yorum bulunamadı." });
 
-    if ((existing as CommentOwner).user_id !== userId) // Fix 8
-      return res.status(403).json({ error: "Yetkisiz." });
+    // Eğer istek yapan admin değilse VE yorumun sahibi değilse, yetkisiz hatası ver
+    if (!requesterIsAdmin && (existing as CommentOwner).user_id !== userId)
+      return res.status(403).json({ error: "Forbidden: You can only delete your own comments." });
 
     await supabaseAdmin.from("comments").delete().eq("id", commentId);
 

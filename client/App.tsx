@@ -20,27 +20,27 @@ import ProfilePage from "./pages/ProfilePage";
 import UserProfilePage from "./pages/UserProfilePage";
 import SifremiUnuttum from "./pages/SifremiUnuttum";
 import SifreSifirla from "./pages/SifreSifirla";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AuthProvider } from "./contexts/AuthContext"; // useAuth kaldırıldı
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./components/ThemeProvider";
 import Magaza from "./pages/Magaza";
 import EditBlogPage from "./pages/EditBlogPage";
 import CreateAnnouncementPage from "./pages/CreateAnnouncementPage";
 import EditAnnouncementPage from "./pages/EditAnnouncementPage";
-import { executeAdminGrant } from "./lib/admin-grant";
+// import { executeAdminGrant } from "./lib/admin-grant"; // Kaldırıldı
 
 const queryClient = new QueryClient();
 
-// Post-auth işlemleri için component
-const PostAuthInitializer = () => {
-  const { user, updateUser, loading } = useAuth();
+// Post-auth işlemleri için component (Artık kullanılmıyor, kaldırıldı)
+// const PostAuthInitializer = () => {
+//   const { user, updateUser, loading } = useAuth();
 
-  if (!loading) {
-    executeAdminGrant(user, updateUser);
-  }
+//   if (!loading) {
+//     executeAdminGrant(user, updateUser);
+//   }
 
-  return null;
-};
+//   return null;
+// };
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -49,7 +49,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <AuthProvider>
-          <PostAuthInitializer />
+          {/* <PostAuthInitializer /> */} {/* Kaldırıldı */}
           <BrowserRouter>
             <Routes>
               <Route element={<Layout />}>

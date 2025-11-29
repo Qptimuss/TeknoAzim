@@ -1,21 +1,18 @@
 import { User } from "@/contexts/AuthContext";
 
+// DİKKAT: Üretim ortamı için, bu liste ideal olarak sunucudan güvenli bir şekilde alınmalı
+// veya istemci tarafı UI mantığı buna bağlıysa, derleme zamanı ortam değişkeni aracılığıyla yönetilmelidir.
+// Kullanıcının girdisine dayanarak anında istemci tarafı UI işlevselliği için buraya sabit kodlanmıştır.
+const CLIENT_ADMIN_EMAILS = ["qptimus06@gmail.com"]; // Kullanıcının sağladığı yönetici e-postası
+
 /**
- * Checks if the given user object corresponds to an administrator.
- * This is a client-side check for UI purposes only. Server-side validation is mandatory.
+ * Verilen kullanıcı nesnesinin bir yöneticiye karşılık gelip gelmediğini kontrol eder.
+ * Bu sadece UI amaçlı bir istemci tarafı kontrolüdür. Sunucu tarafı doğrulama ZORUNLUDUR.
+ * Bu fonksiyon artık kullanıcının e-postasının CLIENT_ADMIN_EMAILS listesinde olup olmadığını kontrol eder.
  */
 export const isAdmin = (user: User | null): boolean => {
-  // WARNING: This list is for UI purposes only. Server must enforce security.
-  // Lütfen kendi admin e-postalarınızı buraya ekleyin.
-  const ADMIN_EMAILS = [
-    "zeynepecemsezer5566@hotmail.com",
-    "mehmetakif.msrli55@gmail.com",
-    "qptimus06@gmail.com",
-  ];
-
   if (!user || !user.email) {
     return false;
   }
-
-  return ADMIN_EMAILS.includes(user.email);
+  return CLIENT_ADMIN_EMAILS.includes(user.email);
 };

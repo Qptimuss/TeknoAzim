@@ -72,3 +72,47 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
   // Başarılı yanıtı JSON olarak döndür
   return response.json();
 };
+
+/**
+ * A wrapper around fetch that does NOT include authorization headers.
+ * @param url The URL to fetch.
+ * @param options The fetch options.
+ * @returns The JSON response.
+ */
+export const fetchWithoutAuth = async (url: string, options: RequestInit = {}) => {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    let errorMessage = `Sunucu Hatası: ${response.status}`;
+    try {
+      const errorData = await response.json();
+      if (typeof errorData.error === 'string' && errorData.error) {
+        errorMessage = errorData.error;
+      } else if (typeof errorData.message === 'string' && errorData.message) {
+        errorMessage = errorData.message;
+      }
+    } catch (e) {
+      try {
+        const textError = await response.text();
+        if (textError) {
+          errorMessage = textError;
+        }
+      } catch (textErr) {
+        // ignore
+      }
+    }
+    throw new Error(errorMessage);
+  }
+
+  if (response.status === 204) {
+    return null;
+  }
+
+  return response.json();
+};

@@ -32,6 +32,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import ImageViewerDialog from "./ImageViewerDialog";
+import { isAdmin } from "@/lib/auth-utils"; // isAdmin helper'ı import edildi
 
 const commentSchema = z.object({
   content: z.string().min(3, "Yorum en az 3 karakter olmalıdır."),
@@ -45,6 +46,7 @@ interface CommentSectionProps {
 
 export default function CommentSection({ postId, comments, onCommentAdded: onCommentsChange }: CommentSectionProps) {
   const { user, updateUser } = useAuth();
+  const isUserAdmin = isAdmin(user); // Admin kontrolü
   const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
   const [viewerState, setViewerState] = useState<{ open: boolean; url: string; alt: string }>({ open: false, url: '', alt: '' });
 
@@ -193,7 +195,7 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                       <p className="text-xs text-muted-foreground">
                         {new Date(comment.created_at).toLocaleString("tr-TR")}
                       </p>
-                      {user && user.id === comment.user_id && (
+                      {user && (user.id === comment.user_id || isUserAdmin) && ( // Adminler de silebilir
                         <Button
                           variant="ghost"
                           size="icon"
