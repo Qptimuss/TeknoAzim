@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Github } from "lucide-react";
 
-const projectText1 = "Bu TÜBİTAK projesi, öğrencilerin kendilerini ifade etme becerilerini geliştirmelerini, spor, bilim ve sanat gibi alanlardaki bilgilerini paylaşmalarını ve temel makale yazım tekniklerini öğrenerek mini makaleler yayımlamalarını amaçlamaktadır. Proje kapsamında öğrenciler yazılar hazırlayarak deneyim kazanacak, diğer öğrenciler bu yazıları okuyup yorumlayarak genel kültürlerini ve eleştirel düşünme becerilerini geliştirecektir. Böylece üretim ve tüketim arasında bir öğrenme döngüsü oluşturulacaktır.";
+const projectGoal = "Bu projede öğrencilerin kendilerini ifade edebilme yeteneklerini geliştirebilmeleri; spor, bilim, sanat gibi herhangi bir alan ile ilgili bilgilerini belli kurallar ve denetimler çerçevesinde diğer öğrencilerle paylaşıp yayımlayabilmeleri, yayımlanacak yazıların kelime seçimleri, cümle düzenleri, anlaşılabilirlik gibi yazım tekniklerine göre nasıl oluşturulması gerektiğini öğrenmeleri, diğer öğrencilerin de yayımlanan bu yazıları okuyup kendi genel kültürlerini geliştirmeleri; öğrencilerin bu yazılar hakkında yorumlar yapıp yazıların güçlü ve zayıf yönlerini ifade edebilmeleri ve yazarların bu yorumlar ve oluşturdukları yazılar ile kendilerini geliştirmeleri şeklinde, hem yazara hem de okura yararlı bir üretim-tüketim döngüsü amaçlanmaktadır. Bu proje sayesinde öğrenciler kendilerini yayımcılık ve medya okuryazarlığı gibi alanlarda geliştirebilirler. Ülkemizde öğrenci blog uygulamalarının öğretim kurumları tarafından öğrenciler üzerindeki olumlu etkisinin fark edilmesi ve bu tarz uygulamaların ülkemizde yaygınlaştırılması da projenin önde gelen amaçları arasındadır.";
 
 const projectText2 = "Projenin uygulanmasında önce HTML/CSS ve JavaScript ile temel web geliştirme öğrenilmiş, ardından UI/UX tasarımı ve Figma kullanımı ile site tasarımı oluşturulmuştur. Öğrenci blog siteleri incelenerek oyunlaştırma, yapay zeka desteği gibi özgün özellikler belirlenmiştir. Site prototipi, Next.js, React.js ve Shadcn ile front-end, Tailwind ile tasarım, Typescript ile işlevsellik, PostgreSQL ve Supabase ile veri yönetimi kullanılarak Dyad platformu üzerinden geliştirilmiştir. Site Netlify'dan herkese açık hale getirilmiştir.";
 
@@ -23,14 +23,14 @@ export default function Hakkimizda() {
           Hakkımızda
         </h1>
         
-        {/* TÜBİTAK notu başlığın hemen altında */}
         <p className="text-sm font-medium text-muted-foreground mb-6">
           Bu site TÜBİTAK'ın desteklediği öğrenci proje etkinlikleri için hazırlanmıştır.
         </p>
         
         <div className="text-left space-y-6 mb-10">
+          <h2 className="text-foreground text-2xl font-outfit font-bold mb-4">Amaç</h2>
           <p className="text-muted-foreground text-lg md:text-xl font-roboto font-normal leading-relaxed">
-            {projectText1}
+            {projectGoal}
           </p>
           <p className="text-muted-foreground text-lg md:text-xl font-roboto font-normal leading-relaxed">
             {projectText2}
