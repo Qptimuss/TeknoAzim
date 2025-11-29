@@ -23,8 +23,9 @@ export default function Hakkimizda() {
           Hakkımızda
         </h1>
         
+        {/* TÜBİTAK notu güncellendi */}
         <p className="text-sm font-medium text-muted-foreground mb-6">
-          Bu site TÜBİTAK'ın desteklediği öğrenci proje etkinlikleri için hazırlanmıştır.
+          Bu site, TÜBİTAK'ın desteklediği öğrenci proje etkinlikleri için hazırlanmıştır.
         </p>
         
         <div className="text-left space-y-6 mb-10">
