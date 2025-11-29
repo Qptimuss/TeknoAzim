@@ -1,11 +1,11 @@
 // This file is a server-side copy of the client's store-items, without React components.
 
 export const RARITIES = {
-  SIRADAN: { name: 'Sıradan', color: 'text-gray-400', chance: '49%' },
+  SIRADAN: { name: 'Sıradan', color: 'text-gray-400', chance: '48.5%' }, // %0.5 düşürüldü
   SIRADISI: { name: 'Sıradışı', color: 'text-blue-400', chance: '30%' },
   ENDER: { name: 'Ender', color: 'text-purple-500', chance: '15%' },
   EFSANEVI: { name: 'Efsanevi', color: 'text-yellow-400', chance: '5%' },
-  ÖZEL: { name: 'Özel', color: 'text-fuchsia-400', chance: '1%' },
+  ÖZEL: { name: 'Özel', color: 'text-fuchsia-400', chance: '0.5%' }, // %0.5 olarak güncellendi
 };
 
 export const FRAMES = [
@@ -30,6 +30,11 @@ export const FRAMES = [
     name: 'Alevli Çember', 
     rarity: RARITIES.EFSANEVI.name, 
     className: 'p-2 rounded-full bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 animate-fire-spin animate-fire-glow [animation-duration:3s] [animation-timing-function:linear] [animation-iteration-count:infinite]' 
+  },
+  { 
+    name: 'Kozmik Aura', 
+    rarity: RARITIES.EFSANEVI.name, 
+    className: 'border-4 border-fuchsia-500 rounded-full p-1 bg-gradient-to-br from-indigo-700 to-purple-900 shadow-[0_0_20px_theme(colors.fuchsia.400)] animate-pulse' 
   },
 
   // Özel

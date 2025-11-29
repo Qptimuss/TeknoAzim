@@ -53,14 +53,15 @@ const selectRandomFrame = () => {
   const rand = Math.random() * 100;
   let selectedRarityName: string;
 
-  if (rand < 1) selectedRarityName = RARITIES.ÖZEL.name;
-  else if (rand < 6) selectedRarityName = RARITIES.EFSANEVI.name;
-  else if (rand < 21) selectedRarityName = RARITIES.ENDER.name;
-  else if (rand < 51) selectedRarityName = RARITIES.SIRADISI.name;
-  else selectedRarityName = RARITIES.SIRADAN.name;
+  if (rand < 0.5) selectedRarityName = RARITIES.ÖZEL.name; // %0.5 şans
+  else if (rand < 5.5) selectedRarityName = RARITIES.EFSANEVI.name; // %5 şans (5.5 - 0.5)
+  else if (rand < 20.5) selectedRarityName = RARITIES.ENDER.name; // %15 şans (20.5 - 5.5)
+  else if (rand < 50.5) selectedRarityName = RARITIES.SIRADISI.name; // %30 şans (50.5 - 20.5)
+  else selectedRarityName = RARITIES.SIRADAN.name; // %49.5 şans (100 - 50.5)
 
   const framesInRarity = FRAMES.filter(frame => frame.rarity === selectedRarityName);
   if (framesInRarity.length === 0) {
+    // Eğer seçilen nadirlikte çerçeve yoksa, sıradan bir çerçeve ver
     const commonFrames = FRAMES.filter(frame => frame.rarity === RARITIES.SIRADAN.name);
     return commonFrames[Math.floor(Math.random() * commonFrames.length)];
   }
