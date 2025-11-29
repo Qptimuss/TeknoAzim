@@ -1,18 +1,18 @@
-import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { getVoteCounts, getUserVote, castVote } from "@/lib/blog-store";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { awardBadge } from "@/lib/gamification";
+import { useState, useEffect, useCallback } from "react";
 
-interface LikeDislikeButtonsProps {
+interface Props {
   postId: string;
 }
 
-export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) {
+export default function LikeDislikeButtons({ postId }: Props) {
   const { user, updateUser } = useAuth();
   const [likes, setLikes] = useState(0);
   const [dislikes, setDislikes] = useState(0);
@@ -40,7 +40,6 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
       return;
     }
 
-    // Optimistic UI update
     const isLiking = action === 'like' && userAction !== 'liked';
     let newUserAction: 'liked' | 'disliked' | null = null;
 
@@ -65,21 +64,20 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
     }
     
     setUserAction(newUserAction);
-    
+
     try {
       const apiVoteType = newUserAction === 'liked' ? 'like' : newUserAction === 'disliked' ? 'dislike' : null;
       await castVote(postId, user.id, apiVoteType);
 
       if (isLiking) {
-        // Fetch the actual new like count after the vote is cast
         const { likes: newLikes } = await getVoteCounts(postId);
-        
+
         const { data: post, error: postError } = await supabase
           .from('blog_posts')
           .select('user_id')
           .eq('id', postId)
           .single();
-        
+
         if (postError) {
           console.error("Error fetching post author for badge:", postError);
           return;
@@ -88,7 +86,6 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
         if (post && post.user_id) {
           let profileAfterUpdate = null;
 
-          // YENİ ROZET KONTROLÜ: 2 beğeni
           if (newLikes === 2) {
             const badgeUpdate = await awardBadge(post.user_id, "Beğeni Başlangıcı");
             if (badgeUpdate) profileAfterUpdate = badgeUpdate;
@@ -98,13 +95,12 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
             const badgeUpdate = await awardBadge(post.user_id, "Beğeni Mıknatısı");
             if (badgeUpdate) profileAfterUpdate = badgeUpdate;
           }
-          
+
           if (newLikes === 10) {
             const badgeUpdate = await awardBadge(post.user_id, "Popüler Yazar");
             if (badgeUpdate) profileAfterUpdate = badgeUpdate;
           }
 
-          // If the badge earner is the current user, update context
           if (profileAfterUpdate && post.user_id === user.id) {
             updateUser(profileAfterUpdate);
           }
@@ -112,13 +108,11 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
       }
     } catch (error) {
       toast.error("Oy verilirken bir hata oluştu.");
-      fetchVotes(); // Revert to actual state on error
+      fetchVotes();
     }
   };
 
-  if (isLoading) {
-    return <div className="flex items-center gap-4 h-8 w-24"><div className="h-4 bg-muted rounded w-full animate-pulse"></div></div>;
-  }
+  if (isLoading) return <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />;
 
   return (
     <div className="flex items-center gap-4">
@@ -132,8 +126,7 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
           userAction === 'liked' && "text-blue-500 hover:text-blue-400"
         )}
       >
-        <ThumbsUp className="h-4 w-4" />
-        <span>{likes}</span>
+        <ThumbsUp className="w-4 h-4" /> {likes}
       </Button>
       <Button 
         variant="ghost" 
@@ -145,8 +138,7 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
           userAction === 'disliked' && "text-red-500 hover:text-red-400"
         )}
       >
-        <ThumbsDown className="h-4 w-4" />
-        <span>{dislikes}</span>
+        <ThumbsDown className="w-4 h-4" /> {dislikes}
       </Button>
     </div>
   );

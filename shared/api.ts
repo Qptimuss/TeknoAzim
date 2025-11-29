@@ -37,3 +37,12 @@ export interface BlogPostWithAuthor {
   user_id: string; // The ID of the author
   profiles: Profile | null; // The author of the blog post
 }
+
+// This will represent a row in the `announcements` table
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  user_id: string; // Admin ID
+}

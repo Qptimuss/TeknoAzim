@@ -4,12 +4,10 @@ import { z } from "zod";
 import { Database } from "../lib/database.types";
 import { parseBody } from "../lib/body-parser";
 
-// --- Profil Güncelleme Mantığı ---
-
 const updateProfileSchema = z.object({
-  name: z.string().min(2, "İsim en az 2 karakter olmalıdır.").optional(),
-  avatar_url: z.string().url("Geçerli bir URL olmalıdır.").nullable().optional(),
-  description: z.string().max(200, "Açıklama en fazla 200 karakter olabilir.").nullable().optional(),
+  name: z.string().min(2).optional(),
+  avatar_url: z.string().url().nullable().optional(),
+  description: z.string().max(200).nullable().optional(),
   selected_title: z.string().nullable().optional(),
   selected_frame: z.string().nullable().optional(),
 });
@@ -19,20 +17,25 @@ export const handleUpdateProfile: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const bodyData = parseBody(req);
+    // body'yi her zaman parseBody ile alıyoruz
+    const bodyData = await parseBody(req);
+
     const validatedData = updateProfileSchema.partial().parse(bodyData);
-    const supabaseAdmin = getSupabaseAdmin();
 
     if (Object.keys(validatedData).length === 0) {
-        return res.status(400).json({ error: "No valid fields provided for update." });
+      return res.status(400).json({ error: "No valid fields provided for update." });
     }
 
-    // Tip ataması yapıldı
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // Cast gerekli — Supabase types ile uyum için
+    const updatePayload = validatedData as Database["public"]["Tables"]["profiles"]["Update"];
+
     const { data, error } = await (supabaseAdmin
-      .from("profiles") as any)
-      .update(validatedData as Database['public']['Tables']['profiles']['Update'])
-      .eq('id', userId) 
-      .select('id, name, avatar_url, description, selected_title, selected_frame')
+      .from("profiles") as any) // Fix 2
+      .update(updatePayload)
+      .eq("id", userId)
+      .select("id, name, avatar_url, description, selected_title, selected_frame")
       .single();
 
     if (error) {
@@ -50,27 +53,23 @@ export const handleUpdateProfile: RequestHandler = async (req, res) => {
   }
 };
 
-
-// --- Kullanıcı Silme Mantığı ---
-
 export const handleDeleteUser: RequestHandler = async (req, res) => {
   const userId = req.userId;
-  if (!userId) {
-    return res.status(401).json({ error: "User ID missing." });
-  }
+  if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
     const supabaseAdmin = getSupabaseAdmin();
+
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (error) {
-      console.error(`Error deleting user ${userId}:`, error);
+      console.error("Supabase delete user error:", error);
       return res.status(500).json({ error: "Failed to delete user account." });
     }
 
     res.status(204).send();
   } catch (e) {
-    console.error("Server error during user deletion:", e);
-    res.status(500).json({ error: "Internal server error during account deletion." });
+    console.error("Error deleting user:", e);
+    res.status(500).json({ error: "Internal server error." });
   }
 };

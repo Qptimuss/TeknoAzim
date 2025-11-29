@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { addBlogPost, uploadBlogImage, getPostsByUserId } from "@/lib/blog-store";
 import { useAuth } from "@/contexts/AuthContext";
 import { addExp, awardBadge, EXP_ACTIONS } from "@/lib/gamification";
-import { Loader2 } from "lucide-react"; // Import Loader2
+import { Loader2 } from "lucide-react";
 
 const blogSchema = z.object({
   title: z.string().min(5, "Başlık en az 5 karakter olmalıdır."),
@@ -52,8 +52,6 @@ export default function CreateBlogPage() {
       const file = imageFile[0];
       const newUrl = URL.createObjectURL(file);
       setImagePreview(newUrl);
-
-      // Cleanup the object URL on component unmount or when file changes
       return () => URL.revokeObjectURL(newUrl);
     } else {
       setImagePreview(null);
@@ -69,22 +67,17 @@ export default function CreateBlogPage() {
     }
 
     try {
-      // Yeni gönderiyi eklemeden ÖNCE kullanıcının gönderi sayısını kontrol et
       const userPosts = await getPostsByUserId(user.id);
       const postCountBeforeCreating = userPosts.length;
 
       let imageUrl: string | undefined = undefined;
-      // Resim seçildiyse yükle
       if (values.imageFile && values.imageFile.length > 0) {
         toast.info("Resim yükleniyor...");
         const file = values.imageFile[0];
         const uploadedUrl = await uploadBlogImage(file, user.id);
-        if (uploadedUrl) {
-          imageUrl = uploadedUrl;
-        }
+        if (uploadedUrl) imageUrl = uploadedUrl;
       }
 
-      // Blog gönderisini veritabanına ekle
       await addBlogPost({ 
         title: values.title,
         content: values.content,
@@ -92,37 +85,27 @@ export default function CreateBlogPage() {
         imageUrl,
       });
 
-      // --- Oyunlaştırma Mantığı ---
-      
-      // 1. Blog yayınladığı için EXP ver.
       let latestProfileState = await addExp(user.id, EXP_ACTIONS.CREATE_POST);
-      
-      // 2. Rozetleri kontrol et
+
       if (postCountBeforeCreating === 0) {
         const badgeUpdate = await awardBadge(user.id, "İlk Blog");
         if (badgeUpdate) latestProfileState = badgeUpdate;
       }
-      
       if (postCountBeforeCreating === 1) {
         const badgeUpdate = await awardBadge(user.id, "Hevesli Katılımcı");
         if (badgeUpdate) latestProfileState = badgeUpdate;
       }
-      
       if (postCountBeforeCreating === 4) {
         const badgeUpdate = await awardBadge(user.id, "Topluluk İnşacısı");
         if (badgeUpdate) latestProfileState = badgeUpdate;
       }
 
-      // 4. Auth Context'i en güncel ve nihai profil durumuyla güncelle.
-      if (latestProfileState) {
-        updateUser(latestProfileState);
-      }
+      if (latestProfileState) updateUser(latestProfileState);
 
       toast.success("Blog yazınız başarıyla oluşturuldu!");
       navigate("/bloglar");
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.";
-      
       if (errorMessage.includes("uygunsuz içerik barındırdığı için reddedildi")) {
         toast.error("İçerik Reddedildi", { description: errorMessage });
       } else {
@@ -153,6 +136,7 @@ export default function CreateBlogPage() {
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="imageFile"
@@ -160,18 +144,13 @@ export default function CreateBlogPage() {
                 <FormItem>
                   <FormLabel>Kapak Resmi (İsteğe Bağlı, Maks 4MB)</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="file" 
-                      accept="image/*"
-                      {...imageFileRef}
-                      className="file:text-foreground"
-                    />
+                    <Input type="file" accept="image/*" {...imageFileRef} className="file:text-foreground" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             {imagePreview && (
               <div className="mt-4">
                 <img
@@ -195,6 +174,7 @@ export default function CreateBlogPage() {
                 </FormItem>
               )}
             />
+
             <Button type="submit" size="lg" disabled={form.formState.isSubmitting} className="w-full text-lg">
               {form.formState.isSubmitting ? (
                 <>
@@ -205,6 +185,7 @@ export default function CreateBlogPage() {
                 "Yayınla"
               )}
             </Button>
+
             <p className="text-xs text-muted-foreground text-center mt-2">
               İçerikler yapay zeka tarafından filtrelendiğinden gönderim işleminde gecikme olabilir.
             </p>

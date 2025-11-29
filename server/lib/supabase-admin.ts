@@ -1,9 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { Database } from "./database.types";
 
-// This client bypasses Row Level Security (RLS) and should only be used on the server.
-// We are making it a singleton getter to avoid crashing the dev server on startup
-// if the service role key is not present. The error will be thrown at runtime instead.
+// Server-side admin client (bypass RLS)
 let supabaseAdminInstance: ReturnType<typeof createClient<Database>> | null = null;
 
 export const getSupabaseAdmin = () => {
@@ -20,9 +18,9 @@ export const getSupabaseAdmin = () => {
   }
 
   if (!SUPABASE_SERVICE_ROLE_KEY) {
-    // Hata ayıklama için daha net bir mesaj
     console.error("FATAL ERROR: SUPABASE_SERVICE_ROLE_KEY is missing from environment variables.");
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing. Please check your .env file and ensure the server is restarted.");
+    // Bu hata mesajını daha spesifik hale getiriyoruz.
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing. Server-side authentication will fail. Please check your .env file.");
   }
 
   supabaseAdminInstance = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {

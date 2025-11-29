@@ -22,14 +22,12 @@ import { ArrowLeft } from "lucide-react";
 const blogSchema = z.object({
   title: z.string().min(5, "Başlık en az 5 karakter olmalıdır."),
   content: z.string().min(20, "İçerik en az 20 karakter olmalıdır."),
-  // We use a separate field for the existing image URL to display it, 
-  // and imageFile for new uploads.
   existingImageUrl: z.string().optional().nullable(),
   imageFile: z
     .instanceof(FileList)
     .optional()
     .refine(
-      (files) => !files || files.length === 0 || files[0].size <= 4 * 1024 * 1024, // 4MB
+      (files) => !files || files.length === 0 || files[0].size <= 4 * 1024 * 1024,
       `Resim boyutu 4MB'den küçük olmalıdır.`
     ),
 });
@@ -53,7 +51,6 @@ export default function EditBlogPage() {
   const imageFileRef = form.register("imageFile");
   const { isSubmitting } = form.formState;
 
-  // 1. Fetch existing post data
   useEffect(() => {
     if (!id || authLoading) return;
 
@@ -66,7 +63,6 @@ export default function EditBlogPage() {
         return;
       }
 
-      // Check ownership
       if (user?.id !== post.user_id) {
         toast.error("Bu yazıyı düzenleme yetkiniz yok.");
         navigate(`/bloglar/${id}`);
@@ -90,15 +86,12 @@ export default function EditBlogPage() {
     let newImageUrl: string | null | undefined = values.existingImageUrl;
 
     try {
-      // 1. Handle new image upload
       if (values.imageFile && values.imageFile.length > 0) {
         toast.info("Yeni resim yükleniyor...");
         const file = values.imageFile[0];
-        const uploadedUrl = await uploadBlogImage(file, user.id);
-        newImageUrl = uploadedUrl;
+        newImageUrl = await uploadBlogImage(file, user.id);
       }
 
-      // 2. Update blog post
       await updateBlogPost(id, { 
         title: values.title,
         content: values.content,
@@ -109,12 +102,7 @@ export default function EditBlogPage() {
       navigate(`/bloglar/${id}`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.";
-      
-      if (errorMessage.includes("uygunsuz içerik barındırdığı için reddedildi")) {
-        toast.error("İçerik Reddedildi", { description: errorMessage });
-      } else {
-        toast.error("Blog yazısı güncellenirken bir hata oluştu.", { description: errorMessage });
-      }
+      toast.error("Blog yazısı güncellenirken bir hata oluştu.", { description: errorMessage });
       console.error(error);
     }
   }
@@ -144,20 +132,20 @@ export default function EditBlogPage() {
                 </FormItem>
               )}
             />
-            
+
             {form.watch('existingImageUrl') && (
-                <div className="space-y-2">
-                    <FormLabel>Mevcut Kapak Resmi</FormLabel>
-                    <img src={form.watch('existingImageUrl')!} alt="Mevcut Resim" className="w-full h-40 object-cover rounded-md" />
-                    <Button 
-                        variant="destructive" 
-                        size="sm" 
-                        type="button"
-                        onClick={() => form.setValue('existingImageUrl', null)}
-                    >
-                        Resmi Kaldır
-                    </Button>
-                </div>
+              <div className="space-y-2">
+                <FormLabel>Mevcut Kapak Resmi</FormLabel>
+                <img src={form.watch('existingImageUrl')!} alt="Mevcut Resim" className="w-full h-40 object-cover rounded-md" />
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  type="button"
+                  onClick={() => form.setValue('existingImageUrl', null)}
+                >
+                  Resmi Kaldır
+                </Button>
+              </div>
             )}
 
             <FormField
@@ -178,6 +166,7 @@ export default function EditBlogPage() {
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="content"
@@ -191,6 +180,7 @@ export default function EditBlogPage() {
                 </FormItem>
               )}
             />
+
             <Button type="submit" size="lg" disabled={isSubmitting} className="w-full text-lg">
               {isSubmitting ? "Güncelleniyor..." : "Güncelle"}
             </Button>

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext"; // useAuth hook'unu ekledik
 
 export default function Giris() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,6 +17,7 @@ export default function Giris() {
     password: "",
   });
   const navigate = useNavigate();
+  const { login } = useAuth(); // login fonksiyonunu aldık
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -27,7 +29,7 @@ export default function Giris() {
     setIsSubmitting(true);
     setShowResendLink(false);
     
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: formData.email,
       password: formData.password,
     });
@@ -35,17 +37,24 @@ export default function Giris() {
     setIsSubmitting(false);
 
     if (error) {
-      if (error.message === "Invalid login credentials") {
-        toast.error("Giriş Hatası", { description: "Geçersiz e-posta veya şifre." });
-      } else if (error.message === 'Email not confirmed') {
+      console.error("Supabase Login Error:", error);
+      
+      if (error.message === 'Email not confirmed') {
         toast.error("Giriş Hatası", { description: "Giriş yapmadan önce lütfen e-postanızı doğrulayın." });
         setShowResendLink(true);
       } else {
-        toast.error("Giriş Hatası", { description: error.message });
+        // Standardized error message for all other login failures
+        toast.error("Giriş Hatası", { description: "Geçersiz e-posta veya şifre." });
+        setShowResendLink(false);
       }
-    } else {
+    } else if (data.user) {
+      // Başarılı giriş sonrası Auth Context'i manuel olarak güncelle
+      await login(data.user);
       toast.success("Giriş başarılı!", { description: "Yönlendiriliyorsunuz..." });
       navigate("/profil");
+    } else {
+        // Bu durum genellikle Supabase'in oturum oluşturduğu ancak kullanıcı nesnesini döndürmediği nadir durumlar içindir.
+        toast.error("Giriş Hatası", { description: "Oturum başlatılamadı. Lütfen tekrar deneyin." });
     }
   };
 

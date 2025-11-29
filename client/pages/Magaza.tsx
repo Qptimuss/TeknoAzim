@@ -45,7 +45,7 @@ export default function Magaza() {
 
     try {
       const { updatedProfile, itemWon, alreadyOwned, refundAmount } = await openCrate(CRATE_COST);
-      
+
       updateUser(updatedProfile);
 
       setWonFrame(itemWon);

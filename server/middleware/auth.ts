@@ -17,36 +17,39 @@ declare global {
 export const requireAuth: RequestHandler = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Unauthorized: Missing or invalid token." });
   }
 
-  const token = authHeader.split(' ')[1];
+  const token = authHeader.split(" ")[1];
 
   try {
     const supabaseAdmin = getSupabaseAdmin();
+
     // Use supabaseAdmin to verify the JWT
     const { data, error } = await supabaseAdmin.auth.getUser(token);
 
     if (error || !data.user) {
       console.error("JWT verification failed:", error?.message);
-      return res.status(401).json({ error: "Unauthorized: Invalid token." });
+      return res.status(401).json({
+        error: "Unauthorized: Session is invalid or expired. Please log in again.",
+      });
     }
 
-    // Attach the authenticated user's ID to the request
+    // Attach authenticated user ID
     req.userId = data.user.id;
     next();
   } catch (e) {
-    // Catch errors from getSupabaseAdmin (e.g., missing service key) or JWT verification issues
     console.error("Error during token verification or admin client initialization:", e);
-    
-    // Check if the error is related to missing service key
-    if (e instanceof Error && e.message.includes("SUPABASE_SERVICE_ROLE_KEY is missing")) {
-      return res.status(500).json({ error: "Server configuration error: Supabase Service Role Key is missing." });
+
+    const errorMsg = e instanceof Error ? e.message : "Internal server error during authentication.";
+
+    if (errorMsg.includes("SUPABASE_SERVICE_ROLE_KEY is missing")) {
+      return res.status(500).json({
+        error: "Server configuration error: Supabase Service Role Key is missing.",
+      });
     }
 
-    // Return the error message if it's a standard Error, otherwise the generic message.
-    const errorMessage = e instanceof Error ? e.message : "Internal server error during authentication.";
-    res.status(500).json({ error: errorMessage });
+    return res.status(500).json({ error: errorMsg });
   }
 };
