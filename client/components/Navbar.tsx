@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-router-dom";
 import { MobileNav } from "@/components/MobileNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "./ui/button";
