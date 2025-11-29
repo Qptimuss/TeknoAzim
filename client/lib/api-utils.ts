@@ -39,15 +39,36 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
   });
 
   if (!response.ok) {
-    // Try to parse error JSON, but fallback if it fails
-    const errorData = await response.json().catch(() => ({ error: 'Bilinmeyen bir sunucu hatası oluştu.' }));
-    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    let errorMessage = `Sunucu Hatası: ${response.status}`; // Varsayılan hata mesajı
+    try {
+      // Sunucudan gelen JSON formatındaki hata mesajını ayrıştırmayı dene
+      const errorData = await response.json();
+      // Gelen veride 'error' veya 'message' alanı varsa onu kullan
+      if (typeof errorData.error === 'string' && errorData.error) {
+        errorMessage = errorData.error;
+      } else if (typeof errorData.message === 'string' && errorData.message) {
+        errorMessage = errorData.message;
+      }
+    } catch (e) {
+      // JSON ayrıştırma başarısız olursa, yanıt metnini ham olarak almayı dene
+      try {
+        const textError = await response.text();
+        if (textError) {
+          errorMessage = textError;
+        }
+      } catch (textErr) {
+        // Eğer yanıtı okumak tamamen başarısız olursa, varsayılan mesaj kullanılır.
+      }
+    }
+    // Her zaman standart bir Error nesnesi fırlat. Bu, '[object Object]' hatasını önler.
+    throw new Error(errorMessage);
   }
 
-  // Handle 204 No Content case for DELETE, etc.
+  // DELETE gibi işlemler için 204 No Content durumunu ele al
   if (response.status === 204) {
     return null;
   }
 
+  // Başarılı yanıtı JSON olarak döndür
   return response.json();
 };

@@ -9,7 +9,12 @@ export const getBlogPosts = async (): Promise<BlogPostWithAuthor[]> => {
     .from("blog_posts")
     .select("*, profiles(*)")
     .order("created_at", { ascending: false });
-  if (error) throw error;
+  
+  if (error) {
+    console.error("Error fetching blog posts:", error);
+    // Hata durumunda boş bir dizi döndürerek uygulamanın çökmesini engelliyoruz.
+    return []; 
+  }
   return data as BlogPostWithAuthor[];
 };
 
@@ -32,7 +37,7 @@ export const getPostsByUserId = async (userId: string): Promise<BlogPostWithAuth
     .select("*, profiles(*)")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return data as BlogPostWithAuthor[];
 };
 
@@ -96,18 +101,54 @@ export const getCommentsForPost = async (postId: string): Promise<CommentWithAut
     .select("*, profiles(*)")
     .eq("post_id", postId)
     .order("created_at", { ascending: true });
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return data as CommentWithAuthor[];
 };
 
-export const addComment = async (comment: { postId: string; userId: string; content: string }) => {
-  return fetchWithAuth('/api/blog/comment', {
+export const addComment = async (comment: { postId: string; content: string }) => {
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  
+  if (sessionError) {
+    throw new Error(`Supabase session hatası: ${sessionError.message}`);
+  }
+
+  if (!session) {
+    throw new Error("Kullanıcı kimliği doğrulanmadı. Lütfen tekrar giriş yapın.");
+  }
+
+  const response = await fetch('/api/blog/comment', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
     body: JSON.stringify({
       postId: comment.postId,
       content: comment.content,
     }),
   });
+
+  if (!response.ok) {
+    let errorMessage = `Sunucu Hatası: ${response.status}`;
+    try {
+      const errorData = await response.json();
+      if (errorData && typeof errorData.error === 'string') {
+        errorMessage = errorData.error;
+      } else if (errorData && errorData.details && Array.isArray(errorData.details)) {
+        // Handle Zod error details
+        errorMessage = `Invalid input data. Details: ${errorData.details.map((d: any) => `${d.path.join('.')} - ${d.message}`).join(', ')}`;
+      }
+    } catch (e) {
+      // Ignore if parsing fails
+    }
+    throw new Error(errorMessage);
+  }
+
+  if (response.status === 204) {
+    return null;
+  }
+
+  return response.json();
 };
 
 export const deleteComment = async (commentId: string) => {
@@ -123,7 +164,7 @@ export const getVoteCounts = async (postId: string): Promise<{ likes: number; di
     .from('post_votes')
     .select('vote_type')
     .eq('post_id', postId);
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   
   const likes = data.filter(v => v.vote_type === 1).length;
   const dislikes = data.filter(v => v.vote_type === -1).length;

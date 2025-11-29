@@ -8,4 +8,4 @@ export const SERVER_EXP_ACTIONS = {
   CREATE_COMMENT: 10, // Although not currently used by client, defining here for completeness
 };
 
-export const BADGE_REWARD_GEMS = 10;
+export const BADGE_REWARD_GEMS = 30;

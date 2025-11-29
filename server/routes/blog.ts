@@ -1,6 +1,8 @@
 import { RequestHandler } from "express";
 import { getSupabaseAdmin } from "../lib/supabase-admin";
 import { z } from "zod";
+import { Database } from "../lib/database.types";
+import { parseBody } from "../lib/body-parser";
 
 // --- Schemas for validation ---
 
@@ -37,11 +39,17 @@ async function moderateContent(content: string): Promise<{ isModerated: boolean 
 
   if (error) {
     console.error("Error invoking moderation function:", error);
-    // If the moderation service fails, we default to allowing the content (isModerated: true)
-    return { isModerated: true }; 
+    // Eğer Edge Function çağrısı başarısız olursa, sunucu hatası fırlat.
+    throw new Error(`Moderasyon servisi hatası: ${error.message}`);
   }
 
   // The Edge Function returns { isModerated: boolean, ... }
+  // Eğer Edge Function'dan 500 hatası gelirse, data null olabilir.
+  if (!data || data.error) {
+      console.error("Moderation function returned an error:", data?.error);
+      throw new Error(`Moderasyon servisi iç hatası: ${data?.error || 'Bilinmeyen hata'}`);
+  }
+  
   return data as { isModerated: boolean };
 }
 
@@ -53,7 +61,8 @@ export const handleCreatePost: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = newPostSchema.parse(req.body);
+    const bodyData = parseBody(req);
+    const validatedData = newPostSchema.parse(bodyData);
     const supabaseAdmin = getSupabaseAdmin();
 
     // --- Moderation Step for Title and Content ---
@@ -67,15 +76,17 @@ export const handleCreatePost: RequestHandler = async (req, res) => {
       return res.status(403).json({ error: "Blog içeriği uygunsuz içerik barındırdığı için reddedildi." });
     }
 
-    // Server-side insertion, ensuring user_id is set by the authenticated user
-    const { data, error } = await supabaseAdmin
-      .from("blog_posts")
-      .insert({
+    const insertPayload: Database['public']['Tables']['blog_posts']['Insert'] = {
         title: validatedData.title,
         content: validatedData.content,
         image_url: validatedData.imageUrl,
         user_id: userId, // Enforce user ID from JWT, not client input
-      })
+    };
+
+    // Server-side insertion, ensuring user_id is set by the authenticated user
+    const { data, error } = await (supabaseAdmin
+      .from("blog_posts") as any)
+      .insert(insertPayload)
       .select()
       .single();
 
@@ -101,7 +112,8 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = updatePostSchema.parse(req.body);
+    const bodyData = parseBody(req);
+    const validatedData = updatePostSchema.parse(bodyData);
     const supabaseAdmin = getSupabaseAdmin();
 
     // --- Moderation Step for Title and Content ---
@@ -122,22 +134,28 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
       .eq("id", postId)
       .single();
 
-    if (fetchError || !existingPost) {
+    // Tip ataması yapıldı
+    type PostOwner = Pick<Database['public']['Tables']['blog_posts']['Row'], 'user_id'>;
+    const postOwner = existingPost as PostOwner | null;
+
+    if (fetchError || !postOwner) {
       return res.status(404).json({ error: "Blog post not found." });
     }
 
-    if (existingPost.user_id !== userId) {
+    if (postOwner.user_id !== userId) {
       return res.status(403).json({ error: "Forbidden: You do not own this post." });
     }
 
-    // 2. Perform update
-    const { data, error } = await supabaseAdmin
-      .from("blog_posts")
-      .update({
+    const updatePayload: Database['public']['Tables']['blog_posts']['Update'] = {
         title: validatedData.title,
         content: validatedData.content,
         image_url: validatedData.imageUrl,
-      })
+    };
+
+    // 2. Perform update
+    const { data, error } = await (supabaseAdmin
+      .from("blog_posts") as any)
+      .update(updatePayload)
       .eq('id', postId)
       .select()
       .single();
@@ -172,11 +190,15 @@ export const handleDeletePost: RequestHandler = async (req, res) => {
       .eq("id", postId)
       .single();
 
-    if (fetchError || !existingPost) {
+    // Tip ataması yapıldı
+    type PostOwner = Pick<Database['public']['Tables']['blog_posts']['Row'], 'user_id'>;
+    const postOwner = existingPost as PostOwner | null;
+
+    if (fetchError || !postOwner) {
       return res.status(404).json({ error: "Blog post not found." });
     }
 
-    if (existingPost.user_id !== userId) {
+    if (postOwner.user_id !== userId) {
       return res.status(403).json({ error: "Forbidden: You do not own this post." });
     }
 
@@ -204,7 +226,8 @@ export const handleAddComment: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = newCommentSchema.parse(req.body);
+    const bodyData = parseBody(req);
+    const validatedData = newCommentSchema.parse(bodyData);
     const supabaseAdmin = getSupabaseAdmin();
 
     // --- Moderation Step ---
@@ -215,15 +238,17 @@ export const handleAddComment: RequestHandler = async (req, res) => {
       return res.status(403).json({ error: "Yorumunuz, yapay zeka tarafından uygunsuz içerik barındırdığı için reddedildi." });
     }
 
-    // Server-side insertion, enforcing user_id from JWT
-    const { data, error } = await supabaseAdmin
-      .from('comments')
-      .insert({
+    const insertPayload: Database['public']['Tables']['comments']['Insert'] = {
         content: validatedData.content,
         post_id: validatedData.postId,
         user_id: userId,
-        is_moderated: isModerated, // Should be true if it passed moderation
-      })
+        // is_moderated alanı comments tablosunda yok, bu yüzden kaldırıldı.
+    };
+
+    // Server-side insertion, enforcing user_id from JWT
+    const { data, error } = await (supabaseAdmin
+      .from('comments') as any)
+      .insert(insertPayload)
       .select()
       .single();
 
@@ -257,11 +282,15 @@ export const handleDeleteComment: RequestHandler = async (req, res) => {
       .eq("id", commentId)
       .single();
 
-    if (fetchError || !existingComment) {
+    // Tip ataması yapıldı
+    type CommentOwner = Pick<Database['public']['Tables']['comments']['Row'], 'user_id'>;
+    const commentOwner = existingComment as CommentOwner | null;
+
+    if (fetchError || !commentOwner) {
       return res.status(404).json({ error: "Comment not found." });
     }
 
-    if (existingComment.user_id !== userId) {
+    if (commentOwner.user_id !== userId) {
       return res.status(403).json({ error: "Forbidden: You do not own this comment." });
     }
 
@@ -289,7 +318,8 @@ export const handleCastVote: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = castVoteSchema.parse(req.body);
+    const bodyData = parseBody(req);
+    const validatedData = castVoteSchema.parse(bodyData);
     const { postId, voteType } = validatedData;
     const supabaseAdmin = getSupabaseAdmin();
 
@@ -302,14 +332,16 @@ export const handleCastVote: RequestHandler = async (req, res) => {
         .eq('user_id', userId);
       if (error) throw error;
     } else {
+      const upsertPayload: Database['public']['Tables']['post_votes']['Insert'] = {
+        post_id: postId,
+        user_id: userId,
+        vote_type: voteType === 'like' ? 1 : -1,
+      };
+
       // Add or update vote
-      const { error } = await supabaseAdmin
-        .from('post_votes')
-        .upsert({
-          post_id: postId,
-          user_id: userId,
-          vote_type: voteType === 'like' ? 1 : -1,
-        }, { onConflict: 'user_id, post_id' });
+      const { error } = await (supabaseAdmin
+        .from('post_votes') as any)
+        .upsert(upsertPayload, { onConflict: 'user_id, post_id' });
       if (error) throw error;
     }
 

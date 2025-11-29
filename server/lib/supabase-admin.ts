@@ -1,8 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import "dotenv/config";
 import { Database } from "./database.types";
-
-const SUPABASE_URL = "https://yswvdavntaevzbxluvkh.supabase.co";
 
 // This client bypasses Row Level Security (RLS) and should only be used on the server.
 // We are making it a singleton getter to avoid crashing the dev server on startup
@@ -14,10 +11,18 @@ export const getSupabaseAdmin = () => {
     return supabaseAdminInstance;
   }
 
+  const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+  if (!SUPABASE_URL) {
+    console.error("FATAL ERROR: SUPABASE_URL is missing from environment variables.");
+    throw new Error("SUPABASE_URL is missing. Please check your .env file and ensure the server is restarted.");
+  }
+
   if (!SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing. Set it in your .env file.");
+    // Hata ayıklama için daha net bir mesaj
+    console.error("FATAL ERROR: SUPABASE_SERVICE_ROLE_KEY is missing from environment variables.");
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing. Please check your .env file and ensure the server is restarted.");
   }
 
   supabaseAdminInstance = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {

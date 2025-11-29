@@ -38,7 +38,7 @@ import NovaFrame from "@/components/frames/NovaFrame";
 import ImageViewerDialog from "@/components/ImageViewerDialog";
 
 export default function ProfilePage() {
-  const { user, updateUser, loading, logout } = useAuth();
+  const { user, saveProfileDetails, updateUser, loading, logout } = useAuth();
   const navigate = useNavigate();
   const [userPosts, setUserPosts] = useState<BlogPostWithAuthor[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
@@ -93,7 +93,7 @@ export default function ProfilePage() {
     if (!user) return;
     const updateData = { selected_title: newTitle === 'none' ? null : newTitle };
     
-    await toast.promise(updateUser(updateData), {
+    await toast.promise(saveProfileDetails(updateData), {
       loading: 'Ünvan kaydediliyor...',
       success: 'Ünvan güncellendi.',
       error: 'Hata oluştu.',
@@ -107,7 +107,6 @@ export default function ProfilePage() {
     let successMessage: string;
 
     if (user.selected_frame === frameName) {
-      // Removed client-side gem refund logic for unselecting a frame to maintain state consistency with secure server API.
       updateData = { selected_frame: null };
       successMessage = 'Çerçeve kaldırıldı.';
     } else {
@@ -115,7 +114,7 @@ export default function ProfilePage() {
       successMessage = 'Çerçeve güncellendi!';
     }
 
-    await toast.promise(updateUser(updateData), {
+    await toast.promise(saveProfileDetails(updateData), {
       loading: 'İşleniyor...',
       success: successMessage,
       error: 'Hata oluştu.',
@@ -139,11 +138,10 @@ export default function ProfilePage() {
     
     setIsSavingName(true);
     try {
-      const updatedData = await updateProfile({ name: nameValue });
-      await updateUser(updatedData);
+      await saveProfileDetails({ name: nameValue });
       toast.success('İsim güncellendi!');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Hata oluştu.";
+      const errorMessage = error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.";
       toast.error("İsim Güncelleme Hatası", { description: errorMessage });
       setNameValue(user.name || ""); // Revert local state on error
     } finally {
@@ -174,11 +172,10 @@ export default function ProfilePage() {
     
     setIsSavingDescription(true);
     try {
-      const updatedData = await updateProfile({ description: descriptionValue });
-      await updateUser(updatedData);
+      await saveProfileDetails({ description: descriptionValue });
       toast.success('Açıklama güncellendi!');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Hata oluştu.";
+      const errorMessage = error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.";
       toast.error("Açıklama Güncelleme Hatası", { description: errorMessage });
       setDescriptionValue(user.description || ""); // Revert local state on error
     } finally {
@@ -216,16 +213,14 @@ export default function ProfilePage() {
     setImageToCrop(null);
     if (!user) return;
 
-    // Dosya adını userId.jpeg olarak ayarlıyoruz, bu RLS kuralıyla eşleşmeli.
     const croppedFile = new File([croppedBlob], `${user.id}.jpeg`, { type: "image/jpeg" });
     
     await toast.promise(
       async () => {
         const uploadedUrl = await uploadAvatar(croppedFile, user.id);
         if (uploadedUrl) {
-          // Önbelleği atlatmak için URL'ye zaman damgası ekle
           const cacheBustingUrl = `${uploadedUrl}?v=${Date.now()}`;
-          await updateUser({ avatar_url: cacheBustingUrl });
+          await saveProfileDetails({ avatar_url: cacheBustingUrl });
         }
       },
       {
@@ -243,8 +238,8 @@ export default function ProfilePage() {
     if (!user) return;
     setIsDeletingAvatar(true);
     try {
-      await deleteAvatar(user.id);
-      await updateUser({ avatar_url: null });
+      await deleteAvatar(user.avatar_url || "");
+      await saveProfileDetails({ avatar_url: null });
       toast.success("Profil fotoğrafı başarıyla silindi.");
     } catch (error) {
       toast.error("Profil fotoğrafı silinirken bir hata oluştu.");
@@ -266,7 +261,6 @@ export default function ProfilePage() {
       await deleteBlogPost(postToDelete.id, postToDelete.imageUrl);
       setUserPosts(prev => prev.filter(p => p.id !== postToDelete.id));
       
-      // Use the action key for removal
       const updatedProfile = await removeExp(user.id, EXP_ACTIONS.REMOVE_POST);
       if (updatedProfile) {
         updateUser(updatedProfile);
@@ -332,7 +326,6 @@ export default function ProfilePage() {
   const SelectedTitleIcon = selectedTitleObject ? selectedTitleObject.icon : CheckCircle;
   const selectedFrame = FRAMES.find(f => f.name === user.selected_frame);
 
-  // Avatar bileşenini yeniden kullanmak için bir helper
   const AvatarPreview = ({ sizeClass = "h-20 w-20" }: { sizeClass?: string }) => (
     <Avatar className={sizeClass}>
       <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />

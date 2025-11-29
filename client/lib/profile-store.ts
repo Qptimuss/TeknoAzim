@@ -1,4 +1,4 @@
-import { getAuthHeaders } from "./api-utils";
+import { getAuthHeaders, fetchWithAuth } from "./api-utils";
 import { Profile } from "@shared/api";
 
 type UpdatableProfileFields = Pick<Profile, 'name' | 'avatar_url' | 'description' | 'selected_title' | 'selected_frame'>;
@@ -9,21 +9,11 @@ type UpdatableProfileFields = Pick<Profile, 'name' | 'avatar_url' | 'description
  * @returns The updated subset of profile fields.
  */
 export const updateProfileDetails = async (updateData: Partial<UpdatableProfileFields>): Promise<Partial<Profile>> => {
-  const headers = await getAuthHeaders();
-
-  const response = await fetch('/api/profile', {
+  // fetchWithAuth handles headers, response checking, and error throwing.
+  return fetchWithAuth('/api/profile', {
     method: 'PUT',
-    headers,
     body: JSON.stringify(updateData),
   });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to update profile details via server.");
-  }
-  
-  // The server returns a subset of the profile (id, name, avatar_url, description, selected_title, selected_frame)
-  return await response.json();
 };
 
 /**
@@ -44,8 +34,9 @@ export const claimDailyReward = async (): Promise<Profile> => {
   }
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to claim daily reward via server.");
+    // Try to parse error JSON, but fallback if it fails
+    const errorData = await response.json().catch(() => ({ error: 'Bilinmeyen bir sunucu hatası oluştu.' }));
+    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
   }
   
   return await response.json();
@@ -56,24 +47,10 @@ export const claimDailyReward = async (): Promise<Profile> => {
  * @param cost The cost of the crate.
  * @returns The full updated profile object and the item won.
  */
-export const openCrate = async (cost: number): Promise<{ updatedProfile: Profile, itemWon: string }> => {
-  const headers = await getAuthHeaders();
-
-  const response = await fetch('/api/gamification/open-crate', {
+export const openCrate = async (cost: number): Promise<{ updatedProfile: Profile, itemWon: any, alreadyOwned: boolean, refundAmount: number }> => {
+  // fetchWithAuth handles headers, response checking, and error throwing.
+  return fetchWithAuth('/api/gamification/open-crate', {
     method: 'POST',
-    headers,
     body: JSON.stringify({ cost }),
   });
-
-  if (response.status === 403) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Insufficient gems.");
-  }
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to open crate via server.");
-  }
-  
-  return await response.json();
 };

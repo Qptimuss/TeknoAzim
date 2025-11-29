@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { getBlogPostById, getCommentsForPost, deleteBlogPost } from "@/lib/blog-store";
-import { ArrowLeft, User as UserIcon, Trash2 } from "lucide-react";
+import { ArrowLeft, User as UserIcon, Trash2, Pencil } from "lucide-react";
 import { BlogPostWithAuthor, CommentWithAuthor } from "@shared/api";
 import LikeDislikeButtons from "@/components/LikeDislikeButtons";
 import CommentSection from "@/components/CommentSection";
@@ -120,15 +120,22 @@ export default function BlogPostPage() {
         
         <article className="bg-card border border-border rounded-lg overflow-hidden relative">
           {isAuthor && (
-            <Button
-              variant="destructive"
-              size="icon"
-              className="absolute top-4 right-4 z-10"
-              onClick={() => setShowDeleteDialog(true)}
-            >
-              <Trash2 className="h-4 w-4" />
-              <span className="sr-only">Sil</span>
-            </Button>
+            <div className="absolute top-4 right-4 z-10 flex gap-2">
+              <Button asChild variant="outline" size="icon">
+                <Link to={`/bloglar/${post.id}/duzenle`}>
+                  <Pencil className="h-4 w-4" />
+                  <span className="sr-only">Düzenle</span>
+                </Link>
+              </Button>
+              <Button
+                variant="destructive"
+                size="icon"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Sil</span>
+              </Button>
+            </div>
           )}
           {post.image_url && (
             <img

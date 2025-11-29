@@ -40,6 +40,7 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
       return;
     }
 
+    // Optimistic UI update
     const isLiking = action === 'like' && userAction !== 'liked';
     let newUserAction: 'liked' | 'disliked' | null = null;
 
@@ -70,6 +71,7 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
       await castVote(postId, user.id, apiVoteType);
 
       if (isLiking) {
+        // Fetch the actual new like count after the vote is cast
         const { likes: newLikes } = await getVoteCounts(postId);
         
         const { data: post, error: postError } = await supabase
@@ -85,6 +87,12 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
 
         if (post && post.user_id) {
           let profileAfterUpdate = null;
+
+          // YENİ ROZET KONTROLÜ: 2 beğeni
+          if (newLikes === 2) {
+            const badgeUpdate = await awardBadge(post.user_id, "Beğeni Başlangıcı");
+            if (badgeUpdate) profileAfterUpdate = badgeUpdate;
+          }
 
           if (newLikes === 5) {
             const badgeUpdate = await awardBadge(post.user_id, "Beğeni Mıknatısı");
@@ -104,7 +112,7 @@ export default function LikeDislikeButtons({ postId }: LikeDislikeButtonsProps) 
       }
     } catch (error) {
       toast.error("Oy verilirken bir hata oluştu.");
-      fetchVotes();
+      fetchVotes(); // Revert to actual state on error
     }
   };
 

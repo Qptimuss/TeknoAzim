@@ -2,6 +2,7 @@ import { RequestHandler } from "express";
 import { getSupabaseAdmin } from "../lib/supabase-admin";
 import { z } from "zod";
 import { Database } from "../lib/database.types";
+import { parseBody } from "../lib/body-parser";
 
 // --- Profil Güncelleme Mantığı ---
 
@@ -18,16 +19,18 @@ export const handleUpdateProfile: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    const validatedData = updateProfileSchema.partial().parse(req.body);
+    const bodyData = parseBody(req);
+    const validatedData = updateProfileSchema.partial().parse(bodyData);
     const supabaseAdmin = getSupabaseAdmin();
 
     if (Object.keys(validatedData).length === 0) {
         return res.status(400).json({ error: "No valid fields provided for update." });
     }
 
-    const { data, error } = await supabaseAdmin
-      .from("profiles")
-      .update(validatedData)
+    // Tip ataması yapıldı
+    const { data, error } = await (supabaseAdmin
+      .from("profiles") as any)
+      .update(validatedData as Database['public']['Tables']['profiles']['Update'])
       .eq('id', userId) 
       .select('id, name, avatar_url, description, selected_title, selected_frame')
       .single();

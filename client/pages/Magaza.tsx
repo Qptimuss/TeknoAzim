@@ -6,39 +6,10 @@ import CrateInfoDialog from "@/components/CrateInfoDialog";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { RARITIES, FRAMES } from "@/lib/store-items";
-import { supabase } from "@/integrations/supabase/client";
 import CrateOpeningDialog from "@/components/CrateOpeningDialog";
+import { openCrate } from "@/lib/profile-store";
 
 const CRATE_COST = 10;
-
-// Nadirlik seviyelerine göre iade miktarları
-const REFUND_AMOUNTS: { [key: string]: number } = {
-  [RARITIES.SIRADAN.name]: 5,
-  [RARITIES.SIRADISI.name]: 10,
-  [RARITIES.ENDER.name]: 15,
-  [RARITIES.EFSANEVI.name]: 25,
-  [RARITIES.ÖZEL.name]: 100,
-};
-
-const selectRandomFrame = () => {
-  const rand = Math.random() * 100;
-  let selectedRarityName: string;
-
-  if (rand < 1) selectedRarityName = RARITIES.ÖZEL.name; // 1% chance for Özel
-  else if (rand < 6) selectedRarityName = RARITIES.EFSANEVI.name; // 5% chance for Efsanevi
-  else if (rand < 21) selectedRarityName = RARITIES.ENDER.name; // 15% chance for Ender
-  else if (rand < 51) selectedRarityName = RARITIES.SIRADISI.name; // 30% chance for Sıradışı
-  else selectedRarityName = RARITIES.SIRADAN.name; // 49% chance for Sıradan
-
-  const framesInRarity = FRAMES.filter(frame => frame.rarity === selectedRarityName);
-  if (framesInRarity.length === 0) {
-    // Fallback to common if for some reason no frames are found in the selected rarity
-    const commonFrames = FRAMES.filter(frame => frame.rarity === RARITIES.SIRADAN.name);
-    return commonFrames[Math.floor(Math.random() * commonFrames.length)];
-  }
-  return framesInRarity[Math.floor(Math.random() * framesInRarity.length)];
-};
 
 export default function Magaza() {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
@@ -49,7 +20,7 @@ export default function Magaza() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [wonFrame, setWonFrame] = useState<any | null>(null);
   const [alreadyOwned, setAlreadyOwned] = useState(false);
-  const [refundAmount, setRefundAmount] = useState(0); // Yeni iade miktarı state'i
+  const [refundAmount, setRefundAmount] = useState(0);
 
   const handleOpenCrate = async () => {
     if (!user) {
@@ -73,32 +44,13 @@ export default function Magaza() {
     setRefundAmount(0);
 
     try {
-      const frame = selectRandomFrame();
+      const { updatedProfile, itemWon, alreadyOwned, refundAmount } = await openCrate(CRATE_COST);
       
-      const { data: currentProfile, error: fetchError } = await supabase
-        .from('profiles').select('gems, owned_frames').eq('id', user.id).single();
+      updateUser(updatedProfile);
 
-      if (fetchError || !currentProfile) throw new Error("Kullanıcı profili alınamadı.");
-      if (currentProfile.gems < CRATE_COST) throw new Error("Yetersiz bakiye.");
-
-      let newGems = currentProfile.gems - CRATE_COST;
-      const currentFrames = currentProfile.owned_frames || [];
-      const isOwned = currentFrames.includes(frame.name);
-      let newFrames = currentFrames;
-      let refund = 0;
-
-      if (isOwned) {
-        refund = REFUND_AMOUNTS[frame.rarity] || 5; // Nadirliğe göre iade miktarını al
-        newGems += refund;
-      } else {
-        newFrames = [...currentFrames, frame.name];
-      }
-
-      await updateUser({ gems: newGems, owned_frames: newFrames });
-
-      setWonFrame(frame);
-      setAlreadyOwned(isOwned);
-      setRefundAmount(refund);
+      setWonFrame(itemWon);
+      setAlreadyOwned(alreadyOwned);
+      setRefundAmount(refundAmount);
     } catch (error) {
       toast.error("Bir hata oluştu", { description: error instanceof Error ? error.message : "Sandık açma işlemi başarısız." });
       setIsCrateDialogOpen(false);

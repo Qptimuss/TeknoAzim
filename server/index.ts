@@ -1,4 +1,3 @@
-import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
@@ -12,14 +11,40 @@ import {
   handleDeleteComment, 
   handleCastVote 
 } from "./routes/blog";
+import {
+  handleUpdateExp,
+  handleAwardBadge,
+  handleClaimDailyReward,
+  handleOpenCrate
+} from "./routes/gamification";
+import { handleCheckEnv } from "./routes/check-env";
 
-export function createServer() {
+export function createServer(env?: Record<string, string | undefined>) {
+  // If an env object is passed (from the Netlify function handler),
+  // robustly merge it into the current process.env. This ensures the variables
+  // are available throughout the server's lifecycle.
+  if (env) {
+    console.log("[createServer] Merging environment variables from function handler...");
+    for (const key in env) {
+      if (env[key]) {
+        process.env[key] = env[key];
+      }
+    }
+  }
+
+  console.log("Creating Express server...");
+  console.log(`[createServer] After merge, SUPABASE_URL is set: ${!!process.env.SUPABASE_URL}`);
+  console.log(`[createServer] After merge, SUPABASE_SERVICE_ROLE_KEY is set: ${!!process.env.SUPABASE_SERVICE_ROLE_KEY}`);
+
   const app = express();
 
   // Middleware
   app.use(cors());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+
+  // --- DIAGNOSTIC ROUTE ---
+  app.get("/api/check-env", handleCheckEnv);
 
   // Example API routes
   app.get("/api/ping", (_req, res) => {
@@ -31,7 +56,7 @@ export function createServer() {
 
   // User routes
   app.delete("/api/user", requireAuth, handleDeleteUser);
-  app.put("/api/profile", requireAuth, handleUpdateProfile); // Corrected route
+  app.put("/api/profile", requireAuth, handleUpdateProfile);
 
   // Blog Post Routes (Requires Auth for CUD operations)
   app.post("/api/blog/post", requireAuth, handleCreatePost);
@@ -44,6 +69,12 @@ export function createServer() {
 
   // Vote Routes (Requires Auth)
   app.post("/api/blog/vote", requireAuth, handleCastVote);
+
+  // Gamification Routes (Requires Auth)
+  app.post("/api/gamification/exp", requireAuth, handleUpdateExp);
+  app.post("/api/gamification/badge", requireAuth, handleAwardBadge);
+  app.post("/api/gamification/daily-reward", requireAuth, handleClaimDailyReward);
+  app.post("/api/gamification/open-crate", requireAuth, handleOpenCrate);
 
   return app;
 }

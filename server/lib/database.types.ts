@@ -125,6 +125,26 @@ export interface Database {
           created_at?: string;
         };
       };
+      first_commenters: {
+        Row: {
+          id: number;
+          user_id: string;
+          post_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: number;
+          user_id: string;
+          post_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: number;
+          user_id?: string;
+          post_id?: string;
+          created_at?: string;
+        };
+      };
     };
     Views: {};
     Functions: {};

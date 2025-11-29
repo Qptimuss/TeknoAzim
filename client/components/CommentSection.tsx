@@ -61,6 +61,12 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
       return;
     }
     
+    // postId'nin burada kesinlikle string olduğundan emin oluyoruz.
+    if (!postId || typeof postId !== 'string') {
+      toast.error("Yorum yapılacak gönderi ID'si eksik veya geçersiz.");
+      return;
+    }
+
     try {
       const { count, error: countError } = await supabase
         .from('comments')
@@ -73,8 +79,8 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
 
       const isFirstComment = count === 0;
 
-      // Use the updated addComment which calls the server API for moderation
-      await addComment({ postId, userId: user.id, content: values.content });
+      // postId ve content'i doğrudan gönderiyoruz.
+      await addComment({ postId, content: values.content });
       
       let finalProfileState = null;
 
@@ -234,6 +240,9 @@ export default function CommentSection({ postId, comments, onCommentAdded: onCom
                   "Yorum Gönder"
                 )}
               </Button>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Yorumlar yapay zeka tarafından filtrelendiğinden gönderim işleminde gecikme olabilir.
+              </p>
             </form>
           </Form>
         ) : (
