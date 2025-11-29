@@ -1,10 +1,13 @@
 import { RequestHandler } from "express";
 import { getSupabaseAdmin } from "../lib/supabase-admin";
 
-// WARNING: In a production environment, this list should be managed securely, 
-// ideally via environment variables or a database lookup.
-// We now rely on an environment variable for the admin list.
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(',').map(e => e.trim()).filter(e => e.length > 0);
+/**
+ * Reads and parses the ADMIN_EMAILS environment variable.
+ */
+const getAdminEmails = (): string[] => {
+  const emails = process.env.ADMIN_EMAILS || "";
+  return emails.split(',').map(e => e.trim()).filter(e => e.length > 0);
+};
 
 /**
  * Middleware to check if the authenticated user is an administrator by checking their email.
@@ -17,6 +20,8 @@ export const requireAdmin: RequestHandler = async (req, res, next) => {
     // This should ideally not happen if requireAuth runs first
     return res.status(401).json({ error: "Unauthorized: User ID missing." });
   }
+
+  const ADMIN_EMAILS = getAdminEmails();
 
   // If no ADMIN_EMAILS are configured, deny access by default
   if (ADMIN_EMAILS.length === 0) {
