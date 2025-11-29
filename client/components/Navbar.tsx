@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { MobileNav } from "@/components/MobileNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "./ui/button";
@@ -53,7 +53,7 @@ export default function Navbar() {
               mainLinks={mainNavLinks} 
               authLinks={user ? authLinks : guestLinks} 
               logo={<AppLogo disableLink />} 
-              user={user} {/* Kullanıcı objesini MobileNav'a iletiyoruz */}
+              user={user} 
               onMouseEnter={() => setIsMobileMenuHovered(true)}
               onMouseLeave={() => setIsMobileMenuHovered(false)}
             />
