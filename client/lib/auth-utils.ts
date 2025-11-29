@@ -3,9 +3,18 @@ import { User } from "@/contexts/AuthContext";
 /**
  * Checks if the given user object corresponds to an administrator.
  * This is a client-side check for UI purposes only. Server-side validation is mandatory.
- * NOTE: This function now returns false by default to prevent client-side user enumeration.
- * The server must enforce the actual admin list.
  */
 export const isAdmin = (user: User | null): boolean => {
-  return false;
+  // WARNING: This list is for UI purposes only. Server must enforce security.
+  // Lütfen kendi admin e-postalarınızı buraya ekleyin.
+  const ADMIN_EMAILS = [
+    "admin@example.com", // Örnek admin e-postası
+    // Buraya kendi admin e-postalarınızı ekleyin
+  ];
+
+  if (!user || !user.email) {
+    return false;
+  }
+
+  return ADMIN_EMAILS.includes(user.email);
 };
