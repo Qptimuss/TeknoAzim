@@ -1,0 +1,40 @@
+.x-logo-container {
+  container-type: size;
+}
+
+/* All children are absolutely positioned with a solid border */
+.x-logo-container > div {
+  position: absolute;
+  border-style: solid;
+}
+
+.x-logo-border1 {
+  border-block-width: 6.2cqw;
+  border-inline-width: 6.9cqw;
+  top: 0;
+  left: calc(50% - 14.2cqw);
+  width: 28cqw;
+  transform: skew(35deg);
+  height: 100cqh;
+}
+
+.x-logo-border2,
+.x-logo-border3 {
+  width: 0;
+  border-width: 4.2cqw;
+  height: 45cqh;
+  transform: skew(-41deg);
+  background-color: currentColor;
+}
+
+.x-logo-border2 {
+  top: 0;
+  left: calc(50% + 18.4cqw);
+  border-bottom-left-radius: 15cqw;
+}
+
+.x-logo-border3 {
+  left: calc(50% - 30.4cqw);
+  bottom: 0;
+  border-top-right-radius: 5cqw;
+}

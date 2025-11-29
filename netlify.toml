@@ -1,0 +1,22 @@
+# netlify.toml
+
+[build]
+  # Command to build the site
+  command = "npm run build"
+  
+  # Directory with static files to publish
+  publish = "dist/spa"
+  
+  # Directory with serverless functions
+  functions = "dist/serverless"
+
+# Redirects for API and client-side routing
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
