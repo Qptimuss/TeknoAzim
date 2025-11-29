@@ -4,7 +4,7 @@ import { getProfileById, getPostsByUserId } from "@/lib/blog-store";
 import { Profile, BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, CheckCircle } from "lucide-react";
+import { User as UserIcon, CheckCircle, Lock, Trash2, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { calculateLevel, ALL_BADGES, TITLES } from "@/lib/gamification";
@@ -12,6 +12,22 @@ import { cn } from "@/lib/utils";
 import { FRAMES } from "@/lib/store-items";
 import NovaFrame from "@/components/frames/NovaFrame";
 import ImageViewerDialog from "@/components/ImageViewerDialog";
+import { useAuth } from "@/contexts/AuthContext"; // useAuth hook'u import edildi
+import { isAdmin } from "@/lib/auth-utils"; // isAdmin helper'ı import edildi
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { fetchWithAuth } from "@/lib/api-utils"; // fetchWithAuth import edildi
+import { useNavigate } from "react-router-dom";
 
 export default function UserProfilePage() {
   const { userId } = useParams<{ userId: string }>();
@@ -20,6 +36,13 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true);
   const [postsLoading, setPostsLoading] = useState(true);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const { user: currentUser, logout } = useAuth(); // Mevcut giriş yapmış kullanıcı
+  const isUserAdmin = isAdmin(currentUser); // Mevcut kullanıcının admin olup olmadığı
+  const navigate = useNavigate();
+
+  // Hesap silme state'leri
+  const [showAdminDeleteUserDialog, setShowAdminDeleteUserDialog] = useState(false);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -42,6 +65,27 @@ export default function UserProfilePage() {
     fetchUserPosts();
   }, [userId]);
 
+  const handleAdminDeleteUserAccount = async () => {
+    if (!userId || !currentUser || !isUserAdmin) return;
+
+    setIsDeletingUser(true);
+    try {
+      await fetchWithAuth(`/api/admin/user/${userId}`, {
+        method: 'DELETE',
+      });
+
+      toast.success("Kullanıcı hesabı başarıyla silindi.");
+      navigate("/bloglar"); // Kullanıcı silindikten sonra ana sayfaya veya bloglara yönlendir
+    } catch (error) {
+      toast.error("Kullanıcı hesabı silinirken bir hata oluştu.", {
+        description: error instanceof Error ? error.message : "Lütfen tekrar deneyin.",
+      });
+    } finally {
+      setIsDeletingUser(false);
+      setShowAdminDeleteUserDialog(false);
+    }
+  };
+
   if (loading) {
     return <div className="text-foreground text-center p-12">Profil yükleniyor...</div>;
   }
@@ -57,6 +101,9 @@ export default function UserProfilePage() {
   const selectedTitleObject = Object.values(TITLES).find(t => t.name === userProfile.selected_title);
   const SelectedTitleIcon = selectedTitleObject ? selectedTitleObject.icon : CheckCircle;
   const selectedFrame = FRAMES.find(f => f.name === userProfile.selected_frame);
+
+  // Adminin kendi profilini bu sayfadan silmesini engelle
+  const canAdminDeleteThisUser = isUserAdmin && currentUser?.id !== userId;
 
   return (
     <>
@@ -154,6 +201,22 @@ export default function UserProfilePage() {
                   Bir blog oluşturmak 25 EXP, bir rozet kazanmak 50 EXP verir.
                 </p>
               </div>
+
+              {canAdminDeleteThisUser && ( // Admin ve kendi profili değilse göster
+                <div className="border-t border-border pt-6 mt-6">
+                  <h3 className="text-destructive text-xl font-outfit font-bold mb-4">Admin Araçları</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Bu kullanıcının hesabını silmek kalıcı bir eylemdir ve geri alınamaz.
+                  </p>
+                  <Button 
+                    variant="destructive" 
+                    className="w-full" 
+                    onClick={() => setShowAdminDeleteUserDialog(true)}
+                  >
+                    Kullanıcının Hesabını Sil
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -179,6 +242,27 @@ export default function UserProfilePage() {
           imageAlt={userProfile.name || "Profil Fotoğrafı"}
         />
       )}
+
+      <AlertDialog open={showAdminDeleteUserDialog} onOpenChange={setShowAdminDeleteUserDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Kullanıcının Hesabını Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu işlem geri alınamaz. <span className="font-bold text-foreground">{userProfile.name}</span> kullanıcısının tüm blog yazıları, yorumları ve profil verileri kalıcı olarak silinecektir. Bu işlemi onaylıyor musunuz?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingUser}>İptal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleAdminDeleteUserAccount}
+              disabled={isDeletingUser}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isDeletingUser ? "Siliniyor..." : "Evet, Hesabı Sil"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

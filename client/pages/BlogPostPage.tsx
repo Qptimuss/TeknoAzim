@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { removeExp, EXP_ACTIONS } from "@/lib/gamification";
 import OtherPostsCarousel from "@/components/OtherPostsCarousel";
+import { isAdmin } from "@/lib/auth-utils"; // isAdmin helper'ı import edildi
 
 export default function BlogPostPage() {
   const { id } = useParams<{ id: string }>();
@@ -33,6 +34,8 @@ export default function BlogPostPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
+
+  const isUserAdmin = isAdmin(user); // Admin kontrolü
 
   const fetchPostAndComments = useCallback(async () => {
     if (!id) return;
@@ -51,15 +54,18 @@ export default function BlogPostPage() {
   }, [fetchPostAndComments]);
 
   const handleDelete = async () => {
-    if (!post || !user || user.id !== post.profiles?.id) return;
+    if (!post || !user) return; // user kontrolü eklendi
 
     setIsDeleting(true);
     try {
       await deleteBlogPost(post.id, post.image_url);
       
-      const updatedProfile = await removeExp(user.id, EXP_ACTIONS.CREATE_POST);
-      if (updatedProfile) {
-        updateUser(updatedProfile);
+      // Eğer silen kişi postun sahibi ise EXP düşür
+      if (user.id === post.user_id) {
+        const updatedProfile = await removeExp(user.id, EXP_ACTIONS.REMOVE_POST);
+        if (updatedProfile) {
+          updateUser(updatedProfile);
+        }
       }
 
       toast.success("Blog yazısı başarıyla silindi.");
@@ -109,6 +115,7 @@ export default function BlogPostPage() {
   });
 
   const isAuthor = user && post.profiles && user.id === post.profiles.id;
+  const canEditOrDelete = isAuthor || isUserAdmin; // Adminler de düzenleyebilir/silebilir
 
   return (
     <>
@@ -119,7 +126,7 @@ export default function BlogPostPage() {
         </Link>
         
         <article className="bg-card border border-border rounded-lg overflow-hidden relative">
-          {isAuthor && (
+          {canEditOrDelete && ( // Adminler de görebilir
             <div className="absolute top-4 right-4 z-10 flex gap-2">
               <Button asChild variant="outline" size="icon">
                 <Link to={`/bloglar/${post.id}/duzenle`}>
@@ -209,7 +216,8 @@ export default function BlogPostPage() {
             <AlertDialogTitle>Blog Yazısını Silmek İstediğinize Emin Misiniz?</AlertDialogTitle>
             <AlertDialogDescription>
               Bu işlem geri alınamaz. Blog yazınız, tüm yorumları ve oylarıyla birlikte kalıcı olarak silinecektir.
-              <span className="font-bold text-destructive"> Ayrıca, bu gönderiden kazandığınız 25 EXP'yi kaybedeceksiniz.</span>
+              {isAuthor && !isUserAdmin && <span className="font-bold text-destructive"> Ayrıca, bu gönderiden kazandığınız 25 EXP'yi kaybedeceksiniz.</span>}
+              {isUserAdmin && !isAuthor && <span className="font-bold text-destructive"> Bu bir yönetici işlemidir.</span>}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
