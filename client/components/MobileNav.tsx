@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { Menu, Gem } from "lucide-react"; // Gem ikonunu ekledik
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import { User } from "@/contexts/AuthContext"; // User tipini import ettik
 
 interface NavLink {
   to: string;
@@ -14,11 +15,12 @@ interface MobileNavProps {
   mainLinks: NavLink[];
   authLinks: NavLink[];
   logo: React.ReactNode;
+  user: User | null; // user prop'unu ekledik
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }
 
-export function MobileNav({ mainLinks, authLinks, logo, onMouseEnter, onMouseLeave }: MobileNavProps) {
+export function MobileNav({ mainLinks, authLinks, logo, user, onMouseEnter, onMouseLeave }: MobileNavProps) {
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -41,6 +43,14 @@ export function MobileNav({ mainLinks, authLinks, logo, onMouseEnter, onMouseLea
           <Link to="/" className="flex items-center gap-2">
             {logo}
           </Link>
+
+          {user && (
+            <div className="flex items-center gap-2 bg-muted/50 rounded-full px-3 py-1 text-sm w-fit self-center">
+              <span className="font-bold text-foreground">{user.gems ?? 0}</span>
+              <Gem className="h-4 w-4 text-green-500" />
+            </div>
+          )}
+
           <div className="flex flex-col gap-2">
             {mainLinks.map((link) => (
               <Link

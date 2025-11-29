@@ -53,6 +53,7 @@ export default function Navbar() {
               mainLinks={mainNavLinks} 
               authLinks={user ? authLinks : guestLinks} 
               logo={<AppLogo disableLink />} 
+              user={user} {/* Kullanıcı objesini MobileNav'a iletiyoruz */}
               onMouseEnter={() => setIsMobileMenuHovered(true)}
               onMouseLeave={() => setIsMobileMenuHovered(false)}
             />
