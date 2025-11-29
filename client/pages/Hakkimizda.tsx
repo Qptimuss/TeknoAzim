@@ -32,6 +32,8 @@ export default function Hakkimizda() {
           <p className="text-muted-foreground text-lg md:text-xl font-roboto font-normal leading-relaxed">
             {projectGoal}
           </p>
+          
+          <h2 className="text-foreground text-2xl font-outfit font-bold mb-4 pt-4">Sitenin Yapısı</h2>
           <p className="text-muted-foreground text-lg md:text-xl font-roboto font-normal leading-relaxed">
             {projectText2}
           </p>
