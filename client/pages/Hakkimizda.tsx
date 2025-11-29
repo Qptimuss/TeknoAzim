@@ -18,6 +18,11 @@ export default function Hakkimizda() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-5 py-20 text-center">
       <div className="max-w-4xl">
+        {/* Yeni eklenen TÜBİTAK notu */}
+        <p className="text-sm font-medium text-primary mb-2">
+          Bu site TÜBİTAK'ın desteklediği öğrenci proje etkinlikleri için hazırlanmıştır.
+        </p>
+        
         <h1 className="text-foreground text-4xl md:text-5xl lg:text-6xl font-outfit font-bold mb-6">
           Hakkımızda
         </h1>
