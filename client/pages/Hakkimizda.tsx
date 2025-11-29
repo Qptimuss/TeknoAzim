@@ -3,7 +3,7 @@ import { Github } from "lucide-react";
 
 const projectGoal = "Bu projede öğrencilerin kendilerini ifade edebilme yeteneklerini geliştirebilmeleri; spor, bilim, sanat gibi herhangi bir alan ile ilgili bilgilerini belli kurallar ve denetimler çerçevesinde diğer öğrencilerle paylaşıp yayımlayabilmeleri, yayımlanacak yazıların kelime seçimleri, cümle düzenleri, anlaşılabilirlik gibi yazım tekniklerine göre nasıl oluşturulması gerektiğini öğrenmeleri, diğer öğrencilerin de yayımlanan bu yazıları okuyup kendi genel kültürlerini geliştirmeleri; öğrencilerin bu yazılar hakkında yorumlar yapıp yazıların güçlü ve zayıf yönlerini ifade edebilmeleri ve yazarların bu yorumlar ve oluşturdukları yazılar ile kendilerini geliştirmeleri şeklinde, hem yazara hem de okura yararlı bir üretim-tüketim döngüsü amaçlanmaktadır. Bu proje sayesinde öğrenciler kendilerini yayımcılık ve medya okuryazarlığı gibi alanlarda geliştirebilirler. Ülkemizde öğrenci blog uygulamalarının öğretim kurumları tarafından öğrenciler üzerindeki olumlu etkisinin fark edilmesi ve bu tarz uygulamaların ülkemizde yaygınlaştırılması da projenin önde gelen amaçları arasındadır.";
 
-const projectText2 = "Projenin uygulanmasında önce HTML/CSS ve JavaScript ile temel web geliştirme öğrenilmiş, ardından UI/UX tasarımı ve Figma kullanımı ile site tasarımı oluşturulmuştur. Öğrenci blog siteleri incelenerek oyunlaştırma, yapay zeka desteği gibi özgün özellikler belirlenmiştir. Site prototipi, Next.js, React.js ve Shadcn ile front-end, Tailwind ile tasarım, Typescript ile işlevsellik, PostgreSQL ve Supabase ile veri yönetimi kullanılarak Dyad platformu üzerinden geliştirilmiştir. Site Netlify'dan herkese açık hale getirilmiştir.";
+const projectText2 = "Projenin uygulanmasında önce HTML/CSS ve JavaScript ile temel web geliştirme öğrenilmiş, ardından UI/UX tasarımı ve Figma kullanımı ile site tasarımı oluşturulmuştur. Öğrenci blog siteleri incelenerek oyunlaştırma, yapay zeka desteği gibi özgün özellikler belirlenmiştir. Site prototipi, Next.js, React.js ve Shadcn ile front-end, Tailwind ile tasarım, Typescript ile işlevsellik, PostgreSQL ve Supabase ile veri yönetimi kullanılarak Dyad platformu üzerinden yapay zeka araçları kullanılarak geliştirilmiştir. Site Netlify'dan herkese açık hale getirilmiştir.";
 
 const githubLinks = [
   { url: "https://github.com/Qptimuss/TeknoAzim", label: "TeknoAzim GitHub Repo", type: "repo" },
@@ -23,7 +23,6 @@ export default function Hakkimizda() {
           Hakkımızda
         </h1>
         
-        {/* TÜBİTAK notu güncellendi */}
         <p className="text-sm font-medium text-muted-foreground mb-6">
           Bu site, TÜBİTAK'ın desteklediği öğrenci proje etkinlikleri için hazırlanmıştır.
         </p>
