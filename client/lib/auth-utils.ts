@@ -7,7 +7,7 @@ import { User } from "@/contexts/AuthContext";
 export const isAdmin = (user: User | null): boolean => {
   // WARNING: This list is for UI purposes only. Server must enforce security.
   // Lütfen kendi admin e-postalarınızı buraya ekleyin.
-  const ADMIN_EMAILS = ["zeynepecemsezer5566@hotmail.com","mehmetakif.msrli55@gmail.com",];
+  const ADMIN_EMAILS = ["zeynepecemsezer5566@hotmail.com","mehmetakif.msrli55@gmail.com","qptimus06@gmail.com"];
 
   if (!user || !user.email) {
     return false;
