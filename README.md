@@ -1,1 +1,13 @@
-Bu proje, öğrencilerin kendilerini ifade etme becerilerini geliştirmelerini, spor, bilim ve sanat gibi alanlarda bilgilerini paylaşmalarını ve temel makale yazım tekniklerini öğrenmelerini amaçlamaktadır. Katılımcılar kendi yazılarını hazırlayıp paylaşacak, diğer öğrenciler bu yazıları okuyarak genel kültürlerini artıracak ve yorum yaparak fikirlerini ifade edecektir. Proje kapsamında web sitesi ve Android uygulama prototipleri, Next.js, React.js, Tailwind, Typescript, PostgreSQL ve Supabase gibi teknolojiler kullanılarak tasarlanmıştır. Yapay zekâ destekli sistem ve etkileşimli özellikler sayesinde öğrenciler içerik üretimi, eleştirel düşünme ve topluluk bilinci kazanacaktır. Uzun vadede proje, dijital medya okuryazarlığı ve bilimsel yazım becerilerini artırmayı , benzer uygulamaların yaygınlaşmasına katkı sağlamayı hedeflemektedir.
+# TeknoAzim
+
+Öğrenciler İçin Vibe Coding Tabanlı Dijital Yayımcılık Sistemi
+
+Projenin ilk aşamasında sitenin oluşturulması adına, bu alanla ilgili terimlerin ve gerekli bilgilerin edinilmesi için temel düzeyde HTML/CSS ve JavaScript öğrenilmiştir. Daha sonrasında sitede UI/UX gibi tasarımların daha efektif ve özgün olması için site tasarımının nasıl oluşturulması gerektiği ile ilgili bilgiler öğrenilmiştir. Ardından site tasarımını oluşturmak için Figma tasarım sitesinin kullanımı öğrenilmiştir. Öğrenim aşaması bittikten sonra öğrenci blog siteleri ile ilgili bir alan yazım taraması yapılmış ve oyunlaştırma, mini-makaleler, yapay zeka desteği vb. sitenin özgün ve yararlı olabilecek yanları belirlenmiştir. Sitenin kurulum aşamasında yeni yazılım geliştirme yöntemleri ile ilgili deneyimleri paylaşmak ve yenilikçiliği desteklemek amacıyla açık kaynak bir Vibe Coding aracı olan Dyad ile framework için Next.js, front-end kütüphaneleri için React.js ve Shadcn, front-end tasarımı için Tailwind, işlevsellik için Typescript, database için PostgreSQL ve BaaS olarak Supabase kullanılmıştır
+
+Projenin yapımında Dyad platformu ile Gemini 2.5 Pro, Gemini 2.5 Flash, Qwen3 Coder free gibi yapay zeka modelleri kullanılmıştır. Sitenin metin filtreleme sistemi için Hugging Face'deki "unitary/toxic-bert" toxicity modeli kulanılmıştır. Site TÜBİTAK araştırma projeleri için hazırlanmıştır.
+
+Dyad Platformu:
+https://www.dyad.sh/
+Metin Filtreleme Modeli:
+https://huggingface.co/unitary/toxic-bert
+
