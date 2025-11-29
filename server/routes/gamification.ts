@@ -54,10 +54,10 @@ const selectRandomFrame = () => {
   let selectedRarityName: string;
 
   if (rand < 0.5) selectedRarityName = RARITIES.ÖZEL.name; // %0.5 şans
-  else if (rand < 5.5) selectedRarityName = RARITIES.EFSANEVI.name; // %5 şans (5.5 - 0.5)
-  else if (rand < 21) selectedRarityName = RARITIES.ENDER.name; // %15.5 şans (21 - 5.5)
-  else if (rand < 51) selectedRarityName = RARITIES.SIRADISI.name; // %30 şans (51 - 21)
-  else selectedRarityName = RARITIES.SIRADAN.name; // %49 şans (100 - 51)
+  else if (rand < 2.5) selectedRarityName = RARITIES.EFSANEVI.name; // %2 şans (2.5 - 0.5)
+  else if (rand < 12.5) selectedRarityName = RARITIES.ENDER.name; // %10 şans (12.5 - 2.5)
+  else if (rand < 42.5) selectedRarityName = RARITIES.SIRADISI.name; // %30 şans (42.5 - 12.5)
+  else selectedRarityName = RARITIES.SIRADAN.name; // %57.5 şans (100 - 42.5)
 
   const framesInRarity = FRAMES.filter(frame => frame.rarity === selectedRarityName);
   if (framesInRarity.length === 0) {

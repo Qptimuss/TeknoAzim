@@ -1,10 +1,10 @@
 import { Gem, Star, Zap, Shield } from 'lucide-react';
 
 export const RARITIES = {
-  SIRADAN: { name: 'Sıradan', color: 'text-gray-400', chance: '49%' }, // %0.5 artırıldı
+  SIRADAN: { name: 'Sıradan', color: 'text-gray-400', chance: '57.5%' }, // Yeni oran
   SIRADISI: { name: 'Sıradışı', color: 'text-blue-400', chance: '30%' },
-  ENDER: { name: 'Ender', color: 'text-purple-500', chance: '15.5%' }, // %0.5 artırıldı
-  EFSANEVI: { name: 'Efsanevi', color: 'text-yellow-400', chance: '5%' },
+  ENDER: { name: 'Ender', color: 'text-purple-500', chance: '10%' }, // Yeni oran
+  EFSANEVI: { name: 'Efsanevi', color: 'text-yellow-400', chance: '2%' }, // Yeni oran
   ÖZEL: { name: 'Özel', color: 'text-fuchsia-400', chance: '0.5%' },
 };
 
