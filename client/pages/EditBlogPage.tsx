@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +42,7 @@ export default function EditBlogPage() {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
   const textareaRef = useRef<HTMLTextAreaElement>(null); // Textarea ref'i
+  const [imagePreview, setImagePreview] = useState<string | null>(null); // Yeni resim önizlemesi için state
   
   const form = useForm<BlogFormValues>({
     resolver: zodResolver(blogSchema),
@@ -54,7 +55,21 @@ export default function EditBlogPage() {
 
   const imageFileRef = form.register("imageFile");
   const { isSubmitting } = form.formState;
-  const contentValue = form.watch("content"); // İçerik değerini izle
+  const contentValue = form.watch("content");
+  const imageFile = form.watch("imageFile");
+  const existingImageUrl = form.watch("existingImageUrl");
+
+  // Yeni resim seçildiğinde önizlemeyi ayarla
+  useEffect(() => {
+    if (imageFile && imageFile.length > 0) {
+      const file = imageFile[0];
+      const newUrl = URL.createObjectURL(file);
+      setImagePreview(newUrl);
+      return () => URL.revokeObjectURL(newUrl);
+    } else {
+      setImagePreview(null);
+    }
+  }, [imageFile]);
 
   useEffect(() => {
     if (!id || authLoading) return;
@@ -88,19 +103,19 @@ export default function EditBlogPage() {
   async function onSubmit(values: BlogFormValues) {
     if (!user || !id) return;
 
-    let newImageUrl: string | null | undefined = values.existingImageUrl;
+    let finalImageUrl: string | null | undefined = values.existingImageUrl;
 
     try {
       if (values.imageFile && values.imageFile.length > 0) {
         toast.info("Yeni resim yükleniyor...");
         const file = values.imageFile[0];
-        newImageUrl = await uploadBlogImage(file, user.id);
+        finalImageUrl = await uploadBlogImage(file, user.id);
       }
 
       await updateBlogPost(id, { 
         title: values.title,
         content: values.content,
-        imageUrl: newImageUrl,
+        imageUrl: finalImageUrl,
       });
 
       toast.success("Blog yazınız başarıyla güncellendi!");
@@ -111,6 +126,9 @@ export default function EditBlogPage() {
       console.error(error);
     }
   }
+
+  // Görüntülenecek resim URL'sini belirle: Yeni önizleme > Mevcut URL
+  const displayImageUrl = imagePreview || existingImageUrl;
 
   return (
     <div className="container mx-auto px-5 py-12 max-w-3xl">
@@ -138,18 +156,40 @@ export default function EditBlogPage() {
               )}
             />
 
-            {form.watch('existingImageUrl') && (
+            {displayImageUrl && (
               <div className="space-y-2">
-                <FormLabel>Mevcut Kapak Resmi</FormLabel>
-                <img src={form.watch('existingImageUrl')!} alt="Mevcut Resim" className="w-full h-40 object-cover rounded-md" />
-                <Button 
-                  variant="destructive" 
-                  size="sm" 
-                  type="button"
-                  onClick={() => form.setValue('existingImageUrl', null)}
-                >
-                  Resmi Kaldır
-                </Button>
+                <FormLabel>Kapak Resmi Önizlemesi</FormLabel>
+                <img 
+                  src={displayImageUrl} 
+                  alt="Kapak Resmi Önizlemesi" 
+                  className="w-full h-40 object-cover rounded-md" 
+                />
+                {existingImageUrl && !imagePreview && (
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    type="button"
+                    onClick={() => {
+                      form.setValue('existingImageUrl', null);
+                      form.setValue('imageFile', undefined); // Dosya seçimini de temizle
+                    }}
+                  >
+                    Mevcut Resmi Kaldır
+                  </Button>
+                )}
+                {imagePreview && (
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    type="button"
+                    onClick={() => {
+                      form.setValue('imageFile', undefined);
+                      setImagePreview(null);
+                    }}
+                  >
+                    Yeni Resmi İptal Et
+                  </Button>
+                )}
               </div>
             )}
 
