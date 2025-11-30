@@ -142,7 +142,7 @@ const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownTool
 
       <Separator orientation="vertical" className="h-6 mx-1" />
 
-      <span className="text-sm font-medium text-foreground whitespace-nowrap">
+      <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
         Blogunu biçimlendir!
       </span>
 
@@ -159,9 +159,9 @@ const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownTool
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-80 p-4" align="start">
-          <h4 className="font-semibold text-lg mb-2">Markdown Biçimlendirme</h4>
+          <h4 className="font-semibold text-lg mb-2">Blog Biçimlendirme</h4>
           <p className="text-sm text-muted-foreground mb-3">
-            Seçtiğiniz metni biçimlendirmek için yukarıdaki butonları kullanın veya aşağıdaki sözdizimini manuel olarak uygulayın.
+            Seçtiğiniz metni biçimlendirmek için **sağdaki butonları** kullanın veya aşağıdaki sözdizimini manuel olarak uygulayın.
           </p>
           <div className="space-y-2">
             {markdownRules.map((rule) => (
