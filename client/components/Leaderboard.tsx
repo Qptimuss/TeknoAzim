@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { getLeaderboardProfiles } from "@/lib/profile-store";
 import { Profile } from "@shared/api";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"; // CardDescription import edildi
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Trophy, User as UserIcon, MoreHorizontal } from "lucide-react";
 import ProfileAvatar from "./ProfileAvatar";
 import { calculateLevel, TITLES } from "@/lib/gamification";
@@ -78,7 +78,7 @@ export default function Leaderboard() {
           <Trophy className="h-6 w-6 text-yellow-500" /> Liderlik Tablosu
         </CardTitle>
         <CardDescription className="text-sm text-muted-foreground">
-          Diğer kullanıcılarla Liderlik tablosuna yarış!
+          Diğer kullanıcılarla liderlik tablosunda yarış!
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -92,7 +92,7 @@ export default function Leaderboard() {
               <span className="font-bold text-lg w-6 text-center shrink-0">#{index + 1}</span>
               <ProfileAvatar profile={profile} className="h-10 w-10" />
               <div className="flex-1 min-w-0 flex justify-between items-center">
-                <div className="flex flex-col items-start">
+                <div>
                   <p className="font-semibold text-foreground text-wrap">{profile.name || "Anonim"}</p>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
                     <span className="font-medium">Seviye {level}</span>
