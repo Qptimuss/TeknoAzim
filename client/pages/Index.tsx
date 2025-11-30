@@ -21,7 +21,7 @@ export default function Index() {
         <div className="relative z-10 px-5 md:px-10 lg:px-20 pb-8 flex flex-col items-center pt-32">
           <div className="w-full max-w-[1122px]">
             {/* Hero Content */}
-            <h1 className="text-foreground dark:text-foreground text-3xl md:text-4xl lg:text-5xl font-outfit font-bold text-center mt-12 md:mt-16 lg:mt-20 px-4">
+            <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-outfit font-bold text-center mt-12 md:mt-16 lg:mt-20 px-4">
               Düşüncelerle derinleşen,yazılarla genişleyen bir dünya.
             </h1>
 
@@ -32,7 +32,7 @@ export default function Index() {
             <div className="flex justify-center mt-8 md:mt-10">
               <Link
                 to="/kaydol"
-                className="rounded-full bg-transparent border-4 border-border px-16 md:px-20 lg:px-24 py-5 md:py-6 font-roboto text-2xl md:text-3xl text-foreground hover:bg-accent transition-colors text-center"
+                className="rounded-full bg-transparent border-4 border-border px-16 md:px-20 lg:px-24 py-5 md:py-6 font-roboto text-2xl md:text-3xl text-white hover:bg-accent transition-colors text-center"
               >
                 Başla
               </Link>
