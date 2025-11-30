@@ -56,10 +56,6 @@ export default function Kaydol() {
 
     setIsSubmitting(true);
     
-    // Removed client-side profile check to prevent username enumeration.
-    // We rely on the database trigger/constraint to handle username uniqueness 
-    // during or immediately after signup, and provide a generic error message if it fails.
-
     const { error } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
@@ -67,7 +63,9 @@ export default function Kaydol() {
         data: {
           name: formData.name,
           avatar_url: `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(formData.name)}`
-        }
+        },
+        // Kullanıcıyı doğrulama sonrası giriş sayfasına yönlendir
+        redirectTo: `${window.location.origin}/giris`, 
       }
     });
 
@@ -76,8 +74,6 @@ export default function Kaydol() {
     if (error) {
       let description = error.message;
       
-      // If the error is due to a database constraint (like unique username), 
-      // we must generalize the message to prevent enumeration.
       if (error.message.includes("duplicate key value violates unique constraint")) {
         description = "Kayıt başarısız oldu. Lütfen girdiğiniz bilgileri kontrol edin (Kullanıcı adı veya e-posta zaten kullanılıyor olabilir).";
       } else if (error.message.includes("User already registered")) {
@@ -137,7 +133,7 @@ export default function Kaydol() {
               </Button>
               <div className="text-center text-sm text-muted-foreground">
                 Zaten hesabınız var mı?{" "}
-                <Link to="/giris" onClick={handleNavigateToLogin} className="text-primary hover:underline">
+                <Link to="/giris" onClick={handleNavigateToRegister} className="text-primary hover:underline">
                   Giriş yap
                 </Link>
               </div>

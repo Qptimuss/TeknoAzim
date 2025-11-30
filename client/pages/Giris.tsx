@@ -65,6 +65,10 @@ export default function Giris() {
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: formData.email,
+      options: {
+        // Kullanıcıyı doğrulama sonrası giriş sayfasına yönlendir
+        redirectTo: `${window.location.origin}/giris`, 
+      }
     });
 
     setIsResending(false);

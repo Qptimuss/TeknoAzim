@@ -15,6 +15,7 @@ export default function SifremiUnuttum() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    // Kullanıcıyı şifre sıfırlama sayfamıza yönlendir
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/sifre-sifirla`,
     });
