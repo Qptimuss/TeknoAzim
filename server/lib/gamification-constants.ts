@@ -6,6 +6,7 @@ export const SERVER_EXP_ACTIONS = {
   REMOVE_POST: -25,
   EARN_BADGE: 50,
   CREATE_COMMENT: 10, // Although not currently used by client, defining here for completeness
+  CLAIM_DAILY_REWARD: 25, // Yeni: Günlük ödül için 25 EXP
 };
 
 export const BADGE_REWARD_GEMS = 30;

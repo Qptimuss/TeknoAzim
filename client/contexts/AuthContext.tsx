@@ -15,6 +15,8 @@ interface AuthContextType {
   updateUser: (data: Partial<User>) => void;
   saveProfileDetails: (newUserData: Partial<User>) => Promise<void>;
   login: (supabaseUser: SupabaseUser) => Promise<void>;
+  isDailyRewardEligible: boolean; // Yeni: Günlük ödül almaya uygun mu?
+  triggerDailyRewardClaim: () => Promise<void>; // Yeni: Günlük ödülü talep etme fonksiyonu
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDailyRewardEligible, setIsDailyRewardEligible] = useState(false); // Yeni state
 
   useEffect(() => {
     const SUPABASE_PROJECT_ID = "bhfshljiqbdxgbpgmllp";
@@ -58,7 +61,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (error) {
         console.error("Error fetching profile from Supabase:", error);
-        // RLS hatası veya profilin olmaması durumunda kullanıcıya bilgi ver
         if (error.code === 'PGRST116' || error.message.includes('Row not found')) {
             toast.error("Profil verisi bulunamadı.", { description: "Lütfen Supabase'de 'profiles' tablonuzun ve RLS ayarlarınızın doğru olduğundan emin olun." });
         } else {
@@ -79,31 +81,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser((prevUser) => (prevUser ? { ...prevUser, ...data } : null));
   };
 
-  const handleDailyReward = async (profile: User): Promise<User> => {
+  // Günlük ödül uygunluğunu kontrol eden fonksiyon
+  const checkDailyRewardEligibility = (profile: User) => {
     const lastClaimed = profile.last_daily_reward_claimed_at
       ? new Date(profile.last_daily_reward_claimed_at)
       : null;
     const today = new Date();
-    if (!lastClaimed || !isSameDay(lastClaimed, today)) {
-      try {
-        const updatedProfile = await claimDailyReward();
-        toast.success("Günlük Giriş Ödülü", { description: "Hesabına 20 Gem eklendi!" });
-        return { ...updatedProfile, email: profile.email } as User;
-      } catch (e) {
-        // Eğer hata zaten ödülün alındığına dairse, sessiz kal
-        if (e instanceof Error && e.message.includes("Daily reward already claimed today")) {
-            return profile;
-        }
-        console.error("Error claiming daily reward via server:", e);
+    setIsDailyRewardEligible(!lastClaimed || !isSameDay(lastClaimed, today));
+  };
+
+  // Kullanıcının günlük ödülü talep etmesini sağlayan fonksiyon
+  const triggerDailyRewardClaim = async () => {
+    if (!user) {
+      toast.error("Günlük ödülü almak için giriş yapmalısınız.");
+      return;
+    }
+    try {
+      const updatedProfile = await claimDailyReward();
+      updateUser({ ...updatedProfile, email: user.email }); // AuthContext'teki user'ı güncelle
+      setIsDailyRewardEligible(false); // Ödül alındı, uygunluğu sıfırla
+      toast.success("Günlük Giriş Ödülü", { description: "Hesabına 20 Gem ve 25 EXP eklendi!" });
+    } catch (e) {
+      if (e instanceof Error && e.message.includes("Daily reward already claimed today")) {
+        toast.info("Günlük ödül zaten alındı.", { description: "Yarın tekrar deneyin." });
+      } else {
+        toast.error("Günlük ödül alınırken bir hata oluştu.", { description: e instanceof Error ? e.message : "Bilinmeyen bir hata." });
       }
     }
-    return profile;
   };
 
   const login = async (supabaseUser: SupabaseUser) => {
     let profile = await fetchUserProfile(supabaseUser);
-    if (profile) profile = await handleDailyReward(profile);
-    setUser(profile);
+    if (profile) {
+      setUser(profile);
+      checkDailyRewardEligibility(profile); // Giriş yapınca uygunluğu kontrol et
+    }
   };
 
   useEffect(() => {
@@ -112,8 +124,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           let profile = await fetchUserProfile(session.user);
-          if (profile) profile = await handleDailyReward(profile);
-          setUser(profile);
+          if (profile) {
+            setUser(profile);
+            checkDailyRewardEligibility(profile); // Başlangıçta uygunluğu kontrol et
+          }
         }
       } catch (e) {
         console.error("Initial auth session error:", e);
@@ -128,10 +142,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const supabaseUser = session?.user;
       if (supabaseUser) {
         let profile = await fetchUserProfile(supabaseUser);
-        if (_event === "SIGNED_IN" && profile) profile = await handleDailyReward(profile);
-        setUser(profile);
+        if (profile) {
+          setUser(profile);
+          checkDailyRewardEligibility(profile); // Oturum değişince uygunluğu kontrol et
+        }
       } else {
         setUser(null);
+        setIsDailyRewardEligible(false); // Çıkış yapınca uygunluğu sıfırla
       }
     });
 
@@ -141,6 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setIsDailyRewardEligible(false); // Çıkış yapınca uygunluğu sıfırla
     queryClient.clear();
   };
 
@@ -149,7 +167,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const safeUpdateData: Partial<Profile> = {};
     SAFE_PROFILE_UPDATE_KEYS.forEach((key) => {
       if (Object.prototype.hasOwnProperty.call(newUserData, key) && newUserData[key] !== undefined) {
-        // Fix: Using 'as any' to bypass strict index signature check during iteration.
         (safeUpdateData as any)[key] = newUserData[key];
       }
     });
@@ -162,7 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const value = { user, loading, logout, updateUser, saveProfileDetails, login };
+  const value = { user, loading, logout, updateUser, saveProfileDetails, login, isDailyRewardEligible, triggerDailyRewardClaim };
 
   return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 }

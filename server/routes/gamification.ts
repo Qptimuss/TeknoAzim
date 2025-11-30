@@ -202,17 +202,15 @@ export const handleClaimDailyReward: RequestHandler = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "User ID missing." });
 
   try {
-    // Daily reward handler does not require parsing body data, but we keep the pattern for consistency if it were to change.
-    // const bodyData = parseBody(req); // Not needed here, but keeping the pattern in mind.
     const supabaseAdmin = getSupabaseAdmin();
 
     const { data: profileData, error: fetchError } = await supabaseAdmin
       .from('profiles')
-      .select('gems, last_daily_reward_claimed_at')
+      .select('gems, last_daily_reward_claimed_at, exp, level') // exp ve level'ı da çek
       .eq('id', userId)
       .single();
 
-    type DailyRewardProfile = Pick<Database['public']['Tables']['profiles']['Row'], 'gems' | 'last_daily_reward_claimed_at'>;
+    type DailyRewardProfile = Pick<Database['public']['Tables']['profiles']['Row'], 'gems' | 'last_daily_reward_claimed_at' | 'exp' | 'level'>;
     const profile = profileData as DailyRewardProfile | null;
 
     if (fetchError || !profile) {
@@ -237,10 +235,16 @@ export const handleClaimDailyReward: RequestHandler = async (req, res) => {
     }
 
     const DAILY_REWARD_GEMS = 20;
+    const DAILY_REWARD_EXP = SERVER_EXP_ACTIONS.CLAIM_DAILY_REWARD; // Yeni EXP kazanımı
+
     const newGems = (profile.gems || 0) + DAILY_REWARD_GEMS;
+    const newExp = (profile.exp || 0) + DAILY_REWARD_EXP; // EXP'yi güncelle
+    const { level: newLevel } = calculateLevel(newExp); // Yeni seviyeyi hesapla
     
     const updatePayload: Database['public']['Tables']['profiles']['Update'] = {
       gems: newGems,
+      exp: newExp, // Payload'a EXP'yi ekle
+      level: newLevel, // Payload'a seviyeyi ekle
       last_daily_reward_claimed_at: today.toISOString(),
     };
 
