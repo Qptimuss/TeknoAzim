@@ -8,8 +8,9 @@ import { User } from "@/contexts/AuthContext";
 import { ThemeToggle } from "./ThemeToggle"; // ThemeToggle import edildi
 
 interface NavLink {
-  to: string;
+  to?: string; // to artık isteğe bağlı
   label: string;
+  onClick?: () => void; // onClick eklendi
 }
 
 interface MobileNavProps {
@@ -65,18 +66,22 @@ export function MobileNav({ mainLinks, authLinks, logo, user, onMouseEnter, onMo
           </div>
           <Separator className="my-2 bg-border h-0.5 rounded-full w-11/12 mx-auto" />
           <div className="flex flex-col gap-2">
-            {authLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={cn(
-                  "font-bakbak text-xl text-foreground whitespace-nowrap",
-                  "hover:text-muted-foreground"
-                )}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {authLinks.map((link) => {
+              const LinkComponent = link.to ? Link : 'button';
+              return (
+                <LinkComponent
+                  key={link.label}
+                  to={link.to || '#'}
+                  onClick={link.onClick}
+                  className={cn(
+                    "font-bakbak text-xl text-foreground whitespace-nowrap text-left",
+                    "hover:text-muted-foreground"
+                  )}
+                >
+                  {link.label}
+                </LinkComponent>
+              );
+            })}
           </div>
         </div>
         <div className="mt-auto pt-4"> {/* Tema değiştirme butonunu en alta hizalamak için */}

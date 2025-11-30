@@ -37,8 +37,10 @@ export default function Navbar() {
     { to: "/giris", label: "Giriş Yap" },
   ];
 
+  // Masaüstü için: Profil ve Çıkış Yap'ı tek bir menüde topluyoruz
   const authLinks = [
     { to: "/profil", label: "Profil" },
+    { onClick: handleLogout, label: "Çıkış Yap" }, // Çıkış yap butonu olarak eklendi
   ];
 
   return (
@@ -69,18 +71,10 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
-              {user && (
-                <Link to="/profil" className="font-bakbak text-sm lg:text-sm font-normal text-card-foreground whitespace-nowrap shrink-0 px-1 lg:px-2">
-                  Profil
-                </Link>
-              )}
             </div>
             <div className="flex items-center gap-4 lg:gap-6 px-2">
               {user ? (
                 <>
-                  <Button onClick={handleLogout} variant="ghost" className="font-bakbak text-base lg:text-base font-normal text-foreground whitespace-nowrap shrink-0 p-0 hover:bg-transparent">
-                    Çıkış Yap
-                  </Button>
                   <div className="flex flex-col items-center">
                     <Link to="/profil">
                       <Avatar className="h-9 w-9">
@@ -106,7 +100,10 @@ export default function Navbar() {
                       </TooltipContent>
                     </Tooltip>
                   </div>
-                  <ThemeToggle /> {/* Tema değiştirme butonu buraya taşındı */}
+                  <Button onClick={handleLogout} variant="ghost" className="font-bakbak text-base lg:text-base font-normal text-foreground whitespace-nowrap shrink-0 p-0 hover:bg-transparent">
+                    Çıkış Yap
+                  </Button>
+                  <ThemeToggle />
                 </>
               ) : (
                 <>
@@ -115,7 +112,7 @@ export default function Navbar() {
                       {link.label}
                     </Link>
                   ))}
-                  <ThemeToggle /> {/* Misafirler için de buraya taşındı */}
+                  <ThemeToggle />
                 </>
               )}
             </div>

@@ -185,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = { user, loading, logout, updateUser, saveProfileDetails, login, isDailyRewardEligible, triggerDailyRewardClaim };
 
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
