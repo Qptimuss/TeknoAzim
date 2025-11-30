@@ -149,9 +149,8 @@ export default function CreateBlogPage() {
 
   // Form gönderildiğinde uyarıyı göster
   const handleFormSubmit = (values: BlogFormValues) => {
-    if (form.formState.isValid) {
-      setShowPublishWarning(true);
-    }
+    // form.handleSubmit zaten verilerin geçerli olduğunu garanti eder.
+    setShowPublishWarning(true);
   };
 
   // Görüntülenecek resim URL'sini belirle: Yeni önizleme > Mevcut URL
