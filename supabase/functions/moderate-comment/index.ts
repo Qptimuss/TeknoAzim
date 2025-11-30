@@ -14,7 +14,7 @@ const HF_MODEL = 'JungleLee/bert-toxic-comment-classification';
 
 // Toksisite eşiği: Bu değerin üzerindeki puanlar toksik kabul edilir.
 const TOXICITY_THRESHOLD = 0.7; 
-const MAX_WORDS_PER_CHUNK = 350; // 512 token sınırını aşmamak için daha güvenli bir kelime sayısı
+const MAX_WORDS_PER_CHUNK = 100; // 512 token sınırını aşmamak için daha güvenli bir kelime sayısı
 
 // Özel test cümlesi için istisna
 const EXCEPTIONAL_PHRASE = "emailinizi falan girin üstten profilinizi oluşturun sonra buraya mesaj atin bakalım cidden calisiyo mu 😎";
