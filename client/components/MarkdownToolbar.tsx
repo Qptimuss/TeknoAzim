@@ -45,7 +45,7 @@ const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownTool
 
   }, [textareaRef, onValueChange]);
 
-  // Sıralı liste için özel işleyici
+  // Sıralı liste için özel işleyici: Seçilen aralıktaki tüm satırları numaralandırır.
   const applyOrderedList = useCallback(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -59,23 +59,28 @@ const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownTool
       return;
     }
 
+    // Seçimin başlangıç ve bitiş satırlarını bul
+    const before = currentValue.substring(0, start);
+    const after = currentValue.substring(end);
     const selectedText = currentValue.substring(start, end);
-    
+
     // Seçilen metni satırlara ayır
     const lines = selectedText.split('\n');
     
+    let lineNumber = 1;
+    
     // Her satırın başına artan sayı ekle
-    const numberedLines = lines.map((line, index) => {
+    const numberedLines = lines.map((line) => {
       // Eğer satır boş değilse veya sadece boşluklardan oluşmuyorsa numaralandır
       if (line.trim().length > 0) {
-        return `${index + 1}. ${line}`;
+        return `${lineNumber++}. ${line}`;
       }
       return line; // Boş satırları olduğu gibi bırak
     });
 
     const newSelectedText = numberedLines.join('\n');
 
-    const newValue = currentValue.substring(0, start) + newSelectedText + currentValue.substring(end);
+    const newValue = before + newSelectedText + after;
     onValueChange(newValue);
 
     // Seçimi koru
