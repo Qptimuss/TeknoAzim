@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu, Gem } from "lucide-react"; // Gem ikonunu ekledik
+import { Menu, Gem } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
-import { User } from "@/contexts/AuthContext"; // User tipini import ettik
+import { User } from "@/contexts/AuthContext";
+import { ThemeToggle } from "./ThemeToggle"; // ThemeToggle import edildi
 
 interface NavLink {
   to: string;
@@ -15,7 +16,7 @@ interface MobileNavProps {
   mainLinks: NavLink[];
   authLinks: NavLink[];
   logo: React.ReactNode;
-  user: User | null; // user prop'unu ekledik
+  user: User | null;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }
@@ -78,7 +79,9 @@ export function MobileNav({ mainLinks, authLinks, logo, user, onMouseEnter, onMo
             ))}
           </div>
         </div>
-        {/* ThemeToggle kaldırıldı */}
+        <div className="mt-auto pt-4"> {/* Tema değiştirme butonunu en alta hizalamak için */}
+          <ThemeToggle />
+        </div>
       </SheetContent>
     </Sheet>
   );

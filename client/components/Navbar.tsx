@@ -8,6 +8,7 @@ import AppLogo from "./AppLogo";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { ThemeToggle } from "./ThemeToggle"; // ThemeToggle import edildi
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -75,6 +76,7 @@ export default function Navbar() {
               )}
             </div>
             <div className="flex items-center gap-4 md:gap-6 lg:gap-8 px-2">
+              <ThemeToggle /> {/* Tema değiştirme butonu buraya eklendi */}
               {user ? (
                 <>
                   <Button onClick={handleLogout} variant="ghost" className="font-bakbak text-base md:text-base font-normal text-foreground whitespace-nowrap shrink-0 p-0 hover:bg-transparent">
