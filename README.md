@@ -10,6 +10,7 @@
 
 ## [Dyad Platformu](https://www.dyad.sh/)
 ## [Metin Toxicity Modeli](https://huggingface.co/unitary/toxic-bert)
+## [Teknoazim](https://teknoazim.netlify.app)
 
 
 
