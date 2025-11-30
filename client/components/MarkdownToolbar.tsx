@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { Heading1, Heading2, Heading3, Bold, Italic, List, ListOrdered } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner'; // toast import edildi
 
 interface MarkdownToolbarProps {
   textareaRef: React.RefObject<HTMLTextAreaElement>;
@@ -10,7 +11,7 @@ interface MarkdownToolbarProps {
 }
 
 const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownToolbarProps) => {
-  const applyFormatting = useCallback((prefix: string, suffix: string = '', placeholder: string = '') => {
+  const applyFormatting = useCallback((prefix: string, suffix: string = '', placeholder: string = '', requireSelection: boolean = false) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
@@ -24,6 +25,10 @@ const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownTool
     let newSelectedText = selectedText;
 
     if (start === end) {
+      if (requireSelection) {
+        toast.info("Lütfen önce biçimlendirmek istediğiniz metni seçin.");
+        return;
+      }
       // Metin seçilmemişse, placeholder kullan
       newSelectedText = prefix + placeholder + suffix;
     } else {
@@ -50,24 +55,27 @@ const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownTool
 
   }, [textareaRef, onValueChange]);
 
+  // Başlıklar ve Listeler için seçim zorunlu değil (requireSelection: false)
   const applyHeading = useCallback((level: 1 | 2 | 3) => {
-    applyFormatting('#'.repeat(level) + ' ', '', 'Başlık Metni');
+    applyFormatting('#'.repeat(level) + ' ', '', 'Başlık Metni', false);
   }, [applyFormatting]);
 
   const applyBold = useCallback(() => {
-    applyFormatting('**', '**', 'Kalın Metin');
+    // Kalın ve İtalik için seçim zorunlu (requireSelection: true)
+    applyFormatting('**', '**', 'Kalın Metin', true);
   }, [applyFormatting]);
 
   const applyItalic = useCallback(() => {
-    applyFormatting('*', '*', 'İtalik Metin');
+    // Kalın ve İtalik için seçim zorunlu (requireSelection: true)
+    applyFormatting('*', '*', 'İtalik Metin', true);
   }, [applyFormatting]);
 
   const applyUnorderedList = useCallback(() => {
-    applyFormatting('* ', '', 'Liste Öğesi');
+    applyFormatting('* ', '', 'Liste Öğesi', false);
   }, [applyFormatting]);
 
   const applyOrderedList = useCallback(() => {
-    applyFormatting('1. ', '', 'Liste Öğesi');
+    applyFormatting('1. ', '', 'Liste Öğesi', false);
   }, [applyFormatting]);
 
   return (
