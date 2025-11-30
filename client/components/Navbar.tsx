@@ -20,28 +20,35 @@ export default function Navbar() {
     navigate("/");
   };
 
-  // Ana Sayfa bağlantısını sadece kullanıcı giriş yapmamışsa gösteriyoruz.
-  const baseNavLinks = [
+  // Tüm temel navigasyon bağlantıları
+  const allBaseLinks = [
     { to: "/bloglar", label: "Bloglar" },
     { to: "/duyurular", label: "Duyurular" },
     { to: "/hakkimizda", label: "Hakkımızda" },
     { to: "/magaza", label: "Mağaza" },
   ];
 
-  // Giriş yapmışsa Profil'i ana menüye ekle.
-  const mainNavLinks = user 
-    ? [...baseNavLinks, { to: "/profil", label: "Profil" }] 
-    : [{ to: "/", label: "Ana Sayfa" }, ...baseNavLinks];
-
-  const guestLinks = [
+  // Misafir kullanıcılar için kimlik doğrulama bağlantıları
+  const guestAuthLinks = [
     { to: "/kaydol", label: "Kaydol" },
     { to: "/giris", label: "Giriş Yap" },
   ];
 
-  // Mobil menü için: Sadece Çıkış Yap'ı tutuyoruz.
-  const authLinks = [
+  // Giriş yapmış kullanıcılar için kimlik doğrulama bağlantıları
+  const userAuthLinks = [
     { onClick: handleLogout, label: "Çıkış Yap" }, 
   ];
+
+  // Masaüstü Ana Bağlantıları
+  const desktopMainNavLinks = user 
+    ? [...allBaseLinks, { to: "/profil", label: "Profil" }] 
+    : [{ to: "/", label: "Ana Sayfa" }, ...allBaseLinks];
+
+  // Mobil Ana Bağlantıları (Misafirler için Ana Sayfa dahil)
+  const mobileMainNavLinks = user 
+    ? [...allBaseLinks, { to: "/profil", label: "Profil" }] 
+    : [{ to: "/", label: "Ana Sayfa" }, ...allBaseLinks];
+
 
   return (
     <header className="sticky top-0 z-50 px-5 md:px-10 lg:px-20 py-2 w-full">
@@ -53,8 +60,8 @@ export default function Navbar() {
           {/* Mobile View */}
           <div className="lg:hidden flex items-center justify-between">
             <MobileNav 
-              mainLinks={user ? [...baseNavLinks, { to: "/profil", label: "Profil" }] : guestLinks} 
-              authLinks={user ? authLinks : guestLinks} 
+              mainLinks={mobileMainNavLinks} 
+              authLinks={user ? userAuthLinks : guestAuthLinks} 
               logo={<AppLogo disableLink />} 
               user={user} 
               onMouseEnter={() => setIsMobileMenuHovered(true)}
@@ -67,7 +74,7 @@ export default function Navbar() {
             {/* Sol Taraf: Logo ve Ana Bağlantılar (bg-card) */}
             <div className="flex rounded-[40px] bg-card border-2 border-border px-0 py-3 items-center gap-0 flex-1">
               <AppLogo /> 
-              {mainNavLinks.map((link) => (
+              {desktopMainNavLinks.map((link) => (
                 <Link key={link.to} to={link.to} className="font-bakbak text-sm lg:text-sm font-normal text-card-foreground whitespace-nowrap shrink-0 px-2 lg:px-3 hover:text-primary transition-colors">
                   {link.label}
                 </Link>
@@ -118,7 +125,7 @@ export default function Navbar() {
                 </>
               ) : (
                 <>
-                  {guestLinks.map((link) => (
+                  {guestAuthLinks.map((link) => (
                     <Link key={link.to} to={link.to} className="font-bakbak text-sm lg:text-sm font-normal text-foreground whitespace-nowrap shrink-0">
                       {link.label}
                     </Link>

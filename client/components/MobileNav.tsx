@@ -41,7 +41,7 @@ export function MobileNav({ mainLinks, authLinks, logo, user, onMouseEnter, onMo
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-[250px] sm:w-[300px] bg-background p-4 h-auto bottom-auto rounded-br-lg flex flex-col">
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 flex-grow">
           <Link to="/" className="flex items-center gap-2">
             {logo}
           </Link>
@@ -53,6 +53,7 @@ export function MobileNav({ mainLinks, authLinks, logo, user, onMouseEnter, onMo
             </div>
           )}
 
+          {/* Ana Bağlantılar */}
           <div className="flex flex-col gap-2">
             {mainLinks.map((link) => (
               <Link
@@ -64,7 +65,10 @@ export function MobileNav({ mainLinks, authLinks, logo, user, onMouseEnter, onMo
               </Link>
             ))}
           </div>
+          
           <Separator className="my-2 bg-border h-0.5 rounded-full w-11/12 mx-auto" />
+          
+          {/* Kimlik Doğrulama Bağlantıları (Alt Kısım) */}
           <div className="flex flex-col gap-2">
             {authLinks.map((link) => {
               const LinkComponent = link.to ? Link : 'button';
