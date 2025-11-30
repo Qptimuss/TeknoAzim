@@ -88,8 +88,8 @@ export default function Leaderboard() {
           const TitleIcon = selectedTitleObject ? selectedTitleObject.icon : UserIcon;
 
           const isSpecialUser = profile.is_special_leaderboard_user;
-          // Özel kullanıcılar için EXP'yi pozitif olarak tut, sadece gösterimde eksi ekle
-          const displayExpValue = (profile.exp || 0); 
+          // Özel kullanıcılar için EXP'yi her zaman pozitif alıp, önüne sadece "-" ekliyoruz.
+          const displayExpValue = Math.abs(profile.exp || 0); 
 
           return (
             <Link to={`/kullanici/${profile.id}`} key={profile.id} className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg border border-border transition-all hover:bg-muted hover:border-primary hover:shadow-md">
