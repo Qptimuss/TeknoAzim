@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import Leaderboard from "@/components/Leaderboard"; // Import edildi
+import MarkdownPreview from "@/components/MarkdownPreview"; // Import edildi
 
 const ANNOUNCEMENT_DISPLAY_LIMIT = 2; // Sadece ilk 2 duyuruyu göster
 
@@ -144,7 +145,14 @@ export default function Duyurular() {
             </CardHeader>
             <Separator className="mx-6 w-auto" />
             <CardContent className="pt-6">
-              <p className="text-foreground whitespace-pre-wrap">{announcement.content}</p>
+              {/* İçeriği MarkdownPreview ile göster ve 3 satırla sınırla */}
+              <div className="line-clamp-3 text-card-foreground">
+                <MarkdownPreview 
+                  content={announcement.content} 
+                  className="markdown-preview-compact !p-0" 
+                />
+              </div>
+              {/* Tam duyuruya gitmek için bir bağlantı ekleyebiliriz (şimdilik sadece başlığa tıklanabilir) */}
             </CardContent>
           </Card>
         ))}
