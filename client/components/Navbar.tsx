@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { MobileNav } from "@/components/MobileNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "./ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { User as UserIcon, Gem } from "lucide-react";
 import AppLogo from "./AppLogo";
 import { cn } from "@/lib/utils";
@@ -28,9 +28,9 @@ export default function Navbar() {
     { to: "/magaza", label: "Mağaza" },
   ];
 
-  // Giriş yapmışsa Profil'i buradan kaldırıyoruz, sağ tarafa taşıyacağız.
+  // Giriş yapmışsa Profil'i ana menüye ekle.
   const mainNavLinks = user 
-    ? baseNavLinks 
+    ? [...baseNavLinks, { to: "/profil", label: "Profil" }] 
     : [{ to: "/", label: "Ana Sayfa" }, ...baseNavLinks];
 
   const guestLinks = [
@@ -38,7 +38,7 @@ export default function Navbar() {
     { to: "/giris", label: "Giriş Yap" },
   ];
 
-  // Mobil menü için: Sadece Çıkış Yap'ı tutuyoruz, çünkü Profil zaten mainNavLinks'te.
+  // Mobil menü için: Sadece Çıkış Yap'ı tutuyoruz.
   const authLinks = [
     { onClick: handleLogout, label: "Çıkış Yap" }, 
   ];
@@ -53,7 +53,7 @@ export default function Navbar() {
           {/* Mobile View */}
           <div className="lg:hidden flex items-center justify-between">
             <MobileNav 
-              mainLinks={user ? [...baseNavLinks, { to: "/profil", label: "Profil" }] : guestLinks} // Mobil menü için Profil'i geri ekledik
+              mainLinks={user ? [...baseNavLinks, { to: "/profil", label: "Profil" }] : guestLinks} 
               authLinks={user ? authLinks : guestLinks} 
               logo={<AppLogo disableLink />} 
               user={user} 
@@ -74,7 +74,7 @@ export default function Navbar() {
               ))}
             </div>
             
-            {/* Sağ Taraf: Profil, Avatar, Elmas ve Tema (bg-muted) */}
+            {/* Sağ Taraf: Çıkış Yap, Avatar, Elmas ve Tema (bg-muted) */}
             <div className="flex items-center gap-4 lg:gap-6 px-2">
               {user ? (
                 <>
@@ -87,14 +87,6 @@ export default function Navbar() {
                     Çıkış Yap
                   </Button>
                   
-                  {/* Profil Bağlantısı */}
-                  <Link 
-                    to="/profil" 
-                    className="font-bakbak text-base lg:text-base font-normal text-foreground whitespace-nowrap shrink-0 hover:text-primary transition-colors"
-                  >
-                    Profil
-                  </Link>
-
                   {/* Avatar ve Elmas Grubu */}
                   <div className="flex flex-col items-center">
                     <Link to="/profil">
