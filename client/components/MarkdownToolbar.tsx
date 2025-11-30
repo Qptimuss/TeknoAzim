@@ -161,7 +161,7 @@ const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownTool
         <PopoverContent className="w-80 p-4" align="start">
           <h4 className="font-semibold text-lg mb-2">Blog Biçimlendirme</h4>
           <p className="text-sm text-muted-foreground mb-3">
-            Seçtiğiniz metni biçimlendirmek için **sağdaki butonları** kullanın veya aşağıdaki sözdizimini manuel olarak uygulayın.
+            Seçtiğiniz metni biçimlendirmek için soldaki butonları kullanın veya aşağıdaki sözdizimini manuel olarak uygulayın.
           </p>
           <div className="space-y-2">
             {markdownRules.map((rule) => (
