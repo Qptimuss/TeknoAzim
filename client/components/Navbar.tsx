@@ -76,7 +76,6 @@ export default function Navbar() {
               )}
             </div>
             <div className="flex items-center gap-4 md:gap-6 lg:gap-8 px-2">
-              <ThemeToggle /> {/* Tema değiştirme butonu buraya eklendi */}
               {user ? (
                 <>
                   <Button onClick={handleLogout} variant="ghost" className="font-bakbak text-base md:text-base font-normal text-foreground whitespace-nowrap shrink-0 p-0 hover:bg-transparent">
@@ -107,13 +106,17 @@ export default function Navbar() {
                       </TooltipContent>
                     </Tooltip>
                   </div>
+                  <ThemeToggle /> {/* Tema değiştirme butonu buraya taşındı */}
                 </>
               ) : (
-                guestLinks.map((link) => (
-                  <Link key={link.to} to={link.to} className="font-bakbak text-base md:text-base font-normal text-foreground whitespace-nowrap shrink-0">
-                    {link.label}
-                  </Link>
-                ))
+                <>
+                  {guestLinks.map((link) => (
+                    <Link key={link.to} to={link.to} className="font-bakbak text-base md:text-base font-normal text-foreground whitespace-nowrap shrink-0">
+                      {link.label}
+                    </Link>
+                  ))}
+                  <ThemeToggle /> {/* Misafirler için de buraya taşındı */}
+                </>
               )}
             </div>
           </div>
