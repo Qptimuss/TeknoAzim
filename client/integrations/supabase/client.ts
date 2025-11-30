@@ -11,7 +11,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     // persistSession: false ayarı, oturumun tarayıcı deposuna (localStorage/sessionStorage)
-    // kaydedilmesini engeller.
-    persistSession: false,
+    // kaydedilmesini engeller. Bu ayar kaldırıldığında, varsayılan olarak true olur ve oturum kalıcı hale gelir.
+    // persistSession: false,
   },
 });
