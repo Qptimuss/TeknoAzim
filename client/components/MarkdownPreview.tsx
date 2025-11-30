@@ -13,7 +13,25 @@ export default function MarkdownPreview({ content, className }: MarkdownPreviewP
     <div className={cn("prose dark:prose-invert max-w-none p-4", className)}>
       <ReactMarkdown 
         remarkPlugins={[remarkGfm]}
-        // Tailwind Typography eklentisi sayesinde başlıklar, listeler ve diğer öğeler otomatik olarak stil kazanacaktır.
+        components={{
+          // Kod blokları için özel stil ekliyoruz
+          pre: ({ children, ...props }) => (
+            <pre 
+              {...props} 
+              className="whitespace-pre-wrap break-words overflow-x-auto" // Satır kaydırmayı etkinleştir
+            >
+              {children}
+            </pre>
+          ),
+          code: ({ children, ...props }) => (
+            <code 
+              {...props} 
+              className="whitespace-pre-wrap break-words" // Satır kaydırmayı etkinleştir
+            >
+              {children}
+            </code>
+          ),
+        }}
       >
         {content}
       </ReactMarkdown>
