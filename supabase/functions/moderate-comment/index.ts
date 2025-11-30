@@ -16,8 +16,6 @@ const HF_MODEL = 'unitary/toxic-bert';
 // Toksisite eşiği: Bu değerin üzerindeki puanlar toksik kabul edilir.
 const TOXICITY_THRESHOLD = 0.7; 
 
-// Özel test cümlesi için istisna
-const EXCEPTIONAL_PHRASE = ;
 
 // Helper to create a regex pattern that allows for character repetitions
 function createSpammyRegex(word: string): string {
@@ -54,13 +52,7 @@ serve(async (req) => {
       });
     }
 
-    // 1. Özel test cümlesi için istisna kontrolü
-    if (content === EXCEPTIONAL_PHRASE) {
-      return new Response(JSON.stringify({ isModerated: true, toxicityScore: 0 }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
+
 
     // 2. Açık anahtar kelime kontrolü
     const lowerCaseContent = content.toLowerCase();
