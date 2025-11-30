@@ -87,6 +87,10 @@ export default function Leaderboard() {
           const selectedTitleObject = Object.values(TITLES).find(t => t.name === profile.selected_title);
           const TitleIcon = selectedTitleObject ? selectedTitleObject.icon : UserIcon;
 
+          const isSpecialUser = profile.is_special_leaderboard_user;
+          // Özel kullanıcılar için EXP'yi negatif olarak göster
+          const displayExp = isSpecialUser ? -(profile.exp || 0) : (profile.exp || 0); 
+
           return (
             <Link to={`/kullanici/${profile.id}`} key={profile.id} className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg border border-border transition-all hover:bg-muted hover:border-primary hover:shadow-md">
               <span className="font-bold text-lg w-6 text-center shrink-0">#{index + 1}</span>
@@ -118,7 +122,7 @@ export default function Leaderboard() {
                 </DropdownMenu>
               </div>
               <div className="flex flex-col items-end">
-                <span className="font-bold text-primary">{profile.exp} EXP</span>
+                <span className={cn("font-bold", isSpecialUser ? "text-red-500" : "text-primary")}>{displayExp} EXP</span>
               </div>
             </Link>
           );
