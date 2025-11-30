@@ -145,14 +145,13 @@ export default function Duyurular() {
             </CardHeader>
             <Separator className="mx-6 w-auto" />
             <CardContent className="pt-6">
-              {/* İçeriği MarkdownPreview ile göster ve 3 satırla sınırla */}
-              <div className="line-clamp-3 text-card-foreground">
+              {/* İçeriği MarkdownPreview ile göster, kısıtlama yok */}
+              <div className="text-card-foreground">
                 <MarkdownPreview 
                   content={announcement.content} 
                   className="markdown-preview-compact !p-0" 
                 />
               </div>
-              {/* Tam duyuruya gitmek için bir bağlantı ekleyebiliriz (şimdilik sadece başlığa tıklanabilir) */}
             </CardContent>
           </Card>
         ))}
