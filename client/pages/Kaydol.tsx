@@ -133,7 +133,7 @@ export default function Kaydol() {
               </Button>
               <div className="text-center text-sm text-muted-foreground">
                 Zaten hesabınız var mı?{" "}
-                <Link to="/giris" onClick={handleNavigateToRegister} className="text-primary hover:underline">
+                <Link to="/giris" onClick={handleNavigateToLogin} className="text-primary hover:underline">
                   Giriş yap
                 </Link>
               </div>
