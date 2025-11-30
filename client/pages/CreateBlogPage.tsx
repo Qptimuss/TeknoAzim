@@ -149,7 +149,6 @@ export default function CreateBlogPage() {
 
   // Form gönderildiğinde uyarıyı göster
   const handleFormSubmit = (values: BlogFormValues) => {
-    // form.handleSubmit zaten verilerin geçerli olduğunu garanti eder.
     setShowPublishWarning(true);
   };
 
@@ -270,9 +269,14 @@ export default function CreateBlogPage() {
                 )}
               </Button>
 
-              <p className="text-xs text-muted-foreground text-center mt-2">
-                İçerikler yapay zeka tarafından filtrelendiğinden gönderim işleminde gecikme olabilir.
-              </p>
+              <div className="text-center space-y-1">
+                <p className="text-xs text-muted-foreground">
+                  İçerikler yapay zeka tarafından filtrelendiğinden gönderim işleminde gecikme olabilir.
+                </p>
+                <p className="text-xs text-red-500 font-semibold">
+                  Eğer yayımlama işlemi 1 dakikadan fazla sürerse sayfayı yenileyip tekrar dene!
+                </p>
+              </div>
             </form>
           </Form>
         </div>
