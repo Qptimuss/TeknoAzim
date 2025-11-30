@@ -37,15 +37,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Eski oturum verilerini temizleyen kod kaldırıldı.
-  // useEffect(() => {
-  //   const SUPABASE_PROJECT_ID = "bhfshljiqbdxgbpgmllp";
-  //   const oldLocalStorageKey = `sb-${SUPABASE_PROJECT_ID}-auth-token`;
-  //   if (typeof localStorage !== "undefined" && localStorage.getItem(oldLocalStorageKey)) {
-  //     console.log("Eski oturum verisi localStorage'dan temizleniyor.");
-  //     localStorage.removeItem(oldLocalStorageKey);
-  //   }
-  // }, []);
+  useEffect(() => {
+    const SUPABASE_PROJECT_ID = "bhfshljiqbdxgbpgmllp";
+    const oldLocalStorageKey = `sb-${SUPABASE_PROJECT_ID}-auth-token`;
+    if (typeof localStorage !== "undefined" && localStorage.getItem(oldLocalStorageKey)) {
+      console.log("Eski oturum verisi localStorage'dan temizleniyor.");
+      localStorage.removeItem(oldLocalStorageKey);
+    }
+  }, []);
 
   const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
     try {
