@@ -11,7 +11,8 @@ interface MarkdownToolbarProps {
 }
 
 const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownToolbarProps) => {
-  const applyFormatting = useCallback((prefix: string, suffix: string = '', placeholder: string = '', requireSelection: boolean = false) => {
+  // Artık tüm biçimlendirmeler için metin seçimi zorunlu olacak.
+  const applyFormatting = useCallback((prefix: string, suffix: string = '', placeholder: string = '') => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
@@ -24,58 +25,48 @@ const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownTool
     const selectedText = currentValue.substring(start, end);
     let newSelectedText = selectedText;
 
+    // Metin seçimi kontrolü: Eğer başlangıç ve bitiş aynıysa, metin seçilmemiştir.
     if (start === end) {
-      if (requireSelection) {
-        toast.info("Lütfen önce biçimlendirmek istediğiniz metni seçin.");
-        return;
-      }
-      // Metin seçilmemişse, placeholder kullan
-      newSelectedText = prefix + placeholder + suffix;
-    } else {
-      // Metin seçilmişse, sarmala
-      newSelectedText = prefix + selectedText + suffix;
+      toast.info("Lütfen önce biçimlendirmek istediğiniz metni seçin.");
+      return;
     }
+    
+    // Metin seçilmişse, sarmala
+    newSelectedText = prefix + selectedText + suffix;
 
     const newValue = currentValue.substring(0, start) + newSelectedText + currentValue.substring(end);
     onValueChange(newValue);
 
-    // İmleci veya seçimi ayarla
+    // Seçimi koru
     setTimeout(() => {
-      if (start === end) {
-        // İmleci placeholder'ın sonuna taşı
-        textarea.selectionStart = start + prefix.length + placeholder.length;
-        textarea.selectionEnd = start + prefix.length + placeholder.length;
-      } else {
-        // Seçimi koru
-        textarea.selectionStart = start;
-        textarea.selectionEnd = start + newSelectedText.length;
-      }
+      textarea.selectionStart = start;
+      textarea.selectionEnd = start + newSelectedText.length;
       textarea.focus();
     }, 0);
 
   }, [textareaRef, onValueChange]);
 
-  // Başlıklar ve Listeler için seçim zorunlu değil (requireSelection: false)
   const applyHeading = useCallback((level: 1 | 2 | 3) => {
-    applyFormatting('#'.repeat(level) + ' ', '', 'Başlık Metni', false);
+    // Başlıklar için de seçim zorunlu, ancak placeholder'ı kullanmıyoruz, sadece seçilen metni sarmalıyoruz.
+    applyFormatting('#'.repeat(level) + ' ', '', 'Başlık Metni');
   }, [applyFormatting]);
 
   const applyBold = useCallback(() => {
-    // Kalın ve İtalik için seçim zorunlu (requireSelection: true)
-    applyFormatting('**', '**', 'Kalın Metin', true);
+    applyFormatting('**', '**', 'Kalın Metin');
   }, [applyFormatting]);
 
   const applyItalic = useCallback(() => {
-    // Kalın ve İtalik için seçim zorunlu (requireSelection: true)
-    applyFormatting('*', '*', 'İtalik Metin', true);
+    applyFormatting('*', '*', 'İtalik Metin');
   }, [applyFormatting]);
 
   const applyUnorderedList = useCallback(() => {
-    applyFormatting('* ', '', 'Liste Öğesi', false);
+    // Liste için de seçim zorunlu. Seçilen metnin her satırına * eklenmesi gerekebilir, 
+    // ancak basitlik için sadece seçilen metni sarmalıyoruz.
+    applyFormatting('* ', '', 'Liste Öğesi');
   }, [applyFormatting]);
 
   const applyOrderedList = useCallback(() => {
-    applyFormatting('1. ', '', 'Liste Öğesi', false);
+    applyFormatting('1. ', '', 'Liste Öğesi');
   }, [applyFormatting]);
 
   return (
