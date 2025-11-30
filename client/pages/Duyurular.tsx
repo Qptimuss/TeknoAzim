@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Construction, Plus, Calendar, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Construction, Plus, Calendar, Pencil, Trash2, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { isAdmin } from "@/lib/auth-utils";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import Leaderboard from "@/components/Leaderboard"; // Yeni import
+import Leaderboard from "@/components/Leaderboard"; // Import edildi
+
+const ANNOUNCEMENT_DISPLAY_LIMIT = 2; // Sadece ilk 2 duyuruyu göster
 
 export default function Duyurular() {
   const { user } = useAuth();
@@ -30,6 +32,7 @@ export default function Duyurular() {
   const [error, setError] = useState<string | null>(null);
   const [announcementToDelete, setAnnouncementToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showAllAnnouncements, setShowAllAnnouncements] = useState(false); // Yeni state
 
   const fetchAnnouncements = useCallback(async () => {
     try {
@@ -66,11 +69,15 @@ export default function Duyurular() {
     }
   };
 
+  const displayedAnnouncements = showAllAnnouncements
+    ? announcements
+    : announcements.slice(0, ANNOUNCEMENT_DISPLAY_LIMIT);
+
   const renderContent = () => {
     if (loading) {
       return (
         <div className="space-y-6">
-          {Array.from({ length: 3 }).map((_, index) => (
+          {Array.from({ length: ANNOUNCEMENT_DISPLAY_LIMIT }).map((_, index) => (
             <Card key={index} className="p-6">
               <Skeleton className="h-6 w-3/4 mb-4" />
               <Skeleton className="h-4 w-1/3 mb-2" />
@@ -102,7 +109,7 @@ export default function Duyurular() {
 
     return (
       <div className="space-y-6">
-        {announcements.map((announcement) => (
+        {displayedAnnouncements.map((announcement) => (
           <Card key={announcement.id} className="w-full relative">
             {isUserAdmin && (
               <div className="absolute top-4 right-4 flex gap-2 z-10">
@@ -141,6 +148,27 @@ export default function Duyurular() {
             </CardContent>
           </Card>
         ))}
+        {announcements.length > ANNOUNCEMENT_DISPLAY_LIMIT && (
+          <div className="text-center mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setShowAllAnnouncements(prev => !prev)}
+              className="flex items-center gap-2 mx-auto"
+            >
+              {showAllAnnouncements ? (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  Daha Az Duyuru Göster
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Daha Fazla Duyuru Göster ({announcements.length - ANNOUNCEMENT_DISPLAY_LIMIT} tane daha)
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </div>
     );
   };
@@ -163,13 +191,12 @@ export default function Duyurular() {
             )}
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-              {renderContent()}
-            </div>
-            <div className="lg:col-span-1">
-              <Leaderboard />
-            </div>
+          {/* Duyurular içeriği */}
+          {renderContent()}
+
+          {/* Liderlik Tablosu Duyuruların altında */}
+          <div className="mt-12"> {/* Duyurular ile liderlik tablosu arasına boşluk */}
+            <Leaderboard />
           </div>
         </div>
       </div>

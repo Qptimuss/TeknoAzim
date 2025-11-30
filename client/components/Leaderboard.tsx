@@ -81,12 +81,12 @@ export default function Leaderboard() {
             <Link to={`/kullanici/${profile.id}`} key={profile.id} className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg border border-border transition-all hover:bg-muted hover:border-primary hover:shadow-md">
               <span className="font-bold text-lg w-6 text-center shrink-0">#{index + 1}</span>
               <ProfileAvatar profile={profile} className="h-10 w-10" />
-              <div className="flex-1">
-                <p className="font-semibold text-foreground">{profile.name || "Anonim"}</p>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex-1 min-w-0"> {/* Added min-w-0 here */}
+                <p className="font-semibold text-foreground text-wrap">{profile.name || "Anonim"}</p> {/* Added text-wrap */}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap"> {/* Added flex-wrap */}
                   <span className="font-medium">Seviye {level}</span>
                   {profile.selected_title && (
-                    <span className={cn("flex items-center gap-1", selectedTitleObject?.color || "text-yellow-400")}>
+                    <span className={cn("flex items-center gap-1 text-wrap", selectedTitleObject?.color || "text-yellow-400")}> {/* Added text-wrap */}
                       <TitleIcon className="h-3 w-3" /> {profile.selected_title}
                     </span>
                   )}
