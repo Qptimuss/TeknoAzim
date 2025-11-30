@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { getLeaderboardProfiles } from "@/lib/profile-store";
 import { Profile } from "@shared/api";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"; // CardDescription import edildi
 import { Trophy, User as UserIcon, MoreHorizontal } from "lucide-react";
 import ProfileAvatar from "./ProfileAvatar";
 import { calculateLevel, TITLES } from "@/lib/gamification";
@@ -77,6 +77,9 @@ export default function Leaderboard() {
         <CardTitle className="text-2xl font-outfit flex items-center gap-2">
           <Trophy className="h-6 w-6 text-yellow-500" /> Liderlik Tablosu
         </CardTitle>
+        <CardDescription className="text-sm text-muted-foreground">
+          Diğer kullanıcılarla yarış!
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {profiles.map((profile, index) => {
@@ -88,8 +91,8 @@ export default function Leaderboard() {
             <Link to={`/kullanici/${profile.id}`} key={profile.id} className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg border border-border transition-all hover:bg-muted hover:border-primary hover:shadow-md">
               <span className="font-bold text-lg w-6 text-center shrink-0">#{index + 1}</span>
               <ProfileAvatar profile={profile} className="h-10 w-10" />
-              <div className="flex-1 min-w-0 flex items-center justify-between"> {/* flex-1 ve justify-between korundu */}
-                <div className="flex flex-col items-start"> {/* Kullanıcı adı ve ünvanı sola hizalamak için */}
+              <div className="flex-1 min-w-0 flex justify-between items-center">
+                <div>
                   <p className="font-semibold text-foreground text-wrap">{profile.name || "Anonim"}</p>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
                     <span className="font-medium">Seviye {level}</span>
