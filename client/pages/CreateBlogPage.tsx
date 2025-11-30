@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import { addBlogPost, uploadBlogImage, getPostsByUserId } from "@/lib/blog-store
 import { useAuth } from "@/contexts/AuthContext";
 import { addExp, awardBadge, EXP_ACTIONS } from "@/lib/gamification";
 import { Loader2 } from "lucide-react";
+import MarkdownToolbar from "@/components/MarkdownToolbar"; // Yeni import
 
 const blogSchema = z.object({
   title: z.string().min(5, "Başlık en az 5 karakter olmalıdır."),
@@ -36,6 +37,7 @@ export default function CreateBlogPage() {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null); // Textarea ref'i
 
   const form = useForm<z.infer<typeof blogSchema>>({
     resolver: zodResolver(blogSchema),
@@ -167,9 +169,23 @@ export default function CreateBlogPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>İçerik</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Blog içeriğini buraya yazın..." {...field} className="min-h-[200px]" />
-                  </FormControl>
+                  <div className="border border-input rounded-md overflow-hidden">
+                    <MarkdownToolbar 
+                      textareaRef={textareaRef} 
+                      onValueChange={field.onChange}
+                    />
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Blog içeriğini buraya yazın..." 
+                        {...field} 
+                        ref={(e) => {
+                          field.ref(e);
+                          (textareaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = e;
+                        }}
+                        className="min-h-[200px] border-none focus-visible:ring-0 focus-visible:ring-offset-0 rounded-t-none" 
+                      />
+                    </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

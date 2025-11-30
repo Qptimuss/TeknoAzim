@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,8 @@ import {
 import { toast } from "sonner";
 import { getBlogPostById, updateBlogPost, uploadBlogImage } from "@/lib/blog-store";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import MarkdownToolbar from "@/components/MarkdownToolbar"; // Yeni import
 
 const blogSchema = z.object({
   title: z.string().min(5, "Başlık en az 5 karakter olmalıdır."),
@@ -38,6 +39,7 @@ export default function EditBlogPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
+  const textareaRef = useRef<HTMLTextAreaElement>(null); // Textarea ref'i
   
   const form = useForm<BlogFormValues>({
     resolver: zodResolver(blogSchema),
@@ -173,16 +175,37 @@ export default function EditBlogPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>İçerik</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Blog içeriğini buraya yazın..." {...field} className="min-h-[200px]" />
-                  </FormControl>
+                  <div className="border border-input rounded-md overflow-hidden">
+                    <MarkdownToolbar 
+                      textareaRef={textareaRef} 
+                      onValueChange={field.onChange}
+                    />
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Blog içeriğini buraya yazın..." 
+                        {...field} 
+                        ref={(e) => {
+                          field.ref(e);
+                          (textareaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = e;
+                        }}
+                        className="min-h-[200px] border-none focus-visible:ring-0 focus-visible:ring-offset-0 rounded-t-none" 
+                      />
+                    </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
             <Button type="submit" size="lg" disabled={isSubmitting} className="w-full text-lg">
-              {isSubmitting ? "Güncelleniyor..." : "Güncelle"}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Güncelleniyor...
+                </>
+              ) : (
+                "Güncelle"
+              )}
             </Button>
           </form>
         </Form>
