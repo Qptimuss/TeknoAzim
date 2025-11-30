@@ -119,6 +119,28 @@
   }
 }
 
+@layer components {
+  /* Blog kartları için özel Markdown stili */
+  .markdown-preview-compact {
+    /* Başlıkları küçült */
+    & h1, & h2, & h3, & h4 {
+      @apply text-lg font-bold mb-1 mt-2;
+    }
+    /* Paragraf ve liste öğelerini küçült */
+    & p, & li {
+      @apply text-sm leading-relaxed mb-1;
+    }
+    /* Liste işaretlerini küçült */
+    & ul, & ol {
+      @apply pl-4;
+    }
+    /* Tüm boşlukları azalt */
+    & > * {
+      @apply my-1;
+    }
+  }
+}
+
 @layer utilities {
   @keyframes shake {
     0%, 100% { transform: translateX(0); }

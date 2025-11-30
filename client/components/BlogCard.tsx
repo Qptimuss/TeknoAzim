@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import ImageViewerDialog from "./ImageViewerDialog";
+import MarkdownPreview from "./MarkdownPreview"; // Import eklendi
 
 interface BlogCardProps {
   post: BlogPostWithAuthor;
@@ -129,7 +130,13 @@ export default function BlogCard({ post, showDelete = false, onDelete, hideProfi
             <CardTitle className="font-outfit text-2xl pt-2">{post.title}</CardTitle>
           </CardHeader>
           <CardContent className="flex-grow">
-            <p className="text-card-foreground line-clamp-3">{post.content}</p>
+            {/* Markdown içeriğini işlemek ve 3 satırla sınırlamak için */}
+            <div className="line-clamp-3 text-card-foreground">
+              <MarkdownPreview 
+                content={post.content} 
+                className="markdown-preview-compact !p-0" // Özel kompakt sınıfı ve padding'i sıfırla
+              />
+            </div>
           </CardContent>
         </Link>
         <CardFooter className="flex justify-between items-center pt-4">
