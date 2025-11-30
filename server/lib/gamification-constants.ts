@@ -33,3 +33,9 @@ export const ALL_BADGE_NAMES = [
   "Beğeni Mıknatısı",
   "Popüler Yazar",
 ];
+
+// These emails will be excluded from the leaderboard
+export const EXCLUDED_LEADERBOARD_EMAILS = [
+  "qptimus06@gmail.com",
+  "zeynepecemsezer5566@hotmail.com",
+];

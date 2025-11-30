@@ -20,6 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import Leaderboard from "@/components/Leaderboard"; // Yeni import
 
 export default function Duyurular() {
   const { user } = useAuth();
@@ -162,7 +163,14 @@ export default function Duyurular() {
             )}
           </div>
           
-          {renderContent()}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              {renderContent()}
+            </div>
+            <div className="lg:col-span-1">
+              <Leaderboard />
+            </div>
+          </div>
         </div>
       </div>
 

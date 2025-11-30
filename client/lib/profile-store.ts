@@ -1,4 +1,4 @@
-import { getAuthHeaders, fetchWithAuth } from "./api-utils";
+import { getAuthHeaders, fetchWithAuth, fetchWithoutAuth } from "./api-utils";
 import { Profile } from "@shared/api";
 import { supabase } from "@/integrations/supabase/client"; // Merkezi istemciyi import et
 
@@ -31,6 +31,15 @@ export const getProfile = async (userId: string): Promise<Profile | null> => {
     console.error("Error fetching profile:", error);
     return null;
   }
+};
+
+/**
+ * Fetches all user profiles, excluding specific admin emails, for the leaderboard.
+ * This uses a public server endpoint.
+ * @returns An array of filtered Profile objects.
+ */
+export const getLeaderboardProfiles = async (): Promise<Profile[]> => {
+  return fetchWithoutAuth('/api/leaderboard/profiles');
 };
 
 /**

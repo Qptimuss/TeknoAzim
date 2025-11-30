@@ -24,8 +24,6 @@ import {
   handleOpenCrate,
 } from "./routes/gamification";
 
-// import { handleGrantAll } from "./routes/admin"; // Kaldırıldı
-
 import {
   handleCreateAnnouncement,
   handleGetAnnouncements,
@@ -35,6 +33,7 @@ import {
 
 import { handleCheckEnv } from "./routes/check-env";
 import { handleGetAnnouncementById } from "./routes/announcement";
+import { handleGetLeaderboardProfiles } from "./routes/leaderboard"; // Yeni import
 
 export function createServer(env?: Record<string, string | undefined>) {
   // Load .env variables
@@ -99,7 +98,6 @@ export function createServer(env?: Record<string, string | undefined>) {
   app.post("/api/gamification/open-crate", requireAuth, handleOpenCrate);
 
   // Admin
-  // app.post("/api/admin/grant-all", requireAuth, requireAdmin, handleGrantAll); // Kaldırıldı
   app.delete("/api/admin/user/:id", requireAuth, requireAdmin, handleAdminDeleteUser);
 
   // Announcements
@@ -108,6 +106,9 @@ export function createServer(env?: Record<string, string | undefined>) {
   app.get("/api/announcement/:id", handleGetAnnouncementById);
   app.put("/api/announcement/:id", requireAuth, requireAdmin, handleUpdateAnnouncement);
   app.delete("/api/announcement/:id", requireAuth, requireAdmin, handleDeleteAnnouncement);
+
+  // Leaderboard
+  app.get("/api/leaderboard/profiles", handleGetLeaderboardProfiles); // Yeni rota
 
   return app;
 }
