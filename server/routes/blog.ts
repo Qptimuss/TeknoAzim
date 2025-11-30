@@ -43,13 +43,24 @@ async function moderateContent(content: string): Promise<{ isModerated: boolean 
   });
 
   if (error) {
-    console.error("Moderasyon servisi hatası:", error);
+    console.error("Moderasyon servisi çağrılırken hata:", error);
     throw new Error(`Moderasyon servisi hatası: ${error.message}`);
   }
 
-  if (!data || data.error) {
-    console.error("Moderasyon fonksiyonu hata döndürdü:", data?.error);
-    throw new Error(`Moderasyon iç hatası: ${data?.error || "Bilinmeyen hata"}`);
+  // Edge Function'dan gelen yanıtın yapısını kontrol et
+  if (!data || typeof data !== 'object' || data === null) {
+    console.error("Moderasyon fonksiyonu geçersiz yanıt döndürdü:", data);
+    throw new Error("Moderasyon iç hatası: Geçersiz yanıt yapısı.");
+  }
+
+  if (data.error) {
+    console.error("Moderasyon fonksiyonu hata döndürdü:", data.error);
+    throw new Error(`Moderasyon iç hatası: ${data.error}`);
+  }
+
+  if (data.isModerated === false) {
+    // Eğer içerik uygunsuzsa, özel bir hata mesajı fırlat
+    throw new Error(`İçerik, yapay zeka tarafından uygunsuz içerik barındırdığı için reddedildi. (Sebep: ${data.reason || 'Bilinmiyor'})`);
   }
 
   return data as { isModerated: boolean };
@@ -68,13 +79,8 @@ export const handleCreatePost: RequestHandler = async (req, res) => {
     const supabaseAdmin = getSupabaseAdmin();
 
     // moderation
-    const { isModerated: titleModerated } = await moderateContent(validated.title);
-    if (!titleModerated)
-      return res.status(403).json({ error: "Başlık uygunsuz içerik içeriyor." });
-
-    const { isModerated: contentModerated } = await moderateContent(validated.content);
-    if (!contentModerated)
-      return res.status(403).json({ error: "İçerik uygunsuz içerik içeriyor." });
+    await moderateContent(validated.title); // Hata fırlatırsa aşağı inmez
+    await moderateContent(validated.content); // Hata fırlatırsa aşağı inmez
 
     const payload: Database["public"]["Tables"]["blog_posts"]["Insert"] = {
       title: validated.title,
@@ -98,6 +104,11 @@ export const handleCreatePost: RequestHandler = async (req, res) => {
   } catch (e) {
     if (e instanceof z.ZodError)
       return res.status(400).json({ error: "Geçersiz veri.", details: e.errors });
+    
+    // Moderasyon hatasını yakala ve 403 döndür
+    if (e instanceof Error && e.message.includes("uygunsuz içerik barındırdığı için reddedildi")) {
+        return res.status(403).json({ error: e.message });
+    }
 
     console.error("Hata:", e);
     res.status(500).json({ error: "Sunucu hatası." });
@@ -129,6 +140,10 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
     if ((existing as PostOwner).user_id !== userId) // Fix 4
       return res.status(403).json({ error: "Yetkisiz." });
 
+    // Moderation for updates
+    if (validated.title) await moderateContent(validated.title);
+    if (validated.content) await moderateContent(validated.content);
+
     const payload: Database["public"]["Tables"]["blog_posts"]["Update"] = {
       title: validated.title,
       content: validated.content,
@@ -149,6 +164,11 @@ export const handleUpdatePost: RequestHandler = async (req, res) => {
   } catch (e) {
     if (e instanceof z.ZodError)
       return res.status(400).json({ error: "Geçersiz veri.", details: e.errors });
+    
+    // Moderasyon hatasını yakala ve 403 döndür
+    if (e instanceof Error && e.message.includes("uygunsuz içerik barındırdığı için reddedildi")) {
+        return res.status(403).json({ error: e.message });
+    }
 
     console.error(e);
     res.status(500).json({ error: "Sunucu hatası." });
@@ -198,9 +218,8 @@ export const handleAddComment: RequestHandler = async (req, res) => {
     const validated = newCommentSchema.parse(bodyData);
     const supabaseAdmin = getSupabaseAdmin();
 
-    const { isModerated } = await moderateContent(validated.content);
-    if (!isModerated)
-      return res.status(403).json({ error: "Yorum uygunsuz içerik içeriyor." });
+    // Moderation
+    await moderateContent(validated.content); // Hata fırlatırsa aşağı inmez
 
     const payload: Database["public"]["Tables"]["comments"]["Insert"] = {
       content: validated.content,
@@ -221,6 +240,11 @@ export const handleAddComment: RequestHandler = async (req, res) => {
   } catch (e) {
     if (e instanceof z.ZodError)
       return res.status(400).json({ error: "Geçersiz veri.", details: e.errors });
+    
+    // Moderasyon hatasını yakala ve 403 döndür
+    if (e instanceof Error && e.message.includes("uygunsuz içerik barındırdığı için reddedildi")) {
+        return res.status(403).json({ error: e.message });
+    }
 
     console.error(e);
     res.status(500).json({ error: "Sunucu hatası." });

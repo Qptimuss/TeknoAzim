@@ -13,6 +13,38 @@ const updateProfileSchema = z.object({
   selected_frame: z.string().nullable().optional(),
 });
 
+// Moderasyon fonksiyonunu tekrar tanımlıyoruz (blog.ts'den kopyalandı)
+async function moderateContent(content: string): Promise<{ isModerated: boolean }> {
+  const supabaseAdmin = getSupabaseAdmin();
+
+  const { data, error } = await supabaseAdmin.functions.invoke("moderate-comment", {
+    body: { content },
+  });
+
+  if (error) {
+    console.error("Moderasyon servisi çağrılırken hata:", error);
+    throw new Error(`Moderasyon servisi hatası: ${error.message}`);
+  }
+
+  if (!data || typeof data !== 'object' || data === null) {
+    console.error("Moderasyon fonksiyonu geçersiz yanıt döndürdü:", data);
+    throw new Error("Moderasyon iç hatası: Geçersiz yanıt yapısı.");
+  }
+
+  if (data.error) {
+    console.error("Moderasyon fonksiyonu hata döndürdü:", data.error);
+    throw new Error(`Moderasyon iç hatası: ${data.error}`);
+  }
+
+  if (data.isModerated === false) {
+    // Eğer içerik uygunsuzsa, özel bir hata mesajı fırlat
+    throw new Error(`İçerik, yapay zeka tarafından uygunsuz içerik barındırdığı için reddedildi. (Sebep: ${data.reason || 'Bilinmiyor'})`);
+  }
+
+  return data as { isModerated: boolean };
+}
+
+
 export const handleUpdateProfile: RequestHandler = async (req, res) => {
   const userId = req.userId;
   if (!userId) return res.status(401).json({ error: "User ID missing." });
@@ -25,6 +57,17 @@ export const handleUpdateProfile: RequestHandler = async (req, res) => {
 
     if (Object.keys(validatedData).length === 0) {
       return res.status(400).json({ error: "No valid fields provided for update." });
+    }
+
+    // Moderasyon Kontrolleri
+    if (validatedData.name) {
+        await moderateContent(validatedData.name);
+    }
+    if (validatedData.description) {
+        // Description null olabilir, sadece string ise kontrol et
+        if (typeof validatedData.description === 'string' && validatedData.description.length > 0) {
+            await moderateContent(validatedData.description);
+        }
     }
 
     const supabaseAdmin = getSupabaseAdmin();
@@ -49,6 +92,12 @@ export const handleUpdateProfile: RequestHandler = async (req, res) => {
     if (e instanceof z.ZodError) {
       return res.status(400).json({ error: "Invalid input data.", details: e.errors });
     }
+    
+    // Moderasyon hatasını yakala ve 403 döndür
+    if (e instanceof Error && e.message.includes("uygunsuz içerik barındırdığı için reddedildi")) {
+        return res.status(403).json({ error: e.message });
+    }
+
     console.error("Error updating profile:", e);
     res.status(500).json({ error: "Internal server error." });
   }
