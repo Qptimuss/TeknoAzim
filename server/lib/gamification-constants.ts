@@ -36,6 +36,11 @@ export const ALL_BADGE_NAMES = [
 
 // These emails will be excluded from the leaderboard
 export const EXCLUDED_LEADERBOARD_EMAILS = [
-  "qptimus06@gmail.com",
-  "zeynepecemsezer5566@hotmail.com",
+  // Admin e-postaları artık genel dışlama listesinden çıkarıldı ve özel olarak işlenecek.
 ];
+
+// SPECIAL_LEADERBOARD_EMAILS artık kullanılmıyor, ADMIN_EMAILS ortam değişkeni kullanılacak.
+// export const SPECIAL_LEADERBOARD_EMAILS = [
+//   "qptimus06@gmail.com",
+//   "zeynepecemsezer5566@hotmail.com",
+// ];

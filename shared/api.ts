@@ -16,6 +16,8 @@ export interface Profile {
   selected_frame?: string | null;
   gems: number;
   last_daily_reward_claimed_at?: string | null;
+  is_special_leaderboard_user?: boolean; // Eski özel kullanıcı bayrağı (şimdilik tutuluyor)
+  is_admin_leaderboard_user?: boolean; // Yeni alan: Liderlik tablosunda admin muamelesi görecek kullanıcılar için
 }
 
 // This will represent a row in the `comments` table, joined with the author's profile
