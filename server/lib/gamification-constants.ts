@@ -36,12 +36,6 @@ export const ALL_BADGE_NAMES = [
 
 // These emails will be excluded from the leaderboard
 export const EXCLUDED_LEADERBOARD_EMAILS = [
-  // "qptimus06@gmail.com", // Artık özel kullanıcı olarak dahil edilecek
-  // "zeynepecemsezer5566@hotmail.com", // Artık özel kullanıcı olarak dahil edilecek
-];
-
-// Liderlik tablosunda özel muamele görecek kullanıcıların e-postaları
-export const SPECIAL_LEADERBOARD_EMAILS = [
   "qptimus06@gmail.com",
   "zeynepecemsezer5566@hotmail.com",
 ];
