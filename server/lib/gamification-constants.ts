@@ -46,3 +46,9 @@ export const SPECIAL_LEADERBOARD_EMAILS = [
   "qptimus06@gmail.com",
   "zeynepecemsezer5566@hotmail.com",
 ];
+
+// Özel kullanıcıların kendi aralarındaki sıralama önceliği (CodeNova > Qptimuss)
+export const SPECIAL_USER_RANKING_ORDER = [
+  "zeynepecemsezer5566@hotmail.com", // CodeNova
+  "qptimus06@gmail.com", // Qptimuss
+];
