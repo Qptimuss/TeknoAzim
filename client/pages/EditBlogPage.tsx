@@ -21,6 +21,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import MarkdownToolbar from "@/components/MarkdownToolbar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Yeni import
 import MarkdownPreview from "@/components/MarkdownPreview"; // Yeni import
+import AutoResizeTextarea from "@/components/AutoResizeTextarea"; // Yeni import
 
 const blogSchema = z.object({
   title: z.string().min(5, "Başlık en az 5 karakter olmalıdır."),
@@ -245,14 +246,14 @@ export default function EditBlogPage() {
                           onValueChange={field.onChange}
                         />
                         <FormControl>
-                          <Textarea 
+                          <AutoResizeTextarea 
                             placeholder="Blog içeriğini buraya yazın..." 
                             {...field} 
                             ref={(e) => {
                               field.ref(e);
                               (textareaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = e;
                             }}
-                            className="min-h-[300px] border-none focus-visible:ring-0 focus-visible:ring-offset-0 rounded-t-none" 
+                            className="border-none focus-visible:ring-0 focus-visible:ring-offset-0 rounded-t-none min-h-[300px]" 
                           />
                         </FormControl>
                       </div>
