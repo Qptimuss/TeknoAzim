@@ -75,14 +75,6 @@ serve(async (req) => {
       });
     }
 
-    // 1. Özel test cümlesi için istisna kontrolü
-    if (content === EXCEPTIONAL_PHRASE) {
-      return new Response(JSON.stringify({ isModerated: true, toxicityScore: 0 }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
-
     // 2. Açık anahtar kelime kontrolü
     const lowerCaseContent = content.toLowerCase();
     let containsBannedWord = false;
