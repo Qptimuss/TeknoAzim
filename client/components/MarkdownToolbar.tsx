@@ -59,11 +59,9 @@ const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownTool
       return;
     }
 
-    // Seçimin başlangıç ve bitiş satırlarını bul
-    const before = currentValue.substring(0, start);
-    const after = currentValue.substring(end);
+    // Seçilen metni al
     const selectedText = currentValue.substring(start, end);
-
+    
     // Seçilen metni satırlara ayır
     const lines = selectedText.split('\n');
     
@@ -79,14 +77,20 @@ const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownTool
     });
 
     const newSelectedText = numberedLines.join('\n');
+    
+    // Yeni listenin her zaman 1'den başlamasını sağlamak için, 
+    // seçilen metnin önüne iki boş satır ekliyoruz (yeni bir paragraf bloğu başlatır).
+    const prefix = '\n\n'; 
 
-    const newValue = before + newSelectedText + after;
+    const newValue = currentValue.substring(0, start) + prefix + newSelectedText + currentValue.substring(end);
+    
+    // Eski seçimi kaldırıp, yeni içeriği eklediğimiz yere odaklanıyoruz.
     onValueChange(newValue);
 
-    // Seçimi koru
+    // Seçimi koru (yeni eklenen prefix'i de hesaba kat)
     setTimeout(() => {
-      textarea.selectionStart = start;
-      textarea.selectionEnd = start + newSelectedText.length;
+      textarea.selectionStart = start + prefix.length;
+      textarea.selectionEnd = start + prefix.length + newSelectedText.length;
       textarea.focus();
     }, 0);
   }, [textareaRef, onValueChange]);
