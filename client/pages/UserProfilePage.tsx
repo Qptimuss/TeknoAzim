@@ -202,21 +202,23 @@ export default function UserProfilePage() {
                 </p>
               </div>
 
-              {/* Yeni Çerçeveler Bölümü */}
-              <div className="mt-8 border-t border-border pt-6">
-                <h3 className="text-card-foreground text-xl font-outfit font-bold mb-4">Çerçeveler</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {/* Çerçeveler Bölümü - ProfilePage ile aynı stil */}
+              <div className="mt-8 bg-card border border-border rounded-lg p-8">
+                <h2 className="text-2xl font-outfit font-bold mb-4">Çerçeveler</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {FRAMES.map((frame) => {
                     const isOwned = userProfile.owned_frames?.includes(frame.name) ?? false;
                     const isSelected = userProfile.selected_frame === frame.name;
                     return (
                       <div key={frame.name} className="flex flex-col items-center gap-2">
-                        <div
+                        <Button
+                          variant="ghost"
                           className={cn(
-                            "w-28 h-28 p-0 rounded-lg border-2 flex items-center justify-center relative",
+                            "w-28 h-28 p-0 rounded-lg border-2 flex items-center justify-center relative transition-all",
                             isSelected ? "border-primary ring-2 ring-primary" : "border-border",
                             !isOwned && "opacity-50 grayscale"
                           )}
+                          disabled // Bu sayfada çerçeveler seçilemez, sadece görüntülenir
                         >
                           {frame.name === 'Nova' ? (
                             <div className="w-24 h-24 flex items-center justify-center">
@@ -231,7 +233,7 @@ export default function UserProfilePage() {
                           )}
                           {!isOwned && <Lock className="absolute bottom-1 right-1 h-4 w-4 text-foreground bg-background rounded-full p-0.5" />}
                           {isSelected && <CheckCircle className="absolute top-1 right-1 h-5 w-5 text-primary bg-background rounded-full" />}
-                        </div>
+                        </Button>
                         <p className="text-xs text-center font-medium">{frame.name}</p>
                       </div>
                     );
