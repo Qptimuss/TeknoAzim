@@ -15,7 +15,7 @@ export default function Index() {
         />
 
         {/* Gradient Overlay - Now applies in both themes, from black to transparent */}
-        <div className="absolute inset-0 h-full w-full bg-gradient-to-t from-black via-black/70 to-transparent" />
+        <div className="absolute inset-0 h-full w-full bg-gradient-to-t from-black via-black/70 to-black/10" />
 
         {/* Content Container */}
         <div className="relative z-10 px-5 md:px-10 lg:px-20 pb-8 flex flex-col items-center pt-32">
