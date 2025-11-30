@@ -99,7 +99,9 @@ export default function Leaderboard() {
                 <div>
                   <p className="font-semibold text-foreground text-wrap">{profile.name || "Anonim"}</p>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-                    <span className="font-medium">Seviye {level}</span>
+                    <span className="font-medium">
+                      Seviye {isSpecialUser ? ":)" : level}
+                    </span>
                     {profile.selected_title && (
                       <span className={cn("flex items-center gap-1 text-wrap", selectedTitleObject?.color || "text-yellow-400")}>
                         <TitleIcon className="h-3 w-3" /> {profile.selected_title}
@@ -123,7 +125,7 @@ export default function Leaderboard() {
               </div>
               <div className="flex flex-col items-end">
                 <span className={cn("font-bold", isSpecialUser ? "text-red-500" : "text-primary")}>
-                  {isSpecialUser && "- "}{displayExpValue} EXP
+                  {isSpecialUser ? ":)" : displayExpValue} EXP
                 </span>
               </div>
             </Link>
