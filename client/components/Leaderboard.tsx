@@ -88,7 +88,6 @@ export default function Leaderboard() {
           const TitleIcon = selectedTitleObject ? selectedTitleObject.icon : UserIcon;
 
           const isSpecialUser = profile.is_special_leaderboard_user;
-          // Özel kullanıcılar için EXP'yi her zaman pozitif alıp, önüne sadece "-" ekliyoruz.
           const displayExpValue = Math.abs(profile.exp || 0); 
 
           return (
@@ -98,16 +97,14 @@ export default function Leaderboard() {
               <div className="flex-1 min-w-0 flex justify-between items-center">
                 <div>
                   <p className="font-semibold text-foreground text-wrap">{profile.name || "Anonim"}</p>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-                    <span className="font-medium">
-                      Seviye {isSpecialUser ? ":)" : level}
-                    </span>
-                    {profile.selected_title && (
-                      <span className={cn("flex items-center gap-1 text-wrap", selectedTitleObject?.color || "text-yellow-400")}>
-                        <TitleIcon className="h-3 w-3" /> {profile.selected_title}
-                      </span>
-                    )}
-                  </div>
+                  {profile.selected_title && (
+                    <p className={cn("flex items-center gap-1 text-sm text-muted-foreground flex-wrap", selectedTitleObject?.color || "text-yellow-400")}>
+                      <TitleIcon className="h-3 w-3" /> {profile.selected_title}
+                    </p>
+                  )}
+                  <p className="font-medium text-sm text-muted-foreground mt-1">
+                    Seviye {isSpecialUser ? ":)" : level}
+                  </p>
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
