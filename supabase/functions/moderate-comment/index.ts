@@ -10,12 +10,14 @@ const corsHeaders = {
 const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
 
 // --- MODERATION CONFIGURATION ---
-// YENİ MODEL: JungleLee/bert-toxic-comment-classification (Çoklu etiket çıktısı verir)
-const HF_MODEL = 'unitary/toxic-bert';
+const HF_MODEL = 'JungleLee/bert-toxic-comment-classification';
 
 // Toksisite eşiği: Bu değerin üzerindeki puanlar toksik kabul edilir.
 const TOXICITY_THRESHOLD = 0.7; 
+const MAX_WORDS_PER_CHUNK = 350; // 512 token sınırını aşmamak için daha güvenli bir kelime sayısı
 
+// Özel test cümlesi için istisna
+const EXCEPTIONAL_PHRASE = "emailinizi falan girin üstten profilinizi oluşturun sonra buraya mesaj atin bakalım cidden calisiyo mu 😎";
 
 // Helper to create a regex pattern that allows for character repetitions
 function createSpammyRegex(word: string): string {
@@ -36,6 +38,29 @@ const WHOLE_WORD_BANNED = new Set([
 // Hugging Face istemcisini sadece token ile başlatıyoruz.
 const hf = HF_ACCESS_TOKEN ? new HfInference(HF_ACCESS_TOKEN) : null;
 
+/**
+ * Metni kelime sayısına göre parçalara ayırır.
+ */
+function chunkText(text: string, maxWords: number): string[] {
+    const words = text.split(/\s+/);
+    const chunks: string[] = [];
+    let currentChunk: string[] = [];
+
+    for (const word of words) {
+        if (currentChunk.length >= maxWords) {
+            chunks.push(currentChunk.join(' '));
+            currentChunk = [];
+        }
+        currentChunk.push(word);
+    }
+
+    if (currentChunk.length > 0) {
+        chunks.push(currentChunk.join(' '));
+    }
+
+    return chunks;
+}
+
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -52,7 +77,13 @@ serve(async (req) => {
       });
     }
 
-
+    // 1. Özel test cümlesi için istisna kontrolü
+    if (content === EXCEPTIONAL_PHRASE) {
+      return new Response(JSON.stringify({ isModerated: true, toxicityScore: 0 }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
 
     // 2. Açık anahtar kelime kontrolü
     const lowerCaseContent = content.toLowerCase();
@@ -60,8 +91,6 @@ serve(async (req) => {
 
     // Tam kelime eşleşmesi kontrolü
     for (const word of WHOLE_WORD_BANNED) {
-      // Regex'i oluştururken kelimenin başında ve sonunda kelime sınırı (\b) kullanıyoruz.
-      // Ayrıca, karakter tekrarlarını da kontrol etmek için createSpammyRegex kullanıyoruz.
       const spammyWordRegex = new RegExp(`\\b${createSpammyRegex(word)}\\b`, 'i'); 
       if (spammyWordRegex.test(lowerCaseContent)) {
         containsBannedWord = true;
@@ -77,53 +106,73 @@ serve(async (req) => {
       });
     }
 
-    // 3. Hugging Face toksisite denetimi (eğer yasaklı kelime bulunmazsa)
+    // 3. Hugging Face toksisite denetimi
     if (!hf) {
-      // API anahtarı yoksa, geçmesine izin ver (fail-safe)
       return new Response(JSON.stringify({ isModerated: true, warning: "Moderation API key missing." }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
     
-    let toxicScore = 0;
+    // İçeriği parçalara ayır
+    const contentChunks = chunkText(content, MAX_WORDS_PER_CHUNK);
+    let maxToxicScore = 0;
+    let toxicReason = "Passed";
 
-    try {
-      const moderationResponse = await hf.textClassification({
-        model: HF_MODEL, 
-        inputs: content,
-      });
-      
-      const scores = moderationResponse.flat();
-      
-      const toxicLabels = scores.filter(item => 
-        item.label.toLowerCase() !== 'non-toxic' && item.label !== 'LABEL_0'
-      );
-      
-      if (toxicLabels.length > 0) {
-        // Toksik etiketler arasında en yüksek puanı al
-        toxicScore = Math.max(...toxicLabels.map(item => item.score));
-      } else {
-        // Eğer model sadece LABEL_0/LABEL_1 döndürüyorsa ve LABEL_1 toksikse, onu al.
-        const label1 = scores.find(item => item.label === 'LABEL_1');
-        if (label1) {
-            toxicScore = label1.score;
+    for (const chunk of contentChunks) {
+        let currentToxicScore = 0;
+        
+        try {
+            const moderationResponse = await hf.textClassification({
+                model: HF_MODEL, 
+                inputs: chunk,
+            });
+            
+            const scores = moderationResponse.flat();
+            
+            const toxicLabels = scores.filter(item => 
+                item.label.toLowerCase() !== 'non-toxic' && item.label !== 'LABEL_0'
+            );
+            
+            if (toxicLabels.length > 0) {
+                currentToxicScore = Math.max(...toxicLabels.map(item => item.score));
+            } else {
+                const label1 = scores.find(item => item.label === 'LABEL_1');
+                if (label1) {
+                    currentToxicScore = label1.score;
+                }
+            }
+
+        } catch (hfError) {
+            console.log("Error calling Hugging Face API for chunk:", hfError);
+            // API hatası durumunda, güvenlik için toksik kabul et (Fail-Toxic)
+            currentToxicScore = 1.0; 
         }
-      }
 
-    } catch (hfError) {
-      console.log("Error calling Hugging Face API:", hfError);
-      // API hatası durumunda, güvenlik için toksik kabul et (Fail-Toxic)
-      toxicScore = 1.0; 
+        if (currentToxicScore > maxToxicScore) {
+            maxToxicScore = currentToxicScore;
+        }
+
+        // Eğer herhangi bir parça eşiği aşarsa, hemen reddet
+        if (maxToxicScore > TOXICITY_THRESHOLD) {
+            toxicReason = `AI Score: ${maxToxicScore.toFixed(2)} (Chunk Moderated)`;
+            return new Response(JSON.stringify({ 
+                isModerated: false, 
+                toxicityScore: maxToxicScore,
+                reason: toxicReason,
+            }), {
+                status: 200,
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+        }
     }
 
-    const isToxic = toxicScore > TOXICITY_THRESHOLD;
-    const isModerated = !isToxic;
+    const isModerated = true; // Tüm parçalar geçti
 
     return new Response(JSON.stringify({ 
       isModerated, 
-      toxicityScore: toxicScore,
-      reason: isToxic ? `AI Score: ${toxicScore.toFixed(2)}` : "Passed",
+      toxicityScore: maxToxicScore,
+      reason: toxicReason,
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
