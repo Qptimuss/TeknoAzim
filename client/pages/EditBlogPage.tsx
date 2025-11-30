@@ -15,7 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "sonner";
-import { getBlogPostById, updateBlogPost, uploadBlogImage } from "@/lib/blog-store";
+import { getBlogPostById, updateBlogPost, uploadBlogImage, deleteBlogImage } from "@/lib/blog-store";
 import { useAuth } from "@/contexts/AuthContext";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import MarkdownToolbar from "@/components/MarkdownToolbar";
@@ -100,6 +100,21 @@ export default function EditBlogPage() {
     fetchPost();
   }, [id, user, authLoading, navigate, form]);
 
+  const handleRemoveExistingImage = async () => {
+    if (!id || !existingImageUrl) return;
+
+    // 1. Resmi depolamadan sil
+    await toast.promise(deleteBlogImage(existingImageUrl), {
+      loading: "Resim siliniyor...",
+      success: "Resim depolamadan silindi.",
+      error: (e) => e.message || "Resim silinirken bir hata oluştu.",
+    });
+
+    // 2. Form state'ini güncelle (existingImageUrl'ı null yap)
+    form.setValue('existingImageUrl', null, { shouldDirty: true });
+    form.setValue('imageFile', undefined, { shouldDirty: true });
+  };
+
   async function onSubmit(values: BlogFormValues) {
     if (!user || !id) return;
 
@@ -112,6 +127,9 @@ export default function EditBlogPage() {
         finalImageUrl = await uploadBlogImage(file, user.id);
       }
 
+      // Eğer mevcut resim kaldırıldıysa (existingImageUrl: null) ve yeni resim yüklenmediyse, null olarak güncelle
+      // Eğer yeni resim yüklendiyse, finalImageUrl yeni URL olur.
+      // Eğer hiçbiri değişmediyse, existingImageUrl eski URL'i tutar.
       await updateBlogPost(id, { 
         title: values.title,
         content: values.content,
@@ -169,12 +187,9 @@ export default function EditBlogPage() {
                     variant="destructive" 
                     size="sm" 
                     type="button"
-                    onClick={() => {
-                      form.setValue('existingImageUrl', null);
-                      form.setValue('imageFile', undefined); // Dosya seçimini de temizle
-                    }}
+                    onClick={handleRemoveExistingImage} // Yeni silme fonksiyonu
                   >
-                    Mevcut Resmi Kaldır
+                    Mevcut Resmi Kaldır ve Sil
                   </Button>
                 )}
                 {imagePreview && (

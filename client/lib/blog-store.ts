@@ -57,14 +57,32 @@ export const updateBlogPost = async (postId: string, updateData: { title: string
   });
 };
 
+/**
+ * Blog gönderisi ile ilişkili resmi Supabase Storage'dan siler.
+ * @param imageUrl Silinecek resmin tam URL'si.
+ */
+export const deleteBlogImage = async (imageUrl: string): Promise<void> => {
+  try {
+    const url = new URL(imageUrl);
+    // URL'den storage yolunu çıkar
+    const path = url.pathname.split('/images/')[1];
+    if (!path) return;
+    
+    const { error } = await supabase.storage.from('images').remove([path]);
+    if (error) throw new Error(`Resim silinemedi: ${error.message}`);
+  } catch (e) {
+    console.error("Error processing image URL for deletion:", e);
+    throw new Error("Resim silinirken bir hata oluştu.");
+  }
+};
+
 export const deleteBlogPost = async (postId: string, imageUrl?: string | null) => {
+  // Resim silme mantığı artık deleteBlogImage içinde.
   if (imageUrl) {
     try {
-      const url = new URL(imageUrl);
-      const path = url.pathname.split('/images/')[1];
-      if (path) await supabase.storage.from('images').remove([path]);
+      await deleteBlogImage(imageUrl);
     } catch (e) {
-      console.error("Could not parse or delete image from storage:", e);
+      console.error("Blog post silinirken resim silme hatası göz ardı edildi:", e);
     }
   }
   return fetchWithAuth(`/api/blog/post/${postId}`, { method: 'DELETE' });
