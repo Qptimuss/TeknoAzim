@@ -291,7 +291,7 @@ export default function CreateBlogPage() {
               Önemli Uyarı!
             </AlertDialogTitle>
             <AlertDialogDescription className="text-lg font-semibold text-foreground">
-              Blogunu yayımlarken siteyi arka plana alma! Blogunu yayınlamadan önce olası sorunlar için yazını bir yere kaydet veya yazını kopyala!
+              Blogunu yayınlamadan önce olası sorunlar için yazını bir yere kaydet veya yazını kopyala! Blogu yayımlarken siteyi arka plana alma!
             </AlertDialogDescription>
             <AlertDialogDescription className="text-sm text-muted-foreground">
               Yayınlama işlemi sırasında bir ağ hatası veya yapay zeka moderasyonundan kaynaklanan bir reddedilme olursa, yazdığınız içerik kaybolabilir. Lütfen devam etmeden önce içeriğinizi kopyaladığınızdan emin olun.
