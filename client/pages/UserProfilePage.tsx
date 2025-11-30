@@ -105,16 +105,6 @@ export default function UserProfilePage() {
   // Adminin kendi profilini bu sayfadan silmesini engelle
   const canAdminDeleteThisUser = isUserAdmin && currentUser?.id !== userId;
 
-  // Avatar önizleme bileşeni
-  const AvatarPreview = ({ sizeClass = "h-20 w-20" }: { sizeClass?: string }) => (
-    <Avatar className={sizeClass}>
-      <AvatarImage src={userProfile.avatar_url || undefined} alt={userProfile.name || ''} />
-      <AvatarFallback>
-        <UserIcon className="h-4/6 w-4/6" />
-      </AvatarFallback>
-    </Avatar>
-  );
-
   return (
     <>
       <div className="container mx-auto px-5 py-12">
@@ -133,11 +123,21 @@ export default function UserProfilePage() {
                 >
                   {userProfile.selected_frame === 'Nova' ? (
                     <NovaFrame>
-                      <AvatarPreview sizeClass="h-24 w-24" />
+                      <Avatar className="h-24 w-24">
+                        <AvatarImage src={userProfile.avatar_url || undefined} alt={userProfile.name || ''} />
+                        <AvatarFallback>
+                          <UserIcon className="h-12 w-12 text-muted-foreground" />
+                        </AvatarFallback>
+                      </Avatar>
                     </NovaFrame>
                   ) : (
                     <div className={cn("p-1", selectedFrame?.className)}>
-                      <AvatarPreview sizeClass="h-24 w-24" />
+                      <Avatar className="h-24 w-24">
+                        <AvatarImage src={userProfile.avatar_url || undefined} alt={userProfile.name || ''} />
+                        <AvatarFallback>
+                          <UserIcon className="h-12 w-12 text-muted-foreground" />
+                        </AvatarFallback>
+                      </Avatar>
                     </div>
                   )}
                 </button>
@@ -200,45 +200,6 @@ export default function UserProfilePage() {
                 <p className="text-xs text-muted-foreground mt-2 text-center">
                   Bir blog oluşturmak 25 EXP, bir rozet kazanmak 50 EXP verir.
                 </p>
-              </div>
-
-              {/* Çerçeveler Bölümü - ProfilePage ile aynı stil */}
-              <div className="mt-8 bg-card border border-border rounded-lg p-8">
-                <h2 className="text-2xl font-outfit font-bold mb-4">Çerçeveler</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {FRAMES.map((frame) => {
-                    const isOwned = userProfile.owned_frames?.includes(frame.name) ?? false;
-                    const isSelected = userProfile.selected_frame === frame.name;
-                    return (
-                      <div key={frame.name} className="flex flex-col items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          className={cn(
-                            "w-28 h-28 p-0 rounded-lg border-2 flex items-center justify-center relative transition-all",
-                            isSelected ? "border-primary ring-2 ring-primary" : "border-border",
-                            !isOwned && "opacity-50 grayscale"
-                          )}
-                          disabled // Bu sayfada çerçeveler seçilemez, sadece görüntülenir
-                        >
-                          {frame.name === 'Nova' ? (
-                            <div className="w-24 h-24 flex items-center justify-center">
-                              <NovaFrame>
-                                <AvatarPreview sizeClass="h-20 w-20" />
-                              </NovaFrame>
-                            </div>
-                          ) : (
-                            <div className={cn("w-24 h-24 flex items-center justify-center", frame.className)}>
-                              <AvatarPreview sizeClass="h-20 w-20" />
-                            </div>
-                          )}
-                          {!isOwned && <Lock className="absolute bottom-1 right-1 h-4 w-4 text-foreground bg-background rounded-full p-0.5" />}
-                          {isSelected && <CheckCircle className="absolute top-1 right-1 h-5 w-5 text-primary bg-background rounded-full" />}
-                        </Button>
-                        <p className="text-xs text-center font-medium">{frame.name}</p>
-                      </div>
-                    );
-                  })}
-                </div>
               </div>
 
               {canAdminDeleteThisUser && ( // Admin ve kendi profili değilse göster
