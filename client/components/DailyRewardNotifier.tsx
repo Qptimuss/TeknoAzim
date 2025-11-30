@@ -14,7 +14,7 @@ export default function DailyRewardNotifier() {
           <Gift className="h-6 w-6 text-primary" />
           <div>
             <p className="font-semibold">Günlük Giriş Ödülü Hazır!</p>
-            <p className="text-sm text-muted-foreground">20 Gem ve 25 EXP seni bekliyor.</p>
+            <p className="text-sm text-muted-foreground">20 Elmas ve 25 EXP seni bekliyor.</p>
           </div>
           <Button 
             onClick={() => {

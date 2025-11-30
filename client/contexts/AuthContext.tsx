@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const updatedProfile = await claimDailyReward();
       updateUser({ ...updatedProfile, email: user.email }); // AuthContext'teki user'ı güncelle
       setIsDailyRewardEligible(false); // Ödül alındı, uygunluğu sıfırla
-      toast.success("Günlük Giriş Ödülü", { description: "Hesabına 20 Gem ve 25 EXP eklendi!" });
+      toast.success("Günlük Giriş Ödülü", { description: "Hesabına 20 Elmas ve 25 EXP eklendi!" });
     } catch (e) {
       if (e instanceof Error && e.message.includes("Daily reward already claimed today")) {
         toast.info("Günlük ödül zaten alındı.", { description: "Yarın tekrar deneyin." });
