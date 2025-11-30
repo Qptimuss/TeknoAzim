@@ -24,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import { removeExp, EXP_ACTIONS } from "@/lib/gamification";
 import OtherPostsCarousel from "@/components/OtherPostsCarousel";
 import { isAdmin } from "@/lib/auth-utils"; // isAdmin helper'ı import edildi
+import MarkdownPreview from "@/components/MarkdownPreview"; // MarkdownPreview import edildi
 
 export default function BlogPostPage() {
   const { id } = useParams<{ id: string }>();
@@ -170,9 +171,9 @@ export default function BlogPostPage() {
             <div className="flex flex-wrap items-center justify-end gap-4 text-sm text-muted-foreground mb-6">
               <LikeDislikeButtons postId={post.id} />
             </div>
-            <div className="text-card-foreground text-lg leading-relaxed whitespace-pre-wrap">
-              {post.content}
-            </div>
+            
+            {/* Markdown içeriğini burada işliyoruz */}
+            <MarkdownPreview content={post.content} className="text-card-foreground text-lg leading-relaxed" />
 
             {post.profiles && (
               <>
