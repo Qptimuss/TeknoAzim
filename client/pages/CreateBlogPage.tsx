@@ -65,6 +65,11 @@ export default function CreateBlogPage() {
 
   const imageFileRef = form.register("imageFile");
 
+  const handleRemoveImage = () => {
+    form.setValue('imageFile', undefined);
+    setImagePreview(null);
+  };
+
   async function onSubmit(values: z.infer<typeof blogSchema>) {
     if (!user) {
       toast.error("Blog yazısı oluşturmak için giriş yapmalısınız.");
@@ -142,29 +147,43 @@ export default function CreateBlogPage() {
               )}
             />
 
+            {imagePreview && (
+              <div className="space-y-2">
+                <FormLabel>Kapak Resmi Önizlemesi</FormLabel>
+                <img
+                  src={imagePreview}
+                  alt="Seçilen resim önizlemesi"
+                  className="w-full max-h-64 object-cover rounded-md border border-border"
+                />
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  type="button"
+                  onClick={handleRemoveImage}
+                >
+                  Resmi Kaldır
+                </Button>
+              </div>
+            )}
+
             <FormField
               control={form.control}
               name="imageFile"
-              render={({ field }) => (
+              render={() => (
                 <FormItem>
                   <FormLabel>Kapak Resmi (İsteğe Bağlı, Maks 4MB)</FormLabel>
                   <FormControl>
-                    <Input type="file" accept="image/*" {...imageFileRef} className="file:text-foreground" />
+                    <Input 
+                      type="file" 
+                      accept="image/*" 
+                      {...imageFileRef} 
+                      className="file:text-foreground transition-all duration-300 hover:border-primary hover:shadow-md" // Animasyon sınıfı eklendi
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            {imagePreview && (
-              <div className="mt-4">
-                <img
-                  src={imagePreview}
-                  alt="Seçilen resim önizlemesi"
-                  className="w-full max-h-64 object-contain rounded-md border border-border"
-                />
-              </div>
-            )}
 
             <FormField
               control={form.control}

@@ -219,7 +219,7 @@ export default function EditBlogPage() {
                       type="file" 
                       accept="image/*"
                       {...imageFileRef}
-                      className="file:text-foreground"
+                      className="file:text-foreground transition-all duration-300 hover:border-primary hover:shadow-md" // Animasyon sınıfı eklendi
                     />
                   </FormControl>
                   <FormMessage />
