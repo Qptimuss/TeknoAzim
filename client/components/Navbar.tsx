@@ -37,10 +37,9 @@ export default function Navbar() {
     { to: "/giris", label: "Giriş Yap" },
   ];
 
-  // Masaüstü için: Profil ve Çıkış Yap'ı tek bir menüde topluyoruz
+  // Mobil menü için: Sadece Çıkış Yap'ı tutuyoruz, çünkü Profil zaten mainNavLinks'te.
   const authLinks = [
-    { to: "/profil", label: "Profil" },
-    { onClick: handleLogout, label: "Çıkış Yap" }, // Çıkış yap butonu olarak eklendi
+    { onClick: handleLogout, label: "Çıkış Yap" }, 
   ];
 
   return (
