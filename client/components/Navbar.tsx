@@ -68,7 +68,7 @@ export default function Navbar() {
             <div className="flex rounded-[40px] bg-card border-2 border-border px-0 py-3 items-center gap-0 flex-1">
               <AppLogo /> 
               {mainNavLinks.map((link) => (
-                <Link key={link.to} to={link.to} className="font-bakbak text-sm lg:text-sm font-normal text-card-foreground whitespace-nowrap shrink-0 px-3 lg:px-4 hover:text-primary transition-colors">
+                <Link key={link.to} to={link.to} className="font-bakbak text-sm lg:text-sm font-normal text-card-foreground whitespace-nowrap shrink-0 px-2 lg:px-3 hover:text-primary transition-colors">
                   {link.label}
                 </Link>
               ))}
