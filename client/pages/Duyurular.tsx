@@ -145,11 +145,11 @@ export default function Duyurular() {
             </CardHeader>
             <Separator className="mx-6 w-auto" />
             <CardContent className="pt-6">
-              {/* İçeriği MarkdownPreview ile göster, kısıtlama yok */}
+              {/* İçeriği MarkdownPreview ile göster, artık kompakt sınıfı yok */}
               <div className="text-card-foreground">
                 <MarkdownPreview 
                   content={announcement.content} 
-                  className="markdown-preview-compact !p-0" 
+                  className="!p-0" // Sadece padding'i sıfırlıyoruz, diğer stil ayarları MarkdownPreview'dan geliyor
                 />
               </div>
             </CardContent>
