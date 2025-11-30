@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -20,6 +19,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { isAdmin } from "@/lib/auth-utils";
 import { getAnnouncementById, updateAnnouncement } from "@/lib/announcement-store";
 import { Skeleton } from "@/components/ui/skeleton";
+import MarkdownToolbar from "@/components/MarkdownToolbar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MarkdownPreview from "@/components/MarkdownPreview";
+import AutoResizeTextarea from "@/components/AutoResizeTextarea";
 
 const announcementSchema = z.object({
   title: z.string().min(5, "Başlık en az 5 karakter olmalıdır."),
@@ -34,6 +37,7 @@ export default function EditAnnouncementPage() {
   const { user, loading: authLoading } = useAuth();
   const isUserAdmin = isAdmin(user);
   const [pageLoading, setPageLoading] = useState(true);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const form = useForm<AnnouncementFormValues>({
     resolver: zodResolver(announcementSchema),
@@ -42,6 +46,8 @@ export default function EditAnnouncementPage() {
       content: "",
     },
   });
+
+  const contentValue = form.watch("content");
 
   // Yetki ve veri yükleme kontrolü
   useEffect(() => {
@@ -80,7 +86,6 @@ export default function EditAnnouncementPage() {
     if (!user || !isUserAdmin || !id) return;
 
     // Zod resolver'dan geçtiği için values'un tam ve zorunlu alanlara sahip olduğunu biliyoruz.
-    // Bu nedenle, tipi zorunlu alanlara sahip bir nesne olarak atayabiliriz.
     const updateData = values as { title: string; content: string };
 
     try {
@@ -140,9 +145,36 @@ export default function EditAnnouncementPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>İçerik</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Duyuru içeriğini buraya yazın..." {...field} className="min-h-[200px]" />
-                  </FormControl>
+                  <Tabs defaultValue="edit" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="edit">İçerik Düzenle</TabsTrigger>
+                      <TabsTrigger value="preview">Görüntü Önizleme</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="edit" className="p-0 mt-0">
+                      <div className="border border-input rounded-md overflow-hidden">
+                        <MarkdownToolbar 
+                          textareaRef={textareaRef} 
+                          onValueChange={field.onChange}
+                        />
+                        <FormControl>
+                          <AutoResizeTextarea 
+                            placeholder="Duyuru içeriğini buraya yazın..." 
+                            {...field} 
+                            ref={(e) => {
+                              field.ref(e);
+                              (textareaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = e;
+                            }}
+                            className="border-none focus-visible:ring-0 focus-visible:ring-offset-0 rounded-t-none min-h-[200px]" 
+                          />
+                        </FormControl>
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="preview" className="p-0 mt-0">
+                      <div className="border border-input rounded-md min-h-[200px] bg-background">
+                        <MarkdownPreview content={contentValue} />
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                   <FormMessage />
                 </FormItem>
               )}
