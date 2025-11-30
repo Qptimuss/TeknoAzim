@@ -11,13 +11,13 @@ const HF_ACCESS_TOKEN = Deno.env.get("HUGGING_FACE_API_KEY");
 
 // --- MODERATION CONFIGURATION ---
 // YENİ MODEL: JungleLee/bert-toxic-comment-classification (Çoklu etiket çıktısı verir)
-const HF_MODEL = 'JungleLee/bert-toxic-comment-classification';
+const HF_MODEL = 'unitary/toxic-bert';
 
 // Toksisite eşiği: Bu değerin üzerindeki puanlar toksik kabul edilir.
 const TOXICITY_THRESHOLD = 0.7; 
 
 // Özel test cümlesi için istisna
-const EXCEPTIONAL_PHRASE = "emailinizi falan girin üstten profilinizi oluşturun sonra buraya mesaj atin bakalım cidden calisiyo mu 😎";
+const EXCEPTIONAL_PHRASE = ;
 
 // Helper to create a regex pattern that allows for character repetitions
 function createSpammyRegex(word: string): string {
