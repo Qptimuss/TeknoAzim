@@ -25,7 +25,7 @@ export default function Index() {
               Düşüncelerle derinleşen,yazılarla genişleyen bir dünya.
             </h1>
 
-            <p className="text-muted-foreground dark:text-muted-foreground text-lg md:text-2xl lg:text-[25px] font-roboto font-normal text-center mt-6 md:mt-8 px-4">
+            <p className="text-gray-300 text-lg md:text-2xl lg:text-[25px] font-roboto font-normal text-center mt-6 md:mt-8 px-4">
               Hobilerinle ilgili bilgilerini diğer öğrencilerle paylaş.
             </p>
 
