@@ -68,7 +68,7 @@ export default function Navbar() {
             <div className="flex rounded-[40px] bg-card border-2 border-border px-0 py-3 items-center gap-0 flex-1">
               <AppLogo /> 
               {mainNavLinks.map((link) => (
-                <Link key={link.to} to={link.to} className="font-bakbak text-sm lg:text-base font-normal text-card-foreground whitespace-nowrap shrink-0 px-3 lg:px-4 hover:text-primary transition-colors">
+                <Link key={link.to} to={link.to} className="font-bakbak text-sm lg:text-sm font-normal text-card-foreground whitespace-nowrap shrink-0 px-3 lg:px-4 hover:text-primary transition-colors">
                   {link.label}
                 </Link>
               ))}
@@ -82,7 +82,7 @@ export default function Navbar() {
                   <Button 
                     onClick={handleLogout} 
                     variant="ghost" 
-                    className="font-bakbak text-base lg:text-base font-normal text-foreground whitespace-nowrap shrink-0 p-0 hover:bg-transparent hover:text-destructive transition-colors"
+                    className="font-bakbak text-sm lg:text-sm font-normal text-foreground whitespace-nowrap shrink-0 p-0 hover:bg-transparent hover:text-destructive transition-colors"
                   >
                     Çıkış Yap
                   </Button>
@@ -119,7 +119,7 @@ export default function Navbar() {
               ) : (
                 <>
                   {guestLinks.map((link) => (
-                    <Link key={link.to} to={link.to} className="font-bakbak text-base lg:text-base font-normal text-foreground whitespace-nowrap shrink-0">
+                    <Link key={link.to} to={link.to} className="font-bakbak text-sm lg:text-sm font-normal text-foreground whitespace-nowrap shrink-0">
                       {link.label}
                     </Link>
                   ))}
