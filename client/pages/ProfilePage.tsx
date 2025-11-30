@@ -548,7 +548,7 @@ export default function ProfilePage() {
                 </RadioGroup>
               </div>
 
-              <div className="mb-6 border-t border-border pt-6">
+              <div className="mb-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-card-foreground text-xl font-outfit font-bold">Rozetler</h3>
                   <span className="text-sm text-muted-foreground">
@@ -561,7 +561,12 @@ export default function ProfilePage() {
                     const Icon = badge.icon;
                     return (
                       <div key={badge.name} className="flex items-start gap-4">
-                        <div className={cn("flex items-center justify-center bg-card p-3 rounded-full border border-border shrink-0", !hasBadge && "opacity-30 grayscale")}>
+                        <div
+                          className={cn(
+                            "flex items-center justify-center bg-card p-3 rounded-full border border-border shrink-0",
+                            !hasBadge && "opacity-30 grayscale"
+                          )}
+                        >
                           <Icon className="h-6 w-6 text-yellow-400" />
                         </div>
                         <div>
@@ -574,7 +579,7 @@ export default function ProfilePage() {
                   })}
                 </div>
                 <p className="text-xs text-muted-foreground text-center mt-2">
-                  Bir blog oluşturmak 25 EXP, bir rozet kazanmak 50 EXP verir.
+                  Bir blog oluşturmak ve günlük giriş yapmak 25 EXP, bir rozet kazanmak ise 50 EXP verir.
                 </p>
               </div>
               
