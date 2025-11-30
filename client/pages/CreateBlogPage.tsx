@@ -226,6 +226,11 @@ export default function CreateBlogPage() {
                 </FormItem>
               )}
             />
+            
+            {/* Yeni Uyarı Mesajı */}
+            <p className="text-center text-sm font-bold text-red-500 bg-red-500/10 p-3 rounded-md border border-red-500/30">
+              Blogunu yayınlamadan önce olası sorunlar için yazını bir yere kaydet veya yazını kopyala!
+            </p>
 
             <Button type="submit" size="lg" disabled={form.formState.isSubmitting} className="w-full text-lg">
               {form.formState.isSubmitting ? (
