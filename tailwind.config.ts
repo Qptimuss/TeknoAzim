@@ -111,6 +111,7 @@ export default {
   },
   plugins: [
     require("tailwindcss-animate"),
+    require("@tailwindcss/typography"), // Typography eklentisi eklendi
     plugin(function ({ addUtilities }) {
       addUtilities({
         ".animation-delay-2000": {

@@ -13,8 +13,7 @@ export default function MarkdownPreview({ content, className }: MarkdownPreviewP
     <div className={cn("prose dark:prose-invert max-w-none p-4", className)}>
       <ReactMarkdown 
         remarkPlugins={[remarkGfm]}
-        // Markdown'ı HTML'e dönüştürürken, başlıkların ve listelerin doğru görünmesi için
-        // Tailwind Typography eklentisinin sınıflarını kullanır.
+        // Tailwind Typography eklentisi sayesinde başlıklar, listeler ve diğer öğeler otomatik olarak stil kazanacaktır.
       >
         {content}
       </ReactMarkdown>
