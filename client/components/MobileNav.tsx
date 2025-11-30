@@ -28,7 +28,7 @@ export function MobileNav({ mainLinks, authLinks, logo, user, onMouseEnter, onMo
         <Button 
           variant="ghost" 
           // Arka planı her zaman şeffaf yapıyoruz.
-          className="md:hidden h-auto p-2 flex items-center gap-2 text-foreground bg-transparent hover:bg-transparent transition-all duration-200 hover:-translate-y-0.5"
+          className="lg:hidden h-auto p-2 flex items-center gap-2 text-foreground bg-transparent hover:bg-transparent transition-all duration-200 hover:-translate-y-0.5"
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
         >
