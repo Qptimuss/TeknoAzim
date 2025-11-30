@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import { getSupabaseAdmin } from "../lib/supabase-admin";
-import { EXCLUDED_LEADERBOARD_EMAILS } from "../lib/gamification-constants"; // EXCLUDED_LEADERBOARD_EMAILS hala kullanılabilir
-import { Profile } from "@shared/api";
+import { EXCLUDED_LEADERBOARD_EMAILS, SPECIAL_LEADERBOARD_EMAILS } from "../lib/gamification-constants";
+import { Profile } from "@shared/api"; // Profile arayüzünü import et
 
 /**
  * Handles fetching all user profiles, excluding specific emails, for the leaderboard.
@@ -21,7 +21,7 @@ export const handleGetLeaderboardProfiles: RequestHandler = async (_req, res) =>
       return res.status(500).json({ error: "Failed to fetch profiles for leaderboard." });
     }
 
-    // Filtreleme ve admin kullanıcıları belirlemek için tüm auth.users'ı çek
+    // Filtreleme ve özel kullanıcıları belirlemek için tüm auth.users'ı çek
     const { data: authUsers, error: authUsersError } = await supabaseAdmin.auth.admin.listUsers();
 
     if (authUsersError) {
@@ -29,14 +29,11 @@ export const handleGetLeaderboardProfiles: RequestHandler = async (_req, res) =>
       return res.status(500).json({ error: "Failed to fetch user emails for filtering." });
     }
 
-    // ADMIN_EMAILS ortam değişkenini al ve bir Set'e dönüştür
-    const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(',').map(e => e.trim()).filter(e => e.length > 0);
-    const adminUserEmails = new Set(ADMIN_EMAILS);
-    const adminUserIds = new Set<string>();
-
-    authUsers.users.forEach(user => {
-      if (user.email && adminUserEmails.has(user.email)) {
-        adminUserIds.add(user.id);
+    const specialUserIds = new Set<string>();
+    SPECIAL_LEADERBOARD_EMAILS.forEach(email => {
+      const user = authUsers.users.find(u => u.email === email);
+      if (user?.id) {
+        specialUserIds.add(user.id);
       }
     });
 
@@ -49,30 +46,29 @@ export const handleGetLeaderboardProfiles: RequestHandler = async (_req, res) =>
     const processedProfiles: Profile[] = [];
 
     profiles.forEach(profile => {
-      // Genel dışlama listesindeki kullanıcıları filtrele
+      // Öncelikle, liderlik tablosundan genel olarak dışlanan kullanıcıları filtrele
       if (excludedFromAllLeaderboardUserIds.has(profile.id)) {
         return; // Bu profili atla
       }
 
-      const isAdminUser = adminUserIds.has(profile.id);
+      const isSpecial = specialUserIds.has(profile.id);
       processedProfiles.push({
         ...profile,
-        is_admin_leaderboard_user: isAdminUser,
-        // is_special_leaderboard_user artık kullanılmıyor, admin bayrağı yeterli
+        is_special_leaderboard_user: isSpecial,
       });
     });
 
     // Özel sıralama fonksiyonu:
     // 1. Normal kullanıcılar EXP'ye göre azalan sırada sıralanır.
-    // 2. Admin kullanıcılar her zaman en altta yer alır, kendi aralarında EXP'ye göre azalan sırada sıralanır.
+    // 2. Özel kullanıcılar her zaman en altta yer alır, kendi aralarında EXP'ye göre azalan sırada sıralanır.
     processedProfiles.sort((a, b) => {
-      const aIsAdmin = a.is_admin_leaderboard_user;
-      const bIsAdmin = b.is_admin_leaderboard_user;
+      const aIsSpecial = a.is_special_leaderboard_user;
+      const bIsSpecial = b.is_special_leaderboard_user;
 
-      if (aIsAdmin && !bIsAdmin) return 1; // a (admin) b'den (normal) sonra gelir
-      if (!aIsAdmin && bIsAdmin) return -1; // a (normal) b'den (admin) önce gelir
+      if (aIsSpecial && !bIsSpecial) return 1; // a (özel) b'den (normal) sonra gelir
+      if (!aIsSpecial && bIsSpecial) return -1; // a (normal) b'den (özel) önce gelir
 
-      // Hem normal hem de admin ise, EXP'ye göre azalan sırada sırala
+      // Hem normal hem de özel ise, EXP'ye göre azalan sırada sırala
       return (b.exp || 0) - (a.exp || 0);
     });
 

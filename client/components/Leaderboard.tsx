@@ -87,10 +87,9 @@ export default function Leaderboard() {
           const selectedTitleObject = Object.values(TITLES).find(t => t.name === profile.selected_title);
           const TitleIcon = selectedTitleObject ? selectedTitleObject.icon : UserIcon;
 
-          const isAdminUser = profile.is_admin_leaderboard_user;
-          // Admin kullanıcılar için seviye ve EXP'yi sadece "-" olarak göster
-          const displayLevel = isAdminUser ? "-" : `Seviye ${level}`;
-          const displayExp = isAdminUser ? "-" : `${profile.exp || 0} EXP`;
+          const isSpecialUser = profile.is_special_leaderboard_user;
+          // Özel kullanıcılar için EXP'yi her zaman pozitif alıp, önüne sadece "-" ekliyoruz.
+          const displayExpValue = Math.abs(profile.exp || 0); 
 
           return (
             <Link to={`/kullanici/${profile.id}`} key={profile.id} className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg border border-border transition-all hover:bg-muted hover:border-primary hover:shadow-md">
@@ -100,8 +99,8 @@ export default function Leaderboard() {
                 <div>
                   <p className="font-semibold text-foreground text-wrap">{profile.name || "Anonim"}</p>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-                    <span className="font-medium">{displayLevel}</span>
-                    {profile.selected_title && !isAdminUser && ( // Adminler için ünvanı gösterme
+                    <span className="font-medium">Seviye {level}</span>
+                    {profile.selected_title && (
                       <span className={cn("flex items-center gap-1 text-wrap", selectedTitleObject?.color || "text-yellow-400")}>
                         <TitleIcon className="h-3 w-3" /> {profile.selected_title}
                       </span>
@@ -123,8 +122,8 @@ export default function Leaderboard() {
                 </DropdownMenu>
               </div>
               <div className="flex flex-col items-end">
-                <span className={cn("font-bold", isAdminUser ? "text-red-500" : "text-primary")}>
-                  {displayExp}
+                <span className={cn("font-bold", isSpecialUser ? "text-red-500" : "text-primary")}>
+                  {isSpecialUser && "- "}{displayExpValue} EXP
                 </span>
               </div>
             </Link>
