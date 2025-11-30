@@ -83,11 +83,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Günlük ödül uygunluğunu kontrol eden fonksiyon
   const checkDailyRewardEligibility = (profile: User) => {
-    const lastClaimed = profile.last_daily_reward_claimed_at
-      ? new Date(profile.last_daily_reward_claimed_at)
-      : null;
-    const today = new Date();
-    setIsDailyRewardEligible(!lastClaimed || !isSameDay(lastClaimed, today));
+    // --- TEST AMAÇLI GEÇİCİ DEĞİŞİKLİK: Günlük ödülü her zaman uygun göster ---
+    // Normalde aşağıdaki satır kullanılmalıydı:
+    // const lastClaimed = profile.last_daily_reward_claimed_at
+    //   ? new Date(profile.last_daily_reward_claimed_at)
+    //   : null;
+    // const today = new Date();
+    // setIsDailyRewardEligible(!lastClaimed || !isSameDay(lastClaimed, today));
+    setIsDailyRewardEligible(true); // TEST AMAÇLI
+    // --- TEST AMAÇLI GEÇİCİ DEĞİŞİKLİK SONU ---
   };
 
   // Kullanıcının günlük ödülü talep etmesini sağlayan fonksiyon
