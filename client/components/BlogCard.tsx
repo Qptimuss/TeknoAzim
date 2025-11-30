@@ -47,7 +47,7 @@ export default function BlogCard({ post, showDelete = false, onDelete, hideProfi
 
   return (
     <>
-      <Card className="w-full flex flex-col transition-all hover:border-primary hover:scale-105 relative">
+      <Card className="w-full flex flex-col relative transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:z-10">
         {showDelete && onDelete && (
           <Button
             variant="destructive"
@@ -63,8 +63,11 @@ export default function BlogCard({ post, showDelete = false, onDelete, hideProfi
             <Trash2 className="h-4 w-4" />
           </Button>
         )}
-        <Link to={`/bloglar/${post.id}`} className="flex flex-col flex-grow">
-          <CardHeader>
+        <Link 
+          to={`/bloglar/${post.id}`} 
+          className="flex flex-col flex-grow group/link"
+        >
+          <CardHeader className="group-hover/link:border-primary transition-colors duration-300">
             {post.image_url && (
               <div className="aspect-video overflow-hidden rounded-t-lg mb-4">
                 <img
@@ -108,7 +111,7 @@ export default function BlogCard({ post, showDelete = false, onDelete, hideProfi
                             <span className="sr-only">Seçenekler</span>
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent> {/* onClick={(e) => e.stopPropagation()} kaldırıldı */}
+                        <DropdownMenuContent>
                           <DropdownMenuItem asChild>
                             <Link to={`/kullanici/${post.profiles.id}`}>Kullanıcının profiline bak</Link>
                           </DropdownMenuItem>
