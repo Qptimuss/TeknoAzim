@@ -288,7 +288,7 @@ export default function CreateBlogPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-red-500">
               <AlertTriangle className="h-6 w-6" />
-              Önemli Uyarı!
+              Önemli Uyarı! Blogu yayımlarken siteyi arka plana alma!
             </AlertDialogTitle>
             <AlertDialogDescription className="text-lg font-semibold text-foreground">
               Blogunu yayınlamadan önce olası sorunlar için yazını bir yere kaydet veya yazını kopyala!
