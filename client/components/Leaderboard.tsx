@@ -4,10 +4,17 @@ import { getLeaderboardProfiles } from "@/lib/profile-store";
 import { Profile } from "@shared/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trophy, User as UserIcon } from "lucide-react";
+import { Trophy, User as UserIcon, MoreHorizontal } from "lucide-react";
 import ProfileAvatar from "./ProfileAvatar";
 import { calculateLevel, TITLES } from "@/lib/gamification";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 export default function Leaderboard() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -81,16 +88,31 @@ export default function Leaderboard() {
             <Link to={`/kullanici/${profile.id}`} key={profile.id} className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg border border-border transition-all hover:bg-muted hover:border-primary hover:shadow-md">
               <span className="font-bold text-lg w-6 text-center shrink-0">#{index + 1}</span>
               <ProfileAvatar profile={profile} className="h-10 w-10" />
-              <div className="flex-1 min-w-0"> {/* Added min-w-0 here */}
-                <p className="font-semibold text-foreground text-wrap">{profile.name || "Anonim"}</p> {/* Added text-wrap */}
-                <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap"> {/* Added flex-wrap */}
-                  <span className="font-medium">Seviye {level}</span>
-                  {profile.selected_title && (
-                    <span className={cn("flex items-center gap-1 text-wrap", selectedTitleObject?.color || "text-yellow-400")}> {/* Added text-wrap */}
-                      <TitleIcon className="h-3 w-3" /> {profile.selected_title}
-                    </span>
-                  )}
+              <div className="flex-1 min-w-0 flex justify-between items-center"> {/* Added flex, justify-between, items-center */}
+                <div> {/* Group name, level, title */}
+                  <p className="font-semibold text-foreground text-wrap">{profile.name || "Anonim"}</p>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+                    <span className="font-medium">Seviye {level}</span>
+                    {profile.selected_title && (
+                      <span className={cn("flex items-center gap-1 text-wrap", selectedTitleObject?.color || "text-yellow-400")}>
+                        <TitleIcon className="h-3 w-3" /> {profile.selected_title}
+                      </span>
+                    )}
+                  </div>
                 </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 p-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">Seçenekler</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem asChild>
+                      <Link to={`/kullanici/${profile.id}`}>Kullanıcının profiline bak</Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
               <div className="flex flex-col items-end">
                 <span className="font-bold text-primary">{profile.exp} EXP</span>
