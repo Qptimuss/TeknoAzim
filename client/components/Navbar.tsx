@@ -28,8 +28,9 @@ export default function Navbar() {
     { to: "/magaza", label: "Mağaza" },
   ];
 
+  // Giriş yapmışsa Profil'i buradan kaldırıyoruz, sağ tarafa taşıyacağız.
   const mainNavLinks = user 
-    ? [...baseNavLinks, { to: "/profil", label: "Profil" }] // Giriş yapmışsa Profil'i ana menüye ekle
+    ? baseNavLinks 
     : [{ to: "/", label: "Ana Sayfa" }, ...baseNavLinks];
 
   const guestLinks = [
@@ -52,7 +53,7 @@ export default function Navbar() {
           {/* Mobile View */}
           <div className="lg:hidden flex items-center justify-between">
             <MobileNav 
-              mainLinks={mainNavLinks} 
+              mainLinks={user ? [...baseNavLinks, { to: "/profil", label: "Profil" }] : guestLinks} // Mobil menü için Profil'i geri ekledik
               authLinks={user ? authLinks : guestLinks} 
               logo={<AppLogo disableLink />} 
               user={user} 
@@ -63,6 +64,7 @@ export default function Navbar() {
 
           {/* Desktop View */}
           <div className="hidden lg:flex items-center justify-between gap-4">
+            {/* Sol Taraf: Logo ve Ana Bağlantılar (bg-card) */}
             <div className="flex rounded-[40px] bg-card border-2 border-border px-0 py-3 items-center gap-0 flex-1">
               <AppLogo /> 
               {mainNavLinks.map((link) => (
@@ -70,23 +72,29 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
-              
-              {/* Giriş yapmışsa Çıkış Yap butonunu buraya ekle */}
-              {user && (
-                <Button 
-                  onClick={handleLogout} 
-                  variant="ghost" 
-                  className="font-bakbak text-sm lg:text-base font-normal text-foreground whitespace-nowrap shrink-0 p-0 px-3 lg:px-4 hover:bg-transparent hover:text-destructive transition-colors"
-                >
-                  Çıkış Yap
-                </Button>
-              )}
             </div>
             
-            {/* Sağ tarafa sadece Avatar, Elmas ve Tema Değiştirme kaldı */}
+            {/* Sağ Taraf: Profil, Avatar, Elmas ve Tema (bg-muted) */}
             <div className="flex items-center gap-4 lg:gap-6 px-2">
               {user ? (
                 <>
+                  {/* Çıkış Yap Butonu */}
+                  <Button 
+                    onClick={handleLogout} 
+                    variant="ghost" 
+                    className="font-bakbak text-base lg:text-base font-normal text-foreground whitespace-nowrap shrink-0 p-0 hover:bg-transparent hover:text-destructive transition-colors"
+                  >
+                    Çıkış Yap
+                  </Button>
+                  
+                  {/* Profil Bağlantısı */}
+                  <Link 
+                    to="/profil" 
+                    className="font-bakbak text-base lg:text-base font-normal text-foreground whitespace-nowrap shrink-0 hover:text-primary transition-colors"
+                  >
+                    Profil
+                  </Link>
+
                   {/* Avatar ve Elmas Grubu */}
                   <div className="flex flex-col items-center">
                     <Link to="/profil">
