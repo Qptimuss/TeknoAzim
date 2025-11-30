@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Heading1, Heading2, Heading3 } from 'lucide-react';
+import { Heading1, Heading2, Heading3, Bold, Italic, List, ListOrdered } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -10,7 +10,7 @@ interface MarkdownToolbarProps {
 }
 
 const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownToolbarProps) => {
-  const applyHeading = useCallback((level: 1 | 2 | 3) => {
+  const applyFormatting = useCallback((prefix: string, suffix: string = '', placeholder: string = '') => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
@@ -20,40 +20,61 @@ const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownTool
 
     if (start === null || end === null) return;
 
-    const prefix = '#'.repeat(level) + ' ';
-    
-    // Seçilen metni al
     const selectedText = currentValue.substring(start, end);
+    let newSelectedText = selectedText;
 
-    // Eğer metin seçilmemişse, sadece imlecin olduğu yere başlık formatını ekle
     if (start === end) {
-      const newValue = currentValue.substring(0, start) + prefix + currentValue.substring(end);
-      onValueChange(newValue);
-      
-      // İmleci başlık metninin sonuna taşı
-      setTimeout(() => {
-        textarea.selectionStart = start + prefix.length;
-        textarea.selectionEnd = start + prefix.length;
-      }, 0);
-      return;
+      // Metin seçilmemişse, placeholder kullan
+      newSelectedText = prefix + placeholder + suffix;
+    } else {
+      // Metin seçilmişse, sarmala
+      newSelectedText = prefix + selectedText + suffix;
     }
-
-    // Seçilen metni sarmala
-    const newSelectedText = prefix + selectedText;
 
     const newValue = currentValue.substring(0, start) + newSelectedText + currentValue.substring(end);
     onValueChange(newValue);
 
-    // Seçimi koru
+    // İmleci veya seçimi ayarla
     setTimeout(() => {
-      textarea.selectionStart = start;
-      textarea.selectionEnd = start + newSelectedText.length;
+      if (start === end) {
+        // İmleci placeholder'ın sonuna taşı
+        textarea.selectionStart = start + prefix.length + placeholder.length;
+        textarea.selectionEnd = start + prefix.length + placeholder.length;
+      } else {
+        // Seçimi koru
+        textarea.selectionStart = start;
+        textarea.selectionEnd = start + newSelectedText.length;
+      }
+      textarea.focus();
     }, 0);
 
   }, [textareaRef, onValueChange]);
 
+  const applyHeading = useCallback((level: 1 | 2 | 3) => {
+    applyFormatting('#'.repeat(level) + ' ', '', 'Başlık Metni');
+  }, [applyFormatting]);
+
+  const applyBold = useCallback(() => {
+    applyFormatting('**', '**', 'Kalın Metin');
+  }, [applyFormatting]);
+
+  const applyItalic = useCallback(() => {
+    applyFormatting('*', '*', 'İtalik Metin');
+  }, [applyFormatting]);
+
+  const applyUnorderedList = useCallback(() => {
+    applyFormatting('* ', '', 'Liste Öğesi');
+  }, [applyFormatting]);
+
+  const applyOrderedList = useCallback(() => {
+    applyFormatting('1. ', '', 'Liste Öğesi');
+  }, [applyFormatting]);
+
   return (
     <div className={cn("flex gap-1 p-1 border-b border-border bg-muted rounded-t-md", className)}>
+      <span className="text-xs font-medium text-muted-foreground flex items-center px-2">
+        Biçimlendir:
+      </span>
       <Button 
         type="button" 
         variant="ghost" 
@@ -83,6 +104,46 @@ const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownTool
         title="Başlık 3 (H3)"
       >
         <Heading3 className="h-4 w-4" />
+      </Button>
+      <Button 
+        type="button" 
+        variant="ghost" 
+        size="icon" 
+        className="h-8 w-8" 
+        onClick={applyBold}
+        title="Kalın (**)"
+      >
+        <Bold className="h-4 w-4" />
+      </Button>
+      <Button 
+        type="button" 
+        variant="ghost" 
+        size="icon" 
+        className="h-8 w-8" 
+        onClick={applyItalic}
+        title="İtalik (*)"
+      >
+        <Italic className="h-4 w-4" />
+      </Button>
+      <Button 
+        type="button" 
+        variant="ghost" 
+        size="icon" 
+        className="h-8 w-8" 
+        onClick={applyUnorderedList}
+        title="Sırasız Liste (*)"
+      >
+        <List className="h-4 w-4" />
+      </Button>
+      <Button 
+        type="button" 
+        variant="ghost" 
+        size="icon" 
+        className="h-8 w-8" 
+        onClick={applyOrderedList}
+        title="Sıralı Liste (1.)"
+      >
+        <ListOrdered className="h-4 w-4" />
       </Button>
     </div>
   );

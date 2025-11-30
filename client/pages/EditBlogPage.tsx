@@ -18,7 +18,9 @@ import { toast } from "sonner";
 import { getBlogPostById, updateBlogPost, uploadBlogImage } from "@/lib/blog-store";
 import { useAuth } from "@/contexts/AuthContext";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import MarkdownToolbar from "@/components/MarkdownToolbar"; // Yeni import
+import MarkdownToolbar from "@/components/MarkdownToolbar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Yeni import
+import MarkdownPreview from "@/components/MarkdownPreview"; // Yeni import
 
 const blogSchema = z.object({
   title: z.string().min(5, "Başlık en az 5 karakter olmalıdır."),
@@ -52,6 +54,7 @@ export default function EditBlogPage() {
 
   const imageFileRef = form.register("imageFile");
   const { isSubmitting } = form.formState;
+  const contentValue = form.watch("content"); // İçerik değerini izle
 
   useEffect(() => {
     if (!id || authLoading) return;
@@ -175,23 +178,36 @@ export default function EditBlogPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>İçerik</FormLabel>
-                  <div className="border border-input rounded-md overflow-hidden">
-                    <MarkdownToolbar 
-                      textareaRef={textareaRef} 
-                      onValueChange={field.onChange}
-                    />
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Blog içeriğini buraya yazın..." 
-                        {...field} 
-                        ref={(e) => {
-                          field.ref(e);
-                          (textareaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = e;
-                        }}
-                        className="min-h-[200px] border-none focus-visible:ring-0 focus-visible:ring-offset-0 rounded-t-none" 
-                      />
-                    </FormControl>
-                  </div>
+                  <Tabs defaultValue="edit" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="edit">İçerik Düzenle</TabsTrigger>
+                      <TabsTrigger value="preview">Görüntü Önizleme</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="edit" className="p-0 mt-0">
+                      <div className="border border-input rounded-md overflow-hidden">
+                        <MarkdownToolbar 
+                          textareaRef={textareaRef} 
+                          onValueChange={field.onChange}
+                        />
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Blog içeriğini buraya yazın..." 
+                            {...field} 
+                            ref={(e) => {
+                              field.ref(e);
+                              (textareaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = e;
+                            }}
+                            className="min-h-[300px] border-none focus-visible:ring-0 focus-visible:ring-offset-0 rounded-t-none" 
+                          />
+                        </FormControl>
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="preview" className="p-0 mt-0">
+                      <div className="border border-input rounded-md min-h-[300px] bg-background">
+                        <MarkdownPreview content={contentValue} />
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                   <FormMessage />
                 </FormItem>
               )}
