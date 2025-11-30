@@ -288,10 +288,10 @@ export default function CreateBlogPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-red-500">
               <AlertTriangle className="h-6 w-6" />
-              Önemli Uyarı! Blogu yayımlarken siteyi arka plana alma!
+              Önemli Uyarı!
             </AlertDialogTitle>
             <AlertDialogDescription className="text-lg font-semibold text-foreground">
-              Blogunu yayınlamadan önce olası sorunlar için yazını bir yere kaydet veya yazını kopyala!
+              Blogunu yayımlarken siteyi arka plana alma! Blogunu yayınlamadan önce olası sorunlar için yazını bir yere kaydet veya yazını kopyala!
             </AlertDialogDescription>
             <AlertDialogDescription className="text-sm text-muted-foreground">
               Yayınlama işlemi sırasında bir ağ hatası veya yapay zeka moderasyonundan kaynaklanan bir reddedilme olursa, yazdığınız içerik kaybolabilir. Lütfen devam etmeden önce içeriğinizi kopyaladığınızdan emin olun.
