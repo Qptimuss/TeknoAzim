@@ -29,7 +29,7 @@ export default function DailyRewardNotifier() {
         {
           id: 'daily-reward-toast', // Bu toast'a benzersiz bir ID veriyoruz
           duration: Infinity, // Kullanıcı kapatana kadar açık kalır
-          position: 'top-right',
+          position: 'top-center', // Konumu 'top-center' olarak değiştirdik
           action: {
             label: 'Kapat',
             onClick: () => toast.dismiss('daily-reward-toast'),
