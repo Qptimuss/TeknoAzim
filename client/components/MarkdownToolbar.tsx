@@ -11,8 +11,8 @@ interface MarkdownToolbarProps {
 }
 
 const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownToolbarProps) => {
-  // Artık tüm biçimlendirmeler için metin seçimi zorunlu olacak.
-  const applyFormatting = useCallback((prefix: string, suffix: string = '', placeholder: string = '') => {
+  // Tüm biçimlendirmeler için metin seçimi zorunlu olacak.
+  const applyFormatting = useCallback((prefix: string, suffix: string = '') => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
@@ -23,8 +23,7 @@ const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownTool
     if (start === null || end === null) return;
 
     const selectedText = currentValue.substring(start, end);
-    let newSelectedText = selectedText;
-
+    
     // Metin seçimi kontrolü: Eğer başlangıç ve bitiş aynıysa, metin seçilmemiştir.
     if (start === end) {
       toast.info("Lütfen önce biçimlendirmek istediğiniz metni seçin.");
@@ -32,7 +31,7 @@ const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownTool
     }
     
     // Metin seçilmişse, sarmala
-    newSelectedText = prefix + selectedText + suffix;
+    const newSelectedText = prefix + selectedText + suffix;
 
     const newValue = currentValue.substring(0, start) + newSelectedText + currentValue.substring(end);
     onValueChange(newValue);
@@ -46,27 +45,62 @@ const MarkdownToolbar = ({ textareaRef, onValueChange, className }: MarkdownTool
 
   }, [textareaRef, onValueChange]);
 
+  // Sıralı liste için özel işleyici
+  const applyOrderedList = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const currentValue = textarea.value;
+
+    if (start === end) {
+      toast.info("Lütfen önce listelemek istediğiniz metni seçin.");
+      return;
+    }
+
+    const selectedText = currentValue.substring(start, end);
+    
+    // Seçilen metni satırlara ayır
+    const lines = selectedText.split('\n');
+    
+    // Her satırın başına artan sayı ekle
+    const numberedLines = lines.map((line, index) => {
+      // Eğer satır boş değilse veya sadece boşluklardan oluşmuyorsa numaralandır
+      if (line.trim().length > 0) {
+        return `${index + 1}. ${line}`;
+      }
+      return line; // Boş satırları olduğu gibi bırak
+    });
+
+    const newSelectedText = numberedLines.join('\n');
+
+    const newValue = currentValue.substring(0, start) + newSelectedText + currentValue.substring(end);
+    onValueChange(newValue);
+
+    // Seçimi koru
+    setTimeout(() => {
+      textarea.selectionStart = start;
+      textarea.selectionEnd = start + newSelectedText.length;
+      textarea.focus();
+    }, 0);
+  }, [textareaRef, onValueChange]);
+
+
   const applyHeading = useCallback((level: 1 | 2 | 3) => {
-    // Başlıklar için de seçim zorunlu, ancak placeholder'ı kullanmıyoruz, sadece seçilen metni sarmalıyoruz.
-    applyFormatting('#'.repeat(level) + ' ', '', 'Başlık Metni');
+    applyFormatting('#'.repeat(level) + ' ');
   }, [applyFormatting]);
 
   const applyBold = useCallback(() => {
-    applyFormatting('**', '**', 'Kalın Metin');
+    applyFormatting('**', '**');
   }, [applyFormatting]);
 
   const applyItalic = useCallback(() => {
-    applyFormatting('*', '*', 'İtalik Metin');
+    applyFormatting('*', '*');
   }, [applyFormatting]);
 
   const applyUnorderedList = useCallback(() => {
-    // Liste için de seçim zorunlu. Seçilen metnin her satırına * eklenmesi gerekebilir, 
-    // ancak basitlik için sadece seçilen metni sarmalıyoruz.
-    applyFormatting('* ', '', 'Liste Öğesi');
-  }, [applyFormatting]);
-
-  const applyOrderedList = useCallback(() => {
-    applyFormatting('1. ', '', 'Liste Öğesi');
+    applyFormatting('* ');
   }, [applyFormatting]);
 
   return (
