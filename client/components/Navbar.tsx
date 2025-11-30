@@ -75,31 +75,43 @@ export default function Navbar() {
             <div className="flex items-center gap-4 lg:gap-6 px-2">
               {user ? (
                 <>
-                  <div className="flex flex-col items-center">
-                    <Link to="/profil">
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-                        <AvatarFallback>
-                          <UserIcon className="h-5 w-5" />
-                        </AvatarFallback>
-                      </Avatar>
+                  {/* Profil ve Avatar Grubu */}
+                  <div className="flex items-center gap-2">
+                    {/* Yeni Profil Bağlantısı */}
+                    <Link 
+                      to="/profil" 
+                      className="font-bakbak text-base lg:text-base font-normal text-foreground whitespace-nowrap shrink-0 hover:text-primary transition-colors"
+                    >
+                      Profil
                     </Link>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link to="/magaza" className="flex items-center gap-1 bg-muted/50 rounded-full px-2 py-0.5 text-xs mt-1">
-                          <span className="font-bold">{user.gems ?? 0}</span>
-                          <Gem className="h-3 w-3 text-green-500" />
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <div className="text-center">
-                          <p className="font-bold">Elmas Kazancı</p>
-                          <p>Her 24 saatte bir giriş: +20 Elmas</p>
-                          <p>Her yeni rozet: +30 Elmas</p>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
+                    
+                    <div className="flex flex-col items-center">
+                      <Link to="/profil">
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
+                          <AvatarFallback>
+                            <UserIcon className="h-5 w-5" />
+                          </AvatarFallback>
+                        </Avatar>
+                      </Link>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link to="/magaza" className="flex items-center gap-1 bg-muted/50 rounded-full px-2 py-0.5 text-xs mt-1">
+                            <span className="font-bold">{user.gems ?? 0}</span>
+                            <Gem className="h-3 w-3 text-green-500" />
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <div className="text-center">
+                            <p className="font-bold">Elmas Kazancı</p>
+                            <p>Her 24 saatte bir giriş: +20 Elmas</p>
+                            <p>Her yeni rozet: +30 Elmas</p>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                   </div>
+                  
                   <Button onClick={handleLogout} variant="ghost" className="font-bakbak text-base lg:text-base font-normal text-foreground whitespace-nowrap shrink-0 p-0 hover:bg-transparent">
                     Çıkış Yap
                   </Button>
