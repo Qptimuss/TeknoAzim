@@ -88,10 +88,10 @@ export default function Leaderboard() {
             <Link to={`/kullanici/${profile.id}`} key={profile.id} className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg border border-border transition-all hover:bg-muted hover:border-primary hover:shadow-md">
               <span className="font-bold text-lg w-6 text-center shrink-0">#{index + 1}</span>
               <ProfileAvatar profile={profile} className="h-10 w-10" />
-              <div className="flex-1 min-w-0 flex items-center justify-between"> {/* flex-1 ve justify-between korundu */}
-                <div className="flex flex-col items-start"> {/* Kullanıcı adı ve ünvanı sola hizalamak için */}
+              <div className="flex-1 min-w-0 flex justify-between items-center">
+                <div className="flex flex-col items-center text-center"> {/* Changed to items-center and text-center */}
                   <p className="font-semibold text-foreground text-wrap">{profile.name || "Anonim"}</p>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground flex-wrap"> {/* Added justify-center */}
                     <span className="font-medium">Seviye {level}</span>
                     {profile.selected_title && (
                       <span className={cn("flex items-center gap-1 text-wrap", selectedTitleObject?.color || "text-yellow-400")}>
