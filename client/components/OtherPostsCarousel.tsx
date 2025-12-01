@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getBlogPosts } from "@/lib/blog-store";
 import { BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
@@ -18,22 +18,14 @@ interface OtherPostsCarouselProps {
 }
 
 export default function OtherPostsCarousel({ currentPostId }: OtherPostsCarouselProps) {
-  const [posts, setPosts] = useState<BlogPostWithAuthor[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: allPosts, isLoading: loading, error } = useQuery<BlogPostWithAuthor[]>({
+    queryKey: ['blogPosts'],
+    queryFn: getBlogPosts,
+  });
 
-  useEffect(() => {
-    const fetchPosts = async () => {
-      setLoading(true);
-      const allPosts = await getBlogPosts();
-      // Mevcut postu filtrele ve en fazla 10 tane göster
-      const filteredPosts = allPosts
-        .filter(post => post.id !== currentPostId)
-        .slice(0, 10); 
-      setPosts(filteredPosts);
-      setLoading(false);
-    };
-    fetchPosts();
-  }, [currentPostId]);
+  const posts = allPosts
+    ? allPosts.filter(post => post.id !== currentPostId).slice(0, 10)
+    : [];
 
   if (loading) {
     return (
@@ -46,6 +38,10 @@ export default function OtherPostsCarousel({ currentPostId }: OtherPostsCarousel
         </div>
       </div>
     );
+  }
+
+  if (error) {
+    return <div className="text-red-500 mt-12">Diğer bloglar yüklenemedi.</div>;
   }
 
   if (posts.length === 0) {
