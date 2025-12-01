@@ -115,24 +115,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          await fetchAndSetUser(session.user);
-        }
-      } catch (e) {
-        console.error("Initial auth session error:", e);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initializeAuth();
-
+    setLoading(true);
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-        setLoading(true);
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
         const supabaseUser = session?.user;
         if (supabaseUser) {
           await fetchAndSetUser(supabaseUser);
@@ -140,15 +125,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
           setIsDailyRewardEligible(false);
         }
-        setLoading(false);
-      } else if (event === 'SIGNED_OUT') {
+      }
+
+      if (event === 'SIGNED_OUT') {
         setUser(null);
         setIsDailyRewardEligible(false);
         queryClient.clear();
       }
+
+      if (event === 'INITIAL_SESSION') {
+        setLoading(false);
+      }
     });
 
-    return () => authListener.subscription.unsubscribe();
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   const logout = async () => {
