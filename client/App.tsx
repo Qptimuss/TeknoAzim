@@ -106,10 +106,9 @@ const AppContent = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
-        </AuthProvider>
-      </ThemeProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+        </ThemeProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 };
 
