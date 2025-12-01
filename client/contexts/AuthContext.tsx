@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { Profile } from "@shared/api";
@@ -40,6 +40,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isDailyRewardEligible, setIsDailyRewardEligible] = useState(false);
 
+  // Ref to hold the latest user state to avoid stale closures in event listeners
+  const userRef = useRef(user);
+  userRef.current = user;
+
   useEffect(() => {
     const SUPABASE_PROJECT_ID = "bhfshljiqbdxgbpgmllp";
     const oldLocalStorageKey = `sb-${SUPABASE_PROJECT_ID}-auth-token`;
@@ -49,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const fetchAndSetUser = async (supabaseUser: SupabaseUser) => {
+  const fetchAndSetUser = useCallback(async (supabaseUser: SupabaseUser) => {
     try {
       const { data: profile, error } = await supabase
         .from("profiles")
@@ -85,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setIsDailyRewardEligible(false);
     }
-  };
+  }, []);
 
   const updateUser = (data: Partial<User>) => {
     setUser((prevUser) => (prevUser ? { ...prevUser, ...data } : null));
@@ -114,16 +118,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchAndSetUser(supabaseUser);
   };
 
-  // Modified logout to clear queryClient
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
     setIsDailyRewardEligible(false);
     queryClient.clear(); // Clear React Query cache on logout
-  };
+  }, []);
 
-  // NEW: Centralized auth error handler for React Query
-  const handleAuthErrorAndRedirect = async () => {
+  const handleAuthErrorAndRedirect = useCallback(async () => {
     toast.dismiss('session-expired-toast'); // Dismiss any existing toast
     toast.error("Oturum Süresi Doldu", {
       id: 'session-expired-toast',
@@ -132,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     await logout(); // Clear session and query cache
     window.location.href = '/giris'; // Redirect
-  };
+  }, [logout]);
 
   useEffect(() => {
     // Set the global auth error handler
@@ -161,11 +163,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    // Revalidate session when tab becomes visible
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          // Session is valid, re-fetch user data to ensure it's fresh
+          await fetchAndSetUser(session.user);
+        } else if (userRef.current) {
+          // No session, but we had a user in state. This means session expired.
+          await logout();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       authListener.subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       authErrorHandlerRef.current = null; // Clear ref on unmount
     };
-  }, []); // Dependency array should be empty for auth listener
+  }, [fetchAndSetUser, logout, handleAuthErrorAndRedirect]);
 
   const saveProfileDetails = async (newUserData: Partial<User>) => {
     if (!user) return;
