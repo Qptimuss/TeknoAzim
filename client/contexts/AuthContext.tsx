@@ -4,7 +4,7 @@ import { Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { Profile } from "@shared/api";
 import { toast } from "sonner";
 import { updateProfileDetails, claimDailyReward } from "@/lib/profile-store";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 
 export type User = Profile & { email?: string };
 
@@ -15,8 +15,8 @@ interface AuthContextType {
   updateUser: (data: Partial<User>) => void;
   saveProfileDetails: (newUserData: Partial<User>) => Promise<void>;
   login: (supabaseUser: SupabaseUser) => Promise<void>;
-  isDailyRewardEligible: boolean; // Yeni: Günlük ödül almaya uygun mu?
-  triggerDailyRewardClaim: () => Promise<void>; // Yeni: Günlük ödülü talep etme fonksiyonu
+  isDailyRewardEligible: boolean;
+  triggerDailyRewardClaim: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isDailyRewardEligible, setIsDailyRewardEligible] = useState(false); // Yeni state
+  const [isDailyRewardEligible, setIsDailyRewardEligible] = useState(false);
 
   useEffect(() => {
     const SUPABASE_PROJECT_ID = "bhfshljiqbdxgbpgmllp";
@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
+  const fetchAndSetUser = async (supabaseUser: SupabaseUser) => {
     try {
       const { data: profile, error } = await supabase
         .from("profiles")
@@ -58,22 +58,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         )
         .eq("id", supabaseUser.id)
         .single();
-      
+
       if (error) {
         console.error("Error fetching profile from Supabase:", error);
         if (error.code === 'PGRST116' || error.message.includes('Row not found')) {
-            toast.error("Profil verisi bulunamadı.", { description: "Lütfen Supabase'de 'profiles' tablonuzun ve RLS ayarlarınızın doğru olduğundan emin olun." });
+          toast.error("Profil verisi bulunamadı.", { description: "Lütfen Supabase'de 'profiles' tablonuzun ve RLS ayarlarınızın doğru olduğundan emin olun." });
         } else {
-            toast.error("Profil yüklenemedi.", { description: error.message });
+          toast.error("Profil yüklenemedi.", { description: error.message });
         }
-        return null;
+        setUser(null);
+        setIsDailyRewardEligible(false);
+        return;
       }
-      
-      return { ...profile, email: supabaseUser.email } as User;
+
+      const fullUser = { ...profile, email: supabaseUser.email } as User;
+      setUser(fullUser);
+
+      const lastClaimed = fullUser.last_daily_reward_claimed_at
+        ? new Date(fullUser.last_daily_reward_claimed_at)
+        : null;
+      const today = new Date();
+      setIsDailyRewardEligible(!lastClaimed || !isSameDay(lastClaimed, today));
     } catch (e) {
-      console.error("Critical error in fetchUserProfile:", e);
+      console.error("Critical error in fetchAndSetUser:", e);
       toast.error("Kritik Profil Hatası", { description: "Lütfen konsolu kontrol edin." });
-      return null;
+      setUser(null);
+      setIsDailyRewardEligible(false);
     }
   };
 
@@ -81,16 +91,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser((prevUser) => (prevUser ? { ...prevUser, ...data } : null));
   };
 
-  // Günlük ödül uygunluğunu kontrol eden fonksiyon
-  const checkDailyRewardEligibility = (profile: User) => {
-    const lastClaimed = profile.last_daily_reward_claimed_at
-      ? new Date(profile.last_daily_reward_claimed_at)
-      : null;
-    const today = new Date();
-    setIsDailyRewardEligible(!lastClaimed || !isSameDay(lastClaimed, today));
-  };
-
-  // Kullanıcının günlük ödülü talep etmesini sağlayan fonksiyon
   const triggerDailyRewardClaim = async () => {
     if (!user) {
       toast.error("Günlük ödülü almak için giriş yapmalısınız.");
@@ -98,8 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     try {
       const updatedProfile = await claimDailyReward();
-      updateUser({ ...updatedProfile, email: user.email }); // AuthContext'teki user'ı güncelle
-      setIsDailyRewardEligible(false); // Ödül alındı, uygunluğu sıfırla
+      updateUser({ ...updatedProfile, email: user.email });
+      setIsDailyRewardEligible(false);
       toast.success("Günlük Giriş Ödülü", { description: "Hesabına 20 Elmas ve 25 EXP eklendi!" });
     } catch (e) {
       if (e instanceof Error && e.message.includes("Daily reward already claimed today")) {
@@ -111,11 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = async (supabaseUser: SupabaseUser) => {
-    let profile = await fetchUserProfile(supabaseUser);
-    if (profile) {
-      setUser(profile);
-      checkDailyRewardEligibility(profile); // Giriş yapınca uygunluğu kontrol et
-    }
+    await fetchAndSetUser(supabaseUser);
   };
 
   useEffect(() => {
@@ -123,11 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-          let profile = await fetchUserProfile(session.user);
-          if (profile) {
-            setUser(profile);
-            checkDailyRewardEligibility(profile); // Başlangıçta uygunluğu kontrol et
-          }
+          await fetchAndSetUser(session.user);
         }
       } catch (e) {
         console.error("Initial auth session error:", e);
@@ -139,28 +131,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initializeAuth();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Sadece ana oturum değişikliklerinde (giriş, çıkış, ilk oturum) tam bir profil güncellemesi yapıyoruz.
-      // TOKEN_REFRESHED gibi olaylarda gereksiz yeniden render'ı önleyerek
-      // React Query'nin veri çekme işlemiyle çakışmasını engelliyoruz.
       if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         setLoading(true);
         const supabaseUser = session?.user;
         if (supabaseUser) {
-          const profile = await fetchUserProfile(supabaseUser);
-          if (profile) {
-            setUser(profile);
-            checkDailyRewardEligibility(profile);
-          }
+          await fetchAndSetUser(supabaseUser);
         } else {
           setUser(null);
-          setIsDailyRewardEligibility(false);
+          setIsDailyRewardEligible(false);
         }
         setLoading(false);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
-        setIsDailyRewardEligibility(false);
-        // Çıkış yapıldığında, bir sonraki kullanıcının eski verileri görmemesi için
-        // tüm sorgu önbelleğini temizlemek en iyi pratiktir.
+        setIsDailyRewardEligible(false);
         queryClient.clear();
       }
     });
@@ -171,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
-    setIsDailyRewardEligibility(false); // Çıkış yapınca uygunluğu sıfırla
+    setIsDailyRewardEligible(false);
     queryClient.clear();
   };
 
