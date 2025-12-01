@@ -1,24 +1,16 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getBlogPosts } from "@/lib/blog-store";
 import { BlogPostWithAuthor } from "@shared/api";
 import BlogCard from "@/components/BlogCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Bloglar() {
-  const [posts, setPosts] = useState<BlogPostWithAuthor[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchPosts = async () => {
-      setLoading(true);
-      const allPosts = await getBlogPosts();
-      setPosts(allPosts);
-      setLoading(false);
-    };
-    fetchPosts();
-  }, []);
+  const { data: posts, isLoading: loading, error } = useQuery<BlogPostWithAuthor[]>({
+    queryKey: ['blogPosts'],
+    queryFn: getBlogPosts,
+  });
 
   return (
     <div className="container mx-auto px-5 py-12">
@@ -43,9 +35,13 @@ export default function Bloglar() {
             </div>
           ))}
         </div>
+      ) : error ? (
+        <div className="text-red-500 text-center col-span-full bg-card border border-border rounded-lg p-8">
+          Bloglar yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {posts.map((post) => (
+          {posts?.map((post) => (
             <BlogCard key={post.id} post={post} />
           ))}
         </div>

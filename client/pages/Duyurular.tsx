@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Construction, Plus, Calendar, Pencil, Trash2, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,38 +20,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import Leaderboard from "@/components/Leaderboard"; // Import edildi
-import MarkdownPreview from "@/components/MarkdownPreview"; // Import edildi
+import Leaderboard from "@/components/Leaderboard";
+import MarkdownPreview from "@/components/MarkdownPreview";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-const ANNOUNCEMENT_DISPLAY_LIMIT = 2; // Sadece ilk 2 duyuruyu göster
+const ANNOUNCEMENT_DISPLAY_LIMIT = 2;
 
 export default function Duyurular() {
   const { user } = useAuth();
   const isUserAdmin = isAdmin(user);
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  const { data: announcements = [], isLoading: loading, error } = useQuery<Announcement[]>({
+    queryKey: ['announcements'],
+    queryFn: getAnnouncements,
+  });
+
   const [announcementToDelete, setAnnouncementToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [showAllAnnouncements, setShowAllAnnouncements] = useState(false); // Yeni state
-
-  const fetchAnnouncements = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await getAnnouncements();
-      setAnnouncements(data);
-      setError(null);
-    } catch (e) {
-      setError("Duyurular yüklenirken bir hata oluştu.");
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchAnnouncements();
-  }, [fetchAnnouncements]);
+  const [showAllAnnouncements, setShowAllAnnouncements] = useState(false);
 
   const handleDeleteConfirm = async () => {
     if (!announcementToDelete) return;
@@ -59,8 +46,7 @@ export default function Duyurular() {
     try {
       await deleteAnnouncement(announcementToDelete);
       toast.success("Duyuru başarıyla silindi.");
-      // Listeyi yeniden çekmek yerine yerel olarak güncelleyelim
-      setAnnouncements(prev => prev.filter(a => a.id !== announcementToDelete));
+      queryClient.invalidateQueries({ queryKey: ['announcements'] });
     } catch (error) {
       toast.error("Duyuru silinirken bir hata oluştu.");
       console.error(error);
@@ -92,7 +78,7 @@ export default function Duyurular() {
     if (error) {
       return (
         <div className="bg-card border border-border rounded-lg p-8 flex flex-col items-center justify-center min-h-[300px]">
-          <p className="text-red-500 text-lg">{error}</p>
+          <p className="text-red-500 text-lg">Duyurular yüklenirken bir hata oluştu.</p>
         </div>
       );
     }
@@ -145,11 +131,10 @@ export default function Duyurular() {
             </CardHeader>
             <Separator className="mx-6 w-auto" />
             <CardContent className="pt-6">
-              {/* İçeriği MarkdownPreview ile göster, artık kompakt sınıfı yok */}
               <div className="text-card-foreground">
                 <MarkdownPreview 
                   content={announcement.content} 
-                  className="!p-0" // Sadece padding'i sıfırlıyoruz, diğer stil ayarları MarkdownPreview'dan geliyor
+                  className="!p-0"
                 />
               </div>
             </CardContent>
@@ -198,11 +183,9 @@ export default function Duyurular() {
             )}
           </div>
           
-          {/* Duyurular içeriği */}
           {renderContent()}
 
-          {/* Liderlik Tablosu Duyuruların altında */}
-          <div className="mt-12"> {/* Duyurular ile liderlik tablosu arasına boşluk */}
+          <div className="mt-12">
             <Leaderboard />
           </div>
         </div>
