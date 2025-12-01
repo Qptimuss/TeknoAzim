@@ -28,9 +28,16 @@ import EditBlogPage from "./pages/EditBlogPage";
 import CreateAnnouncementPage from "./pages/CreateAnnouncementPage";
 import EditAnnouncementPage from "./pages/EditAnnouncementPage";
 import DailyRewardNotifier from "./components/DailyRewardNotifier";
-import { useRefetchOnFocus } from "./hooks/use-refetch-on-focus"; // Yeni import
+import { useRefetchOnFocus } from "./hooks/use-refetch-on-focus";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Pencere odaklandığında otomatik yeniden çekmeyi devre dışı bırak
+      refetchOnWindowFocus: false, 
+    },
+  },
+});
 
 // Yeni bir bileşen oluşturarak hook'u kullanıyoruz
 const AppInitializer = () => {
@@ -45,7 +52,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <AuthProvider>
-          <AppInitializer /> {/* Hook'u burada çağırıyoruz */}
+          <AppInitializer />
           <DailyRewardNotifier />
           <BrowserRouter>
             <Routes>
