@@ -4,7 +4,7 @@ import { Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { Profile } from "@shared/api";
 import { toast } from "sonner";
 import { updateProfileDetails, claimDailyReward } from "@/lib/profile-store";
-import { useQueryClient } from "@tanstack/react-query";
+import { queryClient, authErrorHandlerRef } from "@/App"; // Global queryClient ve authErrorHandlerRef import edildi
 
 export type User = Profile & { email?: string };
 
@@ -36,7 +36,6 @@ const SAFE_PROFILE_UPDATE_KEYS: Array<keyof Profile> = [
 ];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDailyRewardEligible, setIsDailyRewardEligible] = useState(false);
@@ -136,6 +135,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Set the global auth error handler
+    authErrorHandlerRef.current = handleAuthErrorAndRedirect;
+
     setLoading(true);
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
@@ -161,6 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       authListener.subscription.unsubscribe();
+      authErrorHandlerRef.current = null; // Clear ref on unmount
     };
   }, []); // Dependency array should be empty for auth listener
 

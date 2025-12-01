@@ -19,7 +19,7 @@ import ProfilePage from "./pages/ProfilePage";
 import UserProfilePage from "./pages/UserProfilePage";
 import SifremiUnuttum from "./pages/SifremiUnuttum";
 import SifreSifirla from "./pages/SifreSifirla";
-import { AuthProvider, useAuth } from "./contexts/AuthContext"; // useAuth'u da import et
+import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./components/ThemeProvider";
 import Magaza from "./pages/Magaza";
@@ -27,54 +27,55 @@ import EditBlogPage from "./pages/EditBlogPage";
 import CreateAnnouncementPage from "./pages/CreateAnnouncementPage";
 import EditAnnouncementPage from "./pages/EditAnnouncementPage";
 import DailyRewardNotifier from "./components/DailyRewardNotifier";
+import React from "react"; // useRef için React import edildi
 
-// QueryClient ve QueryClientProvider kurulumunu, useAuth kullanabilen bir bileşene taşıyoruz.
-const AppContent = () => {
-  const { handleAuthErrorAndRedirect } = useAuth(); // AuthContext'ten handler'ı al
-
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        refetchOnWindowFocus: true,
-        retry: (failureCount, error: any) => {
-          // Kimlik doğrulama hatalarında yeniden deneme yapma
-          const isAuthError = 
-            error?.message?.includes("JWT") ||
-            error?.message?.includes("Unauthorized") ||
-            error?.message?.includes("session") ||
-            error?.status === 401 || // HTTP durum kodunu kontrol et
-            (error?.response?.status === 401); // fetchWithAuth'tan gelen hatalar için
-
-          if (isAuthError) {
-            return false;
-          }
-          return failureCount < 2; // Diğer hatalar için varsayılan yeniden deneme davranışı
-        },
-      },
-    },
-    queryCache: new QueryCache({
-      onError: async (error: any) => {
-        // Kimlik doğrulama hataları için daha sağlam kontrol
+// Global QueryClient instance
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: true,
+      retry: (failureCount, error: any) => {
         const isAuthError = 
           error?.message?.includes("JWT") ||
           error?.message?.includes("Unauthorized") ||
           error?.message?.includes("session") ||
-          error?.status === 401 || // HTTP durum kodunu kontrol et
-          (error?.response?.status === 401); // fetchWithAuth'tan gelen hatalar için
+          error?.status === 401 ||
+          (error?.response?.status === 401);
 
         if (isAuthError) {
-          handleAuthErrorAndRedirect(); // Merkezi handler'ı kullan
+          return false;
         }
+        return failureCount < 2;
       },
-    }),
-  });
+    },
+  },
+});
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <ThemeProvider attribute="class" defaultTheme="dark">
-          <Sonner />
-          {/* DailyRewardNotifier AuthProvider içinde olmalı */}
+// Global ref to store the auth error handler from AuthContext
+export const authErrorHandlerRef = React.createRef<() => Promise<void>>();
+
+// Configure QueryCache onError globally
+queryClient.setQueryCache(new QueryCache({
+  onError: async (error: any) => {
+    const isAuthError = 
+      error?.message?.includes("JWT") ||
+      error?.message?.includes("Unauthorized") ||
+      error?.message?.includes("session") ||
+      error?.status === 401 ||
+      (error?.response?.status === 401);
+
+    if (isAuthError && authErrorHandlerRef.current) {
+      await authErrorHandlerRef.current();
+    }
+  },
+}));
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <ThemeProvider attribute="class" defaultTheme="dark">
+        <Sonner />
+        <AuthProvider> {/* AuthProvider artık QueryClientProvider içinde */}
           <DailyRewardNotifier /> 
           <BrowserRouter>
             <Routes>
@@ -106,17 +107,10 @@ const AppContent = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
-        </ThemeProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-};
-
-// Ana App bileşeni artık sadece AuthProvider ve AppContent'i render ediyor
-const App = () => (
-  <AuthProvider>
-    <AppContent />
-  </AuthProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
 );
 
 createRoot(document.getElementById("root")!).render(<App />);
