@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getLeaderboardProfiles } from "@/lib/profile-store";
 import { Profile } from "@shared/api";
@@ -15,28 +14,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Leaderboard() {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchProfiles = async () => {
-      try {
-        setLoading(true);
-        const data = await getLeaderboardProfiles();
-        setProfiles(data);
-        setError(null);
-      } catch (e) {
-        setError("Liderlik tablosu yüklenirken bir hata oluştu.");
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfiles();
-  }, []);
+  const { data: profiles = [], isLoading: loading, error } = useQuery<Profile[], Error>({
+    queryKey: ['leaderboardProfiles'],
+    queryFn: getLeaderboardProfiles,
+  });
 
   if (loading) {
     return (
@@ -58,7 +42,7 @@ export default function Leaderboard() {
   if (error) {
     return (
       <div className="text-red-500 text-center p-4 bg-card border border-border rounded-lg">
-        {error}
+        {error.message || "Liderlik tablosu yüklenirken bir hata oluştu."}
       </div>
     );
   }

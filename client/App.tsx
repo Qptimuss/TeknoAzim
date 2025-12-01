@@ -36,7 +36,7 @@ export const authErrorHandlerRef = React.createRef<() => Promise<void>>();
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: true,
+      refetchOnWindowFocus: true, // Otomatik yenilemeyi tekrar aktif hale getirdik
       retry: (failureCount, error: any) => {
         const isAuthError = 
           error?.message?.includes("JWT") ||
