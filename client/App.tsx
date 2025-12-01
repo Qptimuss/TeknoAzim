@@ -3,7 +3,7 @@ import "./global.css";
 import { createRoot } from "react-dom/client";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, QueryCache } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -27,15 +27,48 @@ import EditBlogPage from "./pages/EditBlogPage";
 import CreateAnnouncementPage from "./pages/CreateAnnouncementPage";
 import EditAnnouncementPage from "./pages/EditAnnouncementPage";
 import DailyRewardNotifier from "./components/DailyRewardNotifier";
+import { toast } from "sonner";
+import { supabase } from "./integrations/supabase/client";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Pencere odaklandığında otomatik yeniden çekmeyi ETKİNLEŞTİR.
-      // Bu, süresi dolmuş oturumların ele alınması için standart React Query yöntemidir.
       refetchOnWindowFocus: true,
+      retry: (failureCount, error: any) => {
+        // Don't retry on auth errors from Supabase or our backend
+        if (
+          error?.message?.includes("JWT") ||
+          error?.message?.includes("Unauthorized") ||
+          error?.message?.includes("session")
+        ) {
+          return false;
+        }
+        // Default retry behavior (e.g., for network errors)
+        return failureCount < 2;
+      },
     },
   },
+  queryCache: new QueryCache({
+    onError: async (error: any) => {
+      // Check for specific auth-related error messages
+      if (
+        error?.message?.includes("JWT") ||
+        error?.message?.includes("Unauthorized") ||
+        error?.message?.includes("session")
+      ) {
+        // Prevent multiple toasts from appearing
+        toast.dismiss('session-expired-toast');
+        toast.error("Oturum Süresi Doldu", {
+          id: 'session-expired-toast',
+          description: "Güvenliğiniz için oturumunuz sonlandırıldı. Lütfen tekrar giriş yapın.",
+        });
+        
+        // Sign out and redirect
+        await supabase.auth.signOut();
+        window.location.href = '/giris';
+      }
+    },
+  }),
 });
 
 const App = () => (
