@@ -19,7 +19,7 @@ import ProfilePage from "./pages/ProfilePage";
 import UserProfilePage from "./pages/UserProfilePage";
 import SifremiUnuttum from "./pages/SifremiUnuttum";
 import SifreSifirla from "./pages/SifreSifirla";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext"; // useAuth'u da import et
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./components/ThemeProvider";
 import Magaza from "./pages/Magaza";
@@ -27,57 +27,55 @@ import EditBlogPage from "./pages/EditBlogPage";
 import CreateAnnouncementPage from "./pages/CreateAnnouncementPage";
 import EditAnnouncementPage from "./pages/EditAnnouncementPage";
 import DailyRewardNotifier from "./components/DailyRewardNotifier";
-import { toast } from "sonner";
-import { supabase } from "./integrations/supabase/client";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: true,
-      retry: (failureCount, error: any) => {
-        // Don't retry on auth errors from Supabase or our backend
-        if (
-          error?.message?.includes("JWT") ||
-          error?.message?.includes("Unauthorized") ||
-          error?.message?.includes("session")
-        ) {
-          return false;
-        }
-        // Default retry behavior (e.g., for network errors)
-        return failureCount < 2;
+// QueryClient ve QueryClientProvider kurulumunu, useAuth kullanabilen bir bileşene taşıyoruz.
+const AppContent = () => {
+  const { handleAuthErrorAndRedirect } = useAuth(); // AuthContext'ten handler'ı al
+
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        refetchOnWindowFocus: true,
+        retry: (failureCount, error: any) => {
+          // Kimlik doğrulama hatalarında yeniden deneme yapma
+          const isAuthError = 
+            error?.message?.includes("JWT") ||
+            error?.message?.includes("Unauthorized") ||
+            error?.message?.includes("session") ||
+            error?.status === 401 || // HTTP durum kodunu kontrol et
+            (error?.response?.status === 401); // fetchWithAuth'tan gelen hatalar için
+
+          if (isAuthError) {
+            return false;
+          }
+          return failureCount < 2; // Diğer hatalar için varsayılan yeniden deneme davranışı
+        },
       },
     },
-  },
-  queryCache: new QueryCache({
-    onError: async (error: any) => {
-      // Check for specific auth-related error messages
-      if (
-        error?.message?.includes("JWT") ||
-        error?.message?.includes("Unauthorized") ||
-        error?.message?.includes("session")
-      ) {
-        // Prevent multiple toasts from appearing
-        toast.dismiss('session-expired-toast');
-        toast.error("Oturum Süresi Doldu", {
-          id: 'session-expired-toast',
-          description: "Güvenliğiniz için oturumunuz sonlandırıldı. Lütfen tekrar giriş yapın.",
-        });
-        
-        // Sign out and redirect
-        await supabase.auth.signOut();
-        window.location.href = '/giris';
-      }
-    },
-  }),
-});
+    queryCache: new QueryCache({
+      onError: async (error: any) => {
+        // Kimlik doğrulama hataları için daha sağlam kontrol
+        const isAuthError = 
+          error?.message?.includes("JWT") ||
+          error?.message?.includes("Unauthorized") ||
+          error?.message?.includes("session") ||
+          error?.status === 401 || // HTTP durum kodunu kontrol et
+          (error?.response?.status === 401); // fetchWithAuth'tan gelen hatalar için
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <ThemeProvider attribute="class" defaultTheme="dark">
-        <Sonner />
-        <AuthProvider>
-          <DailyRewardNotifier />
+        if (isAuthError) {
+          handleAuthErrorAndRedirect(); // Merkezi handler'ı kullan
+        }
+      },
+    }),
+  });
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark">
+          <Sonner />
+          {/* DailyRewardNotifier AuthProvider içinde olmalı */}
+          <DailyRewardNotifier /> 
           <BrowserRouter>
             <Routes>
               <Route element={<Layout />}>
@@ -112,6 +110,14 @@ const App = () => (
       </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
+  );
+};
+
+// Ana App bileşeni artık sadece AuthProvider ve AppContent'i render ediyor
+const App = () => (
+  <AuthProvider>
+    <AppContent />
+  </AuthProvider>
 );
 
 createRoot(document.getElementById("root")!).render(<App />);

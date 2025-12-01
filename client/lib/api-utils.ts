@@ -39,24 +39,10 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
     },
   });
 
-  // Oturum süresi dolduğunda (401 Unauthorized) genel hata yönetimi
-  if (response.status === 401) {
-    toast.error("Oturum Süresi Doldu", {
-      description: "Güvenliğiniz için oturumunuz sonlandırıldı. Lütfen tekrar giriş yapın.",
-    });
-    
-    // Supabase oturumunu temizle ve kullanıcıyı giriş sayfasına yönlendir
-    await supabase.auth.signOut();
-    
-    // Sayfayı yeniden yönlendirerek tüm uygulama durumunu temizle
-    window.location.href = '/giris';
-
-    // Bu noktadan sonra devam etmemek için bir hata fırlat
-    throw new Error("Session expired. Redirecting to login.");
-  }
-
   if (!response.ok) {
     let errorMessage = `Sunucu Hatası: ${response.status}`; // Varsayılan hata mesajı
+    let errorStatus = response.status; // HTTP durum kodunu yakala
+
     try {
       // Sunucudan gelen JSON formatındaki hata mesajını ayrıştırmayı dene
       const errorData = await response.json();
@@ -78,7 +64,9 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
       }
     }
     // Her zaman standart bir Error nesnesi fırlat. Bu, '[object Object]' hatasını önler.
-    throw new Error(errorMessage);
+    const err = new Error(errorMessage);
+    (err as any).status = errorStatus; // Durum kodunu hata nesnesine ekle
+    throw err;
   }
 
   // DELETE gibi işlemler için 204 No Content durumunu ele al

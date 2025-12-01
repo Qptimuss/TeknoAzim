@@ -17,6 +17,7 @@ interface AuthContextType {
   login: (supabaseUser: SupabaseUser) => Promise<void>;
   isDailyRewardEligible: boolean;
   triggerDailyRewardClaim: () => Promise<void>;
+  handleAuthErrorAndRedirect: () => Promise<void>; // NEW: Expose this function
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -114,6 +115,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchAndSetUser(supabaseUser);
   };
 
+  // Modified logout to clear queryClient
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setIsDailyRewardEligible(false);
+    queryClient.clear(); // Clear React Query cache on logout
+  };
+
+  // NEW: Centralized auth error handler for React Query
+  const handleAuthErrorAndRedirect = async () => {
+    toast.dismiss('session-expired-toast'); // Dismiss any existing toast
+    toast.error("Oturum Süresi Doldu", {
+      id: 'session-expired-toast',
+      description: "Güvenliğiniz için oturumunuz sonlandırıldı. Lütfen tekrar giriş yapın.",
+      duration: 5000, // Give user some time to read
+    });
+    await logout(); // Clear session and query cache
+    window.location.href = '/giris'; // Redirect
+  };
+
   useEffect(() => {
     setLoading(true);
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -130,7 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_OUT') {
         setUser(null);
         setIsDailyRewardEligible(false);
-        queryClient.clear();
+        queryClient.clear(); // Ensure cache is cleared here too
       }
 
       if (event === 'INITIAL_SESSION') {
@@ -141,14 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
-
-  const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setIsDailyRewardEligible(false);
-    queryClient.clear();
-  };
+  }, []); // Dependency array should be empty for auth listener
 
   const saveProfileDetails = async (newUserData: Partial<User>) => {
     if (!user) return;
@@ -167,7 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const value = { user, loading, logout, updateUser, saveProfileDetails, login, isDailyRewardEligible, triggerDailyRewardClaim };
+  const value = { user, loading, logout, updateUser, saveProfileDetails, login, isDailyRewardEligible, triggerDailyRewardClaim, handleAuthErrorAndRedirect };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
