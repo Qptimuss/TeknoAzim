@@ -138,17 +138,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initializeAuth();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const supabaseUser = session?.user;
-      if (supabaseUser) {
-        let profile = await fetchUserProfile(supabaseUser);
-        if (profile) {
-          setUser(profile);
-          checkDailyRewardEligibility(profile); // Oturum değişince uygunluğu kontrol et
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Sadece ana oturum değişikliklerinde (giriş, çıkış, ilk oturum) tam bir profil güncellemesi yapıyoruz.
+      // TOKEN_REFRESHED gibi olaylarda gereksiz yeniden render'ı önleyerek
+      // React Query'nin veri çekme işlemiyle çakışmasını engelliyoruz.
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        setLoading(true);
+        const supabaseUser = session?.user;
+        if (supabaseUser) {
+          const profile = await fetchUserProfile(supabaseUser);
+          if (profile) {
+            setUser(profile);
+            checkDailyRewardEligibility(profile);
+          }
+        } else {
+          setUser(null);
+          setIsDailyRewardEligibility(false);
         }
-      } else {
+        setLoading(false);
+      } else if (event === 'SIGNED_OUT') {
         setUser(null);
-        setIsDailyRewardEligible(false); // Çıkış yapınca uygunluğu sıfırla
+        setIsDailyRewardEligibility(false);
+        // Çıkış yapıldığında, bir sonraki kullanıcının eski verileri görmemesi için
+        // tüm sorgu önbelleğini temizlemek en iyi pratiktir.
+        queryClient.clear();
       }
     });
 
@@ -158,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
-    setIsDailyRewardEligible(false); // Çıkış yapınca uygunluğu sıfırla
+    setIsDailyRewardEligibility(false); // Çıkış yapınca uygunluğu sıfırla
     queryClient.clear();
   };
 
