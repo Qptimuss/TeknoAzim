@@ -28,22 +28,16 @@ import EditBlogPage from "./pages/EditBlogPage";
 import CreateAnnouncementPage from "./pages/CreateAnnouncementPage";
 import EditAnnouncementPage from "./pages/EditAnnouncementPage";
 import DailyRewardNotifier from "./components/DailyRewardNotifier";
-import { useRefetchOnFocus } from "./hooks/use-refetch-on-focus";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Pencere odaklandığında otomatik yeniden çekmeyi devre dışı bırak
-      refetchOnWindowFocus: false, 
+      // Pencere odaklandığında otomatik yeniden çekmeyi ETKİNLEŞTİR.
+      // Bu, süresi dolmuş oturumların ele alınması için standart React Query yöntemidir.
+      refetchOnWindowFocus: true,
     },
   },
 });
-
-// Yeni bir bileşen oluşturarak hook'u kullanıyoruz
-const AppInitializer = () => {
-  useRefetchOnFocus();
-  return null;
-}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -52,7 +46,6 @@ const App = () => (
         <Toaster />
         <Sonner />
         <AuthProvider>
-          <AppInitializer />
           <DailyRewardNotifier />
           <BrowserRouter>
             <Routes>
