@@ -25,6 +25,7 @@ import OtherPostsCarousel from "@/components/OtherPostsCarousel";
 import { isAdmin } from "@/lib/auth-utils";
 import MarkdownPreview from "@/components/MarkdownPreview";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { BlogPostWithAuthor } from "@shared/api";
 
 export default function BlogPostPage() {
   const { id } = useParams<{ id: string }>();
@@ -40,6 +41,10 @@ export default function BlogPostPage() {
     queryKey: ['blogPost', id],
     queryFn: () => getBlogPostById(id!),
     enabled: !!id,
+    initialData: () => {
+      const posts = queryClient.getQueryData<BlogPostWithAuthor[]>(['blogPosts']);
+      return posts?.find(p => p.id === id);
+    },
   });
 
   const { data: comments = [], refetch: refetchComments } = useQuery({

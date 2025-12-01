@@ -1,6 +1,5 @@
 import "./global.css";
 
-import { Toaster } from "@/components/ui/sonner";
 import { createRoot } from "react-dom/client";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -43,7 +42,6 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <ThemeProvider attribute="class" defaultTheme="dark">
-        <Toaster />
         <Sonner />
         <AuthProvider>
           <DailyRewardNotifier />
