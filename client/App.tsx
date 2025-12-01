@@ -29,6 +29,9 @@ import EditAnnouncementPage from "./pages/EditAnnouncementPage";
 import DailyRewardNotifier from "./components/DailyRewardNotifier";
 import React from "react"; // useRef için React import edildi
 
+// Global ref to store the auth error handler from AuthContext
+export const authErrorHandlerRef = React.createRef<() => Promise<void>>();
+
 // Global QueryClient instance
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,26 +52,22 @@ export const queryClient = new QueryClient({
       },
     },
   },
+  queryCache: new QueryCache({
+    onError: async (error: any) => {
+      const isAuthError = 
+        error?.message?.includes("JWT") ||
+        error?.message?.includes("Unauthorized") ||
+        error?.message?.includes("session") ||
+        error?.status === 401 ||
+        (error?.response?.status === 401);
+
+      if (isAuthError && authErrorHandlerRef.current) {
+        await authErrorHandlerRef.current();
+      }
+    },
+  }),
 });
 
-// Global ref to store the auth error handler from AuthContext
-export const authErrorHandlerRef = React.createRef<() => Promise<void>>();
-
-// Configure QueryCache onError globally
-queryClient.setQueryCache(new QueryCache({
-  onError: async (error: any) => {
-    const isAuthError = 
-      error?.message?.includes("JWT") ||
-      error?.message?.includes("Unauthorized") ||
-      error?.message?.includes("session") ||
-      error?.status === 401 ||
-      (error?.response?.status === 401);
-
-    if (isAuthError && authErrorHandlerRef.current) {
-      await authErrorHandlerRef.current();
-    }
-  },
-}));
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
