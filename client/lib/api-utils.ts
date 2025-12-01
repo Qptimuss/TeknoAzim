@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 /**
  * Helper function to get the current user's JWT for server authentication.
@@ -37,6 +38,22 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
       ...options.headers,
     },
   });
+
+  // Oturum süresi dolduğunda (401 Unauthorized) genel hata yönetimi
+  if (response.status === 401) {
+    toast.error("Oturum Süresi Doldu", {
+      description: "Güvenliğiniz için oturumunuz sonlandırıldı. Lütfen tekrar giriş yapın.",
+    });
+    
+    // Supabase oturumunu temizle ve kullanıcıyı giriş sayfasına yönlendir
+    await supabase.auth.signOut();
+    
+    // Sayfayı yeniden yönlendirerek tüm uygulama durumunu temizle
+    window.location.href = '/giris';
+
+    // Bu noktadan sonra devam etmemek için bir hata fırlat
+    throw new Error("Session expired. Redirecting to login.");
+  }
 
   if (!response.ok) {
     let errorMessage = `Sunucu Hatası: ${response.status}`; // Varsayılan hata mesajı
