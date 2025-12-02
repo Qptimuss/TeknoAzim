@@ -294,7 +294,7 @@ export default function CreateBlogPage() {
               Blogunu yayınlamadan önce olası sorunlar için yazını bir yere kaydet veya yazını kopyala! Blogu yayımlarken siteyi arka plana alma!
             </AlertDialogDescription>
             <AlertDialogDescription className="text-sm text-muted-foreground">
-              Yayınlama işlemi sırasında bir ağ hatası veya yapay zeka moderasyonundan kaynaklanan bir reddedilme olursa, yazdığınız içerik kaybolabilir. Lütfen devam etmeden önce içeriğinizi kopyaladığınızdan emin olun.
+              Siteyi ekranınızda arka plana atıp geri öne alınca siteyi yenilemediğiniz sürece sitedeki yorum yazma, blog yayınlama gibi fonksiyonlar çalışmayı durduruyor bu yüzden blog yayınlama 1-2dk dan fazla sürerse siteyi yenileyip tekrar deneyin.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
