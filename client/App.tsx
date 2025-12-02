@@ -1,9 +1,10 @@
 import "./global.css";
 
+import { Toaster } from "@/components/ui/sonner";
 import { createRoot } from "react-dom/client";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider, QueryCache } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -26,56 +27,18 @@ import Magaza from "./pages/Magaza";
 import EditBlogPage from "./pages/EditBlogPage";
 import CreateAnnouncementPage from "./pages/CreateAnnouncementPage";
 import EditAnnouncementPage from "./pages/EditAnnouncementPage";
-import DailyRewardNotifier from "./components/DailyRewardNotifier";
-import React from "react"; // useRef için React import edildi
+import DailyRewardNotifier from "./components/DailyRewardNotifier"; // Yeni import
 
-// Global ref to store the auth error handler from AuthContext
-export const authErrorHandlerRef = React.createRef<() => Promise<void>>();
-
-// Global QueryClient instance
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: true, // Otomatik yenilemeyi tekrar aktif hale getirdik
-      retry: (failureCount, error: any) => {
-        const isAuthError = 
-          error?.message?.includes("JWT") ||
-          error?.message?.includes("Unauthorized") ||
-          error?.message?.includes("session") ||
-          error?.status === 401 ||
-          (error?.response?.status === 401);
-
-        if (isAuthError) {
-          return false;
-        }
-        return failureCount < 2;
-      },
-    },
-  },
-  queryCache: new QueryCache({
-    onError: async (error: any) => {
-      const isAuthError = 
-        error?.message?.includes("JWT") ||
-        error?.message?.includes("Unauthorized") ||
-        error?.message?.includes("session") ||
-        error?.status === 401 ||
-        (error?.response?.status === 401);
-
-      if (isAuthError && authErrorHandlerRef.current) {
-        await authErrorHandlerRef.current();
-      }
-    },
-  }),
-});
-
+const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <ThemeProvider attribute="class" defaultTheme="dark">
+        <Toaster />
         <Sonner />
-        <AuthProvider> {/* AuthProvider artık QueryClientProvider içinde */}
-          <DailyRewardNotifier /> 
+        <AuthProvider>
+          <DailyRewardNotifier /> {/* DailyRewardNotifier buraya eklendi */}
           <BrowserRouter>
             <Routes>
               <Route element={<Layout />}>

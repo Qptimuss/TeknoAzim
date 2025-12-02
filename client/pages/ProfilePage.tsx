@@ -38,12 +38,12 @@ import NovaFrame from "@/components/frames/NovaFrame";
 import ImageViewerDialog from "@/components/ImageViewerDialog";
 import { isAdmin } from "@/lib/auth-utils";
 import { fetchWithoutAuth } from "@/lib/api-utils";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function ProfilePage() {
   const { user, saveProfileDetails, updateUser, loading, logout } = useAuth();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const [userPosts, setUserPosts] = useState<BlogPostWithAuthor[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [postToDelete, setPostToDelete] = useState<{id: string, imageUrl?: string | null} | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -74,11 +74,6 @@ export default function ProfilePage() {
   const [envCheckResult, setEnvCheckResult] = useState<any>(null);
   const [isCheckingEnv, setIsCheckingEnv] = useState(false);
 
-  const { data: userPosts = [], isLoading: postsLoading } = useQuery<BlogPostWithAuthor[]>({
-    queryKey: ['userPosts', user?.id],
-    queryFn: () => getPostsByUserId(user!.id),
-    enabled: !!user,
-  });
 
   useEffect(() => {
     return () => {
@@ -90,6 +85,14 @@ export default function ProfilePage() {
     if (user) {
       setNameValue(user.name || "");
       setDescriptionValue(user.description || "");
+      
+      const fetchUserPosts = async () => {
+        setPostsLoading(true);
+        const posts = await getPostsByUserId(user.id);
+        setUserPosts(posts);
+        setPostsLoading(false);
+      };
+      fetchUserPosts();
     }
   }, [user]);
 
@@ -263,7 +266,7 @@ export default function ProfilePage() {
     setIsDeleting(true);
     try {
       await deleteBlogPost(postToDelete.id, postToDelete.imageUrl);
-      queryClient.invalidateQueries({ queryKey: ['userPosts', user.id] });
+      setUserPosts(prev => prev.filter(p => p.id !== postToDelete.id));
       
       const updatedProfile = await removeExp(user.id, EXP_ACTIONS.REMOVE_POST);
       if (updatedProfile) {
@@ -639,7 +642,7 @@ export default function ProfilePage() {
           <div className="lg:col-span-2">
             <h2 className="text-foreground text-2xl font-outfit font-bold mb-4">Bloglarım ({userPosts.length})</h2>
             {postsLoading ? (
-               <p className="text-muted-foreground">Bloglar yükleniyor...</p>
+              <p className="text-muted-foreground">Bloglar yükleniyor...</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {userPosts.map(post => (

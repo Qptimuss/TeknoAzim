@@ -2,12 +2,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { BlogPostWithAuthor, CommentWithAuthor, Profile } from "@shared/api";
 import { fetchWithAuth } from "./api-utils";
 
-// Helper to handle Supabase errors consistently
-const handleSupabaseError = (error: any, context: string) => {
-  console.error(`Error ${context}:`, error);
-  throw new Error(error.message || `Failed to ${context}.`);
-};
-
 // --- Blog Posts ---
 export const getBlogPosts = async (): Promise<BlogPostWithAuthor[]> => {
   const { data, error } = await supabase
@@ -15,7 +9,10 @@ export const getBlogPosts = async (): Promise<BlogPostWithAuthor[]> => {
     .select("*, profiles(*)")
     .order("created_at", { ascending: false });
   
-  if (error) handleSupabaseError(error, "fetching blog posts");
+  if (error) {
+    console.error("Error fetching blog posts:", error);
+    return []; 
+  }
   return data as BlogPostWithAuthor[];
 };
 
@@ -26,9 +23,8 @@ export const getBlogPostById = async (id: string): Promise<BlogPostWithAuthor | 
     .eq("id", id)
     .single();
   if (error) {
-    // For single fetches, a "not found" error is not a system error, return null
-    if (error.code === 'PGRST116') return null;
-    handleSupabaseError(error, "fetching post by ID");
+    console.error("Error fetching post by ID:", error);
+    return null;
   }
   return data as BlogPostWithAuthor;
 };
@@ -39,7 +35,7 @@ export const getPostsByUserId = async (userId: string): Promise<BlogPostWithAuth
     .select("*, profiles(*)")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
-  if (error) handleSupabaseError(error, "fetching posts by user ID");
+  if (error) throw new Error(error.message);
   return data as BlogPostWithAuthor[];
 };
 
@@ -61,9 +57,14 @@ export const updateBlogPost = async (postId: string, updateData: { title: string
   });
 };
 
+/**
+ * Blog gönderisi ile ilişkili resmi Supabase Storage'dan siler.
+ * @param imageUrl Silinecek resmin tam URL'si.
+ */
 export const deleteBlogImage = async (imageUrl: string): Promise<void> => {
   try {
     const url = new URL(imageUrl);
+    // URL'den storage yolunu çıkar
     const path = url.pathname.split('/images/')[1];
     if (!path) return;
     
@@ -76,6 +77,7 @@ export const deleteBlogImage = async (imageUrl: string): Promise<void> => {
 };
 
 export const deleteBlogPost = async (postId: string, imageUrl?: string | null) => {
+  // Resim silme mantığı artık deleteBlogImage içinde.
   if (imageUrl) {
     try {
       await deleteBlogImage(imageUrl);
@@ -108,16 +110,39 @@ export const getCommentsForPost = async (postId: string): Promise<CommentWithAut
     .select("*, profiles(*)")
     .eq("post_id", postId)
     .order("created_at", { ascending: true });
-  if (error) handleSupabaseError(error, "fetching comments");
+  if (error) throw new Error(error.message);
   return data as CommentWithAuthor[];
 };
 
 export const addComment = async (comment: { postId: string; content: string }) => {
-  // This function already uses fetchWithAuth which has good error handling.
-  return fetchWithAuth('/api/blog/comment', {
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  
+  if (sessionError) throw new Error(`Supabase session hatası: ${sessionError.message}`);
+  if (!session) throw new Error("Kullanıcı kimliği doğrulanmadı. Lütfen tekrar giriş yapın.");
+
+  const response = await fetch('/api/blog/comment', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
     body: JSON.stringify({ postId: comment.postId, content: comment.content }),
   });
+
+  if (!response.ok) {
+    let errorMessage = `Sunucu Hatası: ${response.status}`;
+    try {
+      const errorData = await response.json();
+      if (errorData && typeof errorData.error === 'string') errorMessage = errorData.error;
+      else if (errorData && errorData.details && Array.isArray(errorData.details)) {
+        errorMessage = `Invalid input data. Details: ${errorData.details.map((d: any) => `${d.path.join('.')} - ${d.message}`).join(', ')}`;
+      }
+    } catch {}
+    throw new Error(errorMessage);
+  }
+
+  if (response.status === 204) return null;
+  return response.json();
 };
 
 export const deleteComment = async (commentId: string) => {
@@ -127,7 +152,7 @@ export const deleteComment = async (commentId: string) => {
 // --- Votes ---
 export const getVoteCounts = async (postId: string): Promise<{ likes: number; dislikes: number }> => {
   const { data, error } = await supabase.from('post_votes').select('vote_type').eq('post_id', postId);
-  if (error) handleSupabaseError(error, "fetching vote counts");
+  if (error) throw new Error(error.message);
 
   const likes = data.filter(v => v.vote_type === 1).length;
   const dislikes = data.filter(v => v.vote_type === -1).length;
@@ -136,10 +161,7 @@ export const getVoteCounts = async (postId: string): Promise<{ likes: number; di
 
 export const getUserVote = async (postId: string, userId: string): Promise<'liked' | 'disliked' | null> => {
   const { data, error } = await supabase.from('post_votes').select('vote_type').eq('post_id', postId).eq('user_id', userId).single();
-  if (error) {
-    if (error.code === 'PGRST116') return null;
-    handleSupabaseError(error, "fetching user vote");
-  }
+  if (error || !data) return null;
   return data.vote_type === 1 ? 'liked' : 'disliked';
 };
 
@@ -151,8 +173,8 @@ export const castVote = async (postId: string, userId: string, voteType: 'like' 
 export const getProfileById = async (userId: string): Promise<Profile | null> => {
   const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single();
   if (error) {
-    if (error.code === 'PGRST116') return null;
-    handleSupabaseError(error, "fetching profile by ID");
+    console.error("Error fetching profile by ID:", error);
+    return null;
   }
   return data as Profile;
 };

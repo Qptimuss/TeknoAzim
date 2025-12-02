@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 /**
  * Helper function to get the current user's JWT for server authentication.
@@ -41,8 +40,6 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
 
   if (!response.ok) {
     let errorMessage = `Sunucu Hatası: ${response.status}`; // Varsayılan hata mesajı
-    let errorStatus = response.status; // HTTP durum kodunu yakala
-
     try {
       // Sunucudan gelen JSON formatındaki hata mesajını ayrıştırmayı dene
       const errorData = await response.json();
@@ -64,9 +61,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
       }
     }
     // Her zaman standart bir Error nesnesi fırlat. Bu, '[object Object]' hatasını önler.
-    const err = new Error(errorMessage);
-    (err as any).status = errorStatus; // Durum kodunu hata nesnesine ekle
-    throw err;
+    throw new Error(errorMessage);
   }
 
   // DELETE gibi işlemler için 204 No Content durumunu ele al

@@ -28,10 +28,13 @@ import {
 import { toast } from "sonner";
 import { fetchWithAuth } from "@/lib/api-utils"; // fetchWithAuth import edildi
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 
 export default function UserProfilePage() {
   const { userId } = useParams<{ userId: string }>();
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [userPosts, setUserPosts] = useState<BlogPostWithAuthor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [postsLoading, setPostsLoading] = useState(true);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const { user: currentUser, logout } = useAuth(); // Mevcut giriş yapmış kullanıcı
   const isUserAdmin = isAdmin(currentUser); // Mevcut kullanıcının admin olup olmadığı
@@ -41,17 +44,26 @@ export default function UserProfilePage() {
   const [showAdminDeleteUserDialog, setShowAdminDeleteUserDialog] = useState(false);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
 
-  const { data: userProfile, isLoading: loading } = useQuery<Profile | null>({
-    queryKey: ['profile', userId],
-    queryFn: () => getProfileById(userId!),
-    enabled: !!userId,
-  });
+  useEffect(() => {
+    if (!userId) return;
 
-  const { data: userPosts = [], isLoading: postsLoading } = useQuery<BlogPostWithAuthor[]>({
-    queryKey: ['userPosts', userId],
-    queryFn: () => getPostsByUserId(userId!),
-    enabled: !!userId,
-  });
+    const fetchData = async () => {
+      setLoading(true);
+      const profile = await getProfileById(userId);
+      setUserProfile(profile);
+      setLoading(false);
+    };
+
+    const fetchUserPosts = async () => {
+      setPostsLoading(true);
+      const posts = await getPostsByUserId(userId);
+      setUserPosts(posts);
+      setPostsLoading(false);
+    };
+
+    fetchData();
+    fetchUserPosts();
+  }, [userId]);
 
   const handleAdminDeleteUserAccount = async () => {
     if (!userId || !currentUser || !isUserAdmin) return;

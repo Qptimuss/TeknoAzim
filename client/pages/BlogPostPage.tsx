@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { getBlogPostById, getCommentsForPost, deleteBlogPost } from "@/lib/blog-store";
 import { ArrowLeft, User as UserIcon, Trash2, Pencil } from "lucide-react";
+import { BlogPostWithAuthor, CommentWithAuthor } from "@shared/api";
 import LikeDislikeButtons from "@/components/LikeDislikeButtons";
 import CommentSection from "@/components/CommentSection";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,44 +23,45 @@ import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { removeExp, EXP_ACTIONS } from "@/lib/gamification";
 import OtherPostsCarousel from "@/components/OtherPostsCarousel";
-import { isAdmin } from "@/lib/auth-utils";
-import MarkdownPreview from "@/components/MarkdownPreview";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BlogPostWithAuthor } from "@shared/api";
+import { isAdmin } from "@/lib/auth-utils"; // isAdmin helper'ı import edildi
+import MarkdownPreview from "@/components/MarkdownPreview"; // MarkdownPreview import edildi
 
 export default function BlogPostPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { user, updateUser } = useAuth();
-  const queryClient = useQueryClient();
+  const [post, setPost] = useState<BlogPostWithAuthor | null>(null);
+  const [comments, setComments] = useState<CommentWithAuthor[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { user, updateUser } = useAuth();
+  const navigate = useNavigate();
 
-  const isUserAdmin = isAdmin(user);
+  const isUserAdmin = isAdmin(user); // Admin kontrolü
 
-  const { data: post, isLoading: isPostLoading } = useQuery({
-    queryKey: ['blogPost', id],
-    queryFn: () => getBlogPostById(id!),
-    enabled: !!id,
-    initialData: () => {
-      const posts = queryClient.getQueryData<BlogPostWithAuthor[]>(['blogPosts']);
-      return posts?.find(p => p.id === id);
-    },
-  });
+  const fetchPostAndComments = useCallback(async () => {
+    if (!id) return;
+    setLoading(true);
+    const [postData, commentsData] = await Promise.all([
+      getBlogPostById(id),
+      getCommentsForPost(id),
+    ]);
+    setPost(postData);
+    setComments(commentsData);
+    setLoading(false);
+  }, [id]);
 
-  const { data: comments = [], refetch: refetchComments } = useQuery({
-    queryKey: ['comments', id],
-    queryFn: () => getCommentsForPost(id!),
-    enabled: !!id,
-  });
+  useEffect(() => {
+    fetchPostAndComments();
+  }, [fetchPostAndComments]);
 
   const handleDelete = async () => {
-    if (!post || !user) return;
+    if (!post || !user) return; // user kontrolü eklendi
 
     setIsDeleting(true);
     try {
       await deleteBlogPost(post.id, post.image_url);
       
+      // Eğer silen kişi postun sahibi ise EXP düşür
       if (user.id === post.user_id) {
         const updatedProfile = await removeExp(user.id, EXP_ACTIONS.REMOVE_POST);
         if (updatedProfile) {
@@ -68,7 +70,6 @@ export default function BlogPostPage() {
       }
 
       toast.success("Blog yazısı başarıyla silindi.");
-      queryClient.invalidateQueries({ queryKey: ['blogPosts'] });
       navigate("/bloglar");
     } catch (error) {
       toast.error("Blog yazısı silinirken bir hata oluştu.");
@@ -79,7 +80,7 @@ export default function BlogPostPage() {
     }
   };
 
-  if (isPostLoading) {
+  if (loading) {
     return (
       <div className="container mx-auto px-5 py-12 max-w-4xl">
         <Skeleton className="h-8 w-48 mb-8" />
@@ -115,7 +116,7 @@ export default function BlogPostPage() {
   });
 
   const isAuthor = user && post.profiles && user.id === post.profiles.id;
-  const canEditOrDelete = isAuthor || isUserAdmin;
+  const canEditOrDelete = isAuthor || isUserAdmin; // Adminler de düzenleyebilir/silebilir
 
   return (
     <>
@@ -126,7 +127,7 @@ export default function BlogPostPage() {
         </Link>
         
         <article className="bg-card border border-border rounded-lg overflow-hidden relative">
-          {canEditOrDelete && (
+          {canEditOrDelete && ( // Adminler de görebilir
             <div className="absolute top-4 right-4 z-10 flex gap-2">
               <Button asChild variant="outline" size="icon">
                 <Link to={`/bloglar/${post.id}/duzenle`}>
@@ -171,6 +172,7 @@ export default function BlogPostPage() {
               <LikeDislikeButtons postId={post.id} />
             </div>
             
+            {/* Markdown içeriğini burada işliyoruz */}
             <MarkdownPreview content={post.content} className="text-card-foreground text-lg leading-relaxed" />
 
             {post.profiles && (
@@ -203,8 +205,9 @@ export default function BlogPostPage() {
           </div>
         </article>
 
-        <CommentSection postId={post.id} comments={comments} onCommentAdded={refetchComments} />
+        <CommentSection postId={post.id} comments={comments} onCommentAdded={fetchPostAndComments} />
         
+        {/* Yeni Eklenen Bölüm */}
         <OtherPostsCarousel currentPostId={post.id} />
       </div>
 
